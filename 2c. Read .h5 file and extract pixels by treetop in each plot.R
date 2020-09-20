@@ -30,13 +30,13 @@ north <- c(4879000,4879000,4881000,4880000,4878000,4880000,4878000,4878000,48800
 byTileAOP(dpID="DP3.30006.001",site="BART",
             year="2017", easting= east,
             northing = north,
-            buffer=50, savepath = "./R_input/",check.size = T)
+            buffer=200, savepath = "./R_input/",check.size = T)
 
 # Download DSMs
 byTileAOP(dpID="DP3.30024.001",site="BART",
           year="2017", easting= east,
           northing = north,
-          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
+          buffer=200, savepath = "./R_input/Bart_DSM/",check.size = T)
 
 
 ## read plot shapefiles
