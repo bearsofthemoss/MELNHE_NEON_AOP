@@ -1,5 +1,5 @@
-### Alex Young 9-8-2020
 ### Anna K. Schweiger 9-22-2020
+### Alex Young 9-22-2020
 
 library(sp)
 library(rgdal)
@@ -18,29 +18,22 @@ bright_norm <- function(x){
   x_norm <- x/sqrt(sum(x^2))
   return(x_norm)}
 
-# setwd("C:\\Users\\aryoung\\Desktop\\mel_NEON")
-setwd("C:/Users/Anna/Bartlett/")
-
-#### Ideally I'd use the neonUtilities to pull the .h5 file directly for each stand.  The issue I have currently is limited processing power to open multiple .h5 files at once.
-
-# these are the easting and northings for the stand locations
-east <- c(  313000, 314000, 318000, 318000, 316000, 318000, 314000, 317000, 315000, 315000, 316000, 317000)
-north <- c(4879000,4879000,4881000,4880000,4878000,4880000,4878000,4878000,4880000,4880000,4880000,4879000)
-
-byTileAOP(dpID="DP3.30006.001",site="BART",
-            year="2017", easting= east,
-            northing = north,
-            buffer=50, savepath = "./R_input/",check.size = T)
-
-# Download DSMs
-byTileAOP(dpID="DP3.30024.001",site="BART",
-          year="2017", easting= east,
-          northing = north,
-          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
-
+# Anna's wd: # setwd("C:/Users/Anna/Bartlett/")
+# Alex's wd:
+setwd("C:\\Users\\aryoung\\Documents\\GitHub\\MELNHE_NEON_AOP")
 
 ## read plot shapefiles
-plots <- readOGR("./R_input/fwdneoncoverageofourtrees","Bartlett_intensive_sites_subplots")
+
+## plots
+#Anna's plot file# plots <- readOGR("./R_input/fwdneoncoverageofourtrees","Bartlett_intensive_sites_subplots")
+# Alex's plots
+plots <- readOGR("R_input\\fwdneoncoverageofourtrees","Bartlett_intensive_sites_30x30")
+
+# tree tops
+# Anna's tree tops:# trees <- readOGR("./R_input/tree_tops","bart_ttops_6_22_2020")
+# Alex's tree tops
+trees <- readOGR("R_input\\tree_tops","bart_ttops_6_22_2020")
+
 
 # transform to UTM coordinates
 crss <- make_EPSG()
@@ -50,13 +43,38 @@ UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>%
 
 plots_UTM <- spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
 
-# tree tops
-trees <- readOGR("./R_input/tree_tops","bart_ttops_6_22_2020")
+# centroids are the 'plot centers'. This script works with point data.
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
+centroids
+# these are the easting and northings for the stand locations
+east <- centroids[, 1]
+east
+north <-centroids[, 2]
+north
+## If you need to download the tiles
 
-ff <- list.files("R_input/Bart_tiles/",pattern = ".h5", recursive = T, full.names = T)
-dd <- list.files("R_input/Bart_DSM/",pattern = "DSM.tif", recursive = T, full.names = T)
+byTileAOP(dpID="DP3.30006.001",site="BART",
+            year="2017", easting= east,
+            northing = north,
+            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
+# the code did not have the bart_tiles for savepath-  I renamed the folder, and updated the savepath for consistency Ay 9_22_2020
 
+# Download DSMs
+byTileAOP(dpID="DP3.30024.001",site="BART",
+          year="2017", easting= east,
+          northing = north,
+          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
 
+# Mac
+#ff <- list.files("R_input/Bart_tiles/",pattern = ".h5", recursive = T, full.names = T)
+#dd <- list.files("R_input/Bart_DSM/",pattern = "DSM.tif", recursive = T, full.names = T)
+
+#PC- Alex's work
+ff <- list.files("R_input/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
+dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
+
+# AY saw 23 files in ff. and 23 files in dd. 9_22_2020
+# AY used plot centers and got 10 files in each 9_23_2020
 ############################################################################################
 #### Begin hyperspectral data management
 # Extract image information
@@ -124,18 +142,26 @@ for (k in 1:length(ff)){
   bandNames <- paste("Band_", round(wvl,digits = 2),sep="")
   names(hsiStack) <- bandNames ### Raster does not safe band names
   
+  # origina nami from Anna  (This just gave AY the value '2017')
   nami <- sapply(strsplit(f,"/"),"[",3)
   
+  # alex try nami. The 10th slot has the tile name with coord 313000_4877000
+  nami<-sapply(strsplit(f,"/"),"[",10)  
+  nami
+  
   ### plot
-  plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
-  plot(plots_UTM, add=T, col=2)
+#3 AY can't see whats going on here?
+  #plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
+  #plot(plots_UTM, add=T, col="2")
+
+## Ay can't see the overlay happenning? looks like the Rgb doesn't look right?  
+  #plot(plots_UTM, col="pink")
   # text(coordinates(plots_UTM), labels=plots_UTM$Site, cex=0.8)
   
   # plot(plots_UTM[plots_UTM$Site=="C1",])
   
-  writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), format="raster")
-  
-  
+  # For Anna's wd:# writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), format="raster")
+
   ### Make NDVI raster layer
   # NEON uses bands close to 648.2, 858.6
   # ideal bands: https://data.neonscience.org/documents/10179/11204/NEON.DOC.002391vA/0b2a4472-95eb-42a7-a3cb-db6647de7ba9
@@ -152,7 +178,7 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), format="GTiff")
+  #For Anna's wd:# writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), format="GTiff")
   
   h5closeAll()
   ##################################################################################
@@ -165,6 +191,8 @@ for (k in 1:length(ff)){
   good <- which((as.numeric(wvl)>400 & as.numeric(wvl)<1340|
                    as.numeric(wvl)>1445 & as.numeric(wvl)<1790|
                    as.numeric(wvl)>1955 & as.numeric(wvl)<2400)==T)
+  
+  ###------
   
   ### subset bands
   cube_wat <- raster::subset(hsiStack, good)
@@ -179,12 +207,14 @@ for (k in 1:length(ff)){
   cube_norm <- raster::calc(cube_masked, fun=bright_norm)
   names(cube_norm) <- names(cube_masked)
   
-  plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
+  #plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
   
   ### Shade mask
   nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
-  dsm <- raster(dd[grep(nam_d,dd)])
 
+    dsm <- raster(dd[grep(nam_d,dd)])
+
+  
   dsm_slope <- terrain(dsm,opt="slope")
   dsm_aspect <- terrain(dsm,opt="aspect")
   
@@ -219,25 +249,30 @@ for (k in 1:length(ff)){
   
   # Select subset to examine threshold
   # better: clip to extent of stand (centroid plus 200 m buffer)
-  plotRGB(hsiStack, r = 56, g = 28, b = 14, stretch = 'lin')
-  plot(plots_UTM, add=T, col=2)
   
-  mini <- drawExtent()
-  
-  mini_cube <- crop(hsiStack,mini)
-  mini_noshade <- crop(cube_no_shade,mini)
+  ## Alex #'d these out to reduce time
+  #plotRGB(hsiStack, r = 56, g = 28, b = 14, stretch = 'lin')
+  #plot(plots_UTM, add=T, col=5)
+  #mini <- drawExtent()
+  #mini_cube <- crop(hsiStack,mini)
+  #mini_noshade <- crop(cube_no_shade,mini)
  
   # plot
-  plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
-  plotRGB(mini_noshade,r = 56, g = 28, b = 14, stretch = 'lin')
+  #plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
+  #plotRGB(mini_noshade,r = 56, g = 28, b = 14, stretch = 'lin')
+  #plot(plots_UTM, add=T, col="red")
   
   ###################
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
-  plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
   
-  plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
-  plot(trees, add=T, col="yellow")
+  extent(shade_mask)
+  
+  extent(cube_norm)
+  #plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
+  
+  #plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
+  #plot(trees, add=T, col="yellow")
   
   ################################################################################################
   ################################################################################################
@@ -247,12 +282,14 @@ for (k in 1:length(ff)){
   inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
   trees_in <- trees[as.vector(inout),]
   
-  # here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
+# here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
   spectra <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)
 
   spectra_df[[k]] <- as.data.frame(spectra@data)
 }
 
+head(spectra_df)
+spectra_df
 ### combine and save
 spectra_all <- do.call(rind, spectra_df)
 write.csv(all, file="./R_output/ttop_C10.csv")
