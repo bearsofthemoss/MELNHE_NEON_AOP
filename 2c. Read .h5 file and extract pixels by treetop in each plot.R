@@ -53,17 +53,17 @@ north <-centroids[, 2]
 north
 ## If you need to download the tiles
 
-byTileAOP(dpID="DP3.30006.001",site="BART",
-            year="2017", easting= east,
-            northing = north,
-            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
+#byTileAOP(dpID="DP3.30006.001",site="BART",
+#            year="2017", easting= east,
+#            northing = north,
+#            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
 # the code did not have the bart_tiles for savepath-  I renamed the folder, and updated the savepath for consistency Ay 9_22_2020
 
 # Download DSMs
-byTileAOP(dpID="DP3.30024.001",site="BART",
-          year="2017", easting= east,
-          northing = north,
-          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
+#byTileAOP(dpID="DP3.30024.001",site="BART",
+#          year="2017", easting= east,
+#          northing = north,
+#          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
 
 # Mac
 #ff <- list.files("R_input/Bart_tiles/",pattern = ".h5", recursive = T, full.names = T)
@@ -73,6 +73,7 @@ byTileAOP(dpID="DP3.30024.001",site="BART",
 ff <- list.files("R_input/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
 dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
 
+
 # AY saw 23 files in ff. and 23 files in dd. 9_22_2020
 # AY used plot centers and got 10 files in each 9_23_2020
 ############################################################################################
@@ -81,7 +82,7 @@ dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.nam
 spectra_df <- list()
 
 for (k in 1:length(ff)){
-  f <- ff[k]
+  f <- ff[1]
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -131,12 +132,13 @@ for (k in 1:length(ff)){
     all_wvls[[i]] <- a[i]
   }
   
-  # this takes a minute
+    # this takes a minute
   cube_rast <- lapply(all_wvls,band2raster, path_h5 = f,NoDataValue = myNoDataValue,
                       xMin = xMin, yMax = yMax,
                       res=reso, crs = myCRS, ncols =  reflInfo$Dimensions[2],
                       nrows =  reflInfo$Dimensions[1])
   hsiStack <- stack(cube_rast)
+  
   
   # make list of band names 
   bandNames <- paste("Band_", round(wvl,digits = 2),sep="")
@@ -146,7 +148,8 @@ for (k in 1:length(ff)){
   nami <- sapply(strsplit(f,"/"),"[",3)
   
   # alex try nami. The 10th slot has the tile name with coord 313000_4877000
-  nami<-sapply(strsplit(f,"/"),"[",10)  
+  strsplit(f,"/")
+  nami<-sapply(strsplit(f,"/"),"[",11)  
   nami
   
   ### plot
@@ -289,10 +292,13 @@ for (k in 1:length(ff)){
 }
 
 head(spectra_df)
-spectra_df
+
 ### combine and save
-spectra_all <- do.call(rind, spectra_df)
-write.csv(all, file="./R_output/ttop_C10.csv")
+spectra_all <- do.call(rbind, spectra_df)
+
+head(spectra_all)
+names(spectra_all)
+write.csv(spectra_all, file="actual_tops_9_24.csv")
 
 
 
