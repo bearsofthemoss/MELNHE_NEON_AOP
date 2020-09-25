@@ -2,7 +2,7 @@
 # Background and data sources
   
 library(vegan)
-tree<-read.csv("C:\\Users\\Dropcopter2\\Documents\\R\\hyperspectral R\\10+cm.csv")
+tree<-read.csv("data_folder/10+cm.csv")
 table(tree$Stand)
 tree$Plot.ID<-paste(tree$Stand, tree$Plot) 
 dim(tree)

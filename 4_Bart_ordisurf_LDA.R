@@ -9,7 +9,7 @@ library(agricolae)
 
 
 ## dada contains the tree top reflectance. Add 'Stand Age' column
-dada<-read.csv("actual_tops_9_24.csv")
+dada<-read.csv("data_folder/actual_tops_9_24.csv")
 
 
 
