@@ -1,11 +1,44 @@
+library(ggplot2)
+theme_set(theme_classic())
+library(sf)
+library(maps)
+library(rnaturalearth)
+library(rnaturalearthdata)
+#
+library(ggmap)
+library(gridExtra)
+#
 
 library(neonUtilities)
 library(ForestTools)
 library(raster)
 library(rgdal)
 library(rgeos)
+###########
 
 
+###### PART 1:   Map of NH
+world <- ne_countries(scale = "medium", returnclass = "sf")
+sites <- data.frame(longitude = c(-71.28731), latitude = c(44.06388 ))
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+states <- cbind(states, st_coordinates(st_centroid(states)))
+
+ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) + 
+  geom_point(data = sites, aes(x = longitude, y = latitude), size = 4, shape = 23, fill = "darkred") +
+  coord_sf(xlim = c(-75, -67), ylim = c(40, 47), expand = FALSE)
+
+
+
+######  PART2:  9 stands color coded plots
+#Use this but for the whole site?
+
+byTileAOP("DP3.30010.001", site="BART", year="2017", 
+          check.size = F,buffer = 100,
+          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+
+
+
+######  Part 3 and 4
 #stands<-readOGR("data_files\\plot_shp","Bartlett_intensive_sites_30x30")
 
 stands<-readOGR("C:\\Users\\Dropcopter2\\Documents\\R\\hyperspectral R\\mel_NEON\\plot_shp","Bartlett_intensive_sites_30x30")
