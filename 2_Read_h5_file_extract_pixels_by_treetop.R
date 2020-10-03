@@ -20,22 +20,22 @@ bright_norm <- function(x){
 
 # Alex's wd:
 # setwd("C:\\Users\\aryoung\\Documents\\GitHub\\MELNHE_NEON_AOP")
-# Anna's 
-setwd("~//Documents/CABO/Bartlett_Alex/")
+# Anna's wd:
+#setwd("~//Documents/CABO/Bartlett_Alex/")
 
 ## read plot shapefiles
 
 ## plots
 # Anna's plot file
-plots <- readOGR("./R_input/","Bartlett_intensive_sites_30x30")
+#plots <- readOGR("./R_input","Bartlett_intensive_sites_30x30")
 
 # Alex's plots
-# plots <- readOGR("R_input\\fwdneoncoverageofourtrees","Bartlett_intensive_sites_30x30")
+ plots <- readOGR("R_input","Bartlett_intensive_sites_30x30")
 
 # tree tops
-trees <- readOGR("./R_input/","bart_ttops_6_22_2020")
+#trees <- readOGR("./R_input/","bart_ttops_6_22_2020")
 # Alex's tree tops
-# trees <- readOGR("R_input\\tree_tops","bart_ttops_6_22_2020")
+ trees <- readOGR("R_input","bart_ttops_6_22_2020")
 
 
 # transform to UTM coordinates
@@ -60,7 +60,7 @@ north <-centroids[, 2]
 #            year="2017", easting= east,
 #            northing = north,
 #            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
-# the code did not have the bart_tiles for savepath-  I renamed the folder, and updated the savepath for consistency Ay 9_22_2020
+
 
 # Download DSMs
 #byTileAOP(dpID="DP3.30024.001",site="BART",
@@ -69,9 +69,9 @@ north <-centroids[, 2]
 #          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
 
 
-#PC- Alex's work
-# ff <- list.files("R_input/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
-# dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
+#PC- Alex's wd
+ ff <- list.files("R_input/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
+ dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
 
 # Anna's
 ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
@@ -147,23 +147,22 @@ for (k in 1:length(ff)){
   bandNames <- paste("Band_", round (wvl,digits = 2),sep="")
   names(hsiStack) <- bandNames ### Raster does not safe band names
   
-  # origina nami from Anna  (This just gave AY the value '2017')
-  nami <- sapply(strsplit(f,"/"),"[",3)
+  #########################################################
   
-  # alex try nami. The 10th slot has the tile name with coord 313000_4877000
-  strsplit(f,"/")
-  # nami<-sapply(strsplit(f,"/"),"[",11)  
-  # Anna's
-  nami<-sapply(strsplit(f,"/"),"[",15)  
+  #########################################################
+  
+  #########################################################
+  ## index hyperspectral .h5 file 'f', call it nami. Use the 15th slot to match the .h5 tile to the chm .tif file 
+  nami<-sapply(strsplit(f,"/"),"[",11)  
   nami
   
   ### plot
-  # plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
-  # plot(plots_UTM, add=T, col=2)
-  # text(coordinates(plots_UTM), labels=plots_UTM$stand, cex=0.8)
+   plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
+   plot(plots_UTM, add=T, col=2)
+   text(coordinates(plots_UTM), labels=plots_UTM$stand, cex=0.8)
 
-  # plot(plots_UTM, col="pink")
-  # plot(plots_UTM[plots_UTM$stand=="C1",])
+   plot(plots_UTM, col="pink")
+   plot(plots_UTM[plots_UTM$stand=="C1",])
   
   # For Anna's wd: save if needed
   # writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), overwrite=T,
@@ -201,10 +200,11 @@ for (k in 1:length(ff)){
   ##################################################################################
   
   ##################################################################################
-  ### Process images ###  Part 2
+ 
   ##################################################################################
-  ### Remove water absorption bands
-  # index for good bands
+
+  ### Now that the tile is processed, we need to
+  # Remove water absorption bands, index for good bands
   good <- which((as.numeric(wvl)>400 & as.numeric(wvl)<1340|
                    as.numeric(wvl)>1445 & as.numeric(wvl)<1790|
                    as.numeric(wvl)>1955 & as.numeric(wvl)<2400)==T)
@@ -286,7 +286,7 @@ for (k in 1:length(ff)){
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
   
   # plot
-  # plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
+   plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
   
   # mini_noshade <- crop(cube_no_shade,mini)
   # plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
@@ -310,11 +310,12 @@ for (k in 1:length(ff)){
   }
 }
 
-# head(spectra_df)
+  head(spectra_df)
 
 ### combine and save
 spectra_all <- do.call(rbind, spectra_df)
 
+str(spectra_)
 # head(spectra_all)
 # names(spectra_all)
 write.csv(spectra_all, file="./actual_tops_10_02.csv")

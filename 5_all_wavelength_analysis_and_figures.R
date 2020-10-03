@@ -11,44 +11,59 @@ library(data.table)
 
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada<-read.csv("actual_tops_9_24.csv")
-dada<-gather(dada, "wvl","refl",8:351)
+dada<-read.csv("actual_tops_10_02.csv")
+dada<-dada[,-1]
+
+# make a 'long' version of dada
+ldada<-gather(dada, "wvl","refl",7:351)
+ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
+ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
+ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
 
+# look at number of obs per plot
+table(ldada$Treatment, ldada$Stand)/345  
+table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
-head(dada)
+# min,max, and mean number of tree tops by plot.  6 is probably too low right?
+min(table(ldada$staplo))/345
+max(table(ldada$staplo))/345
+mean(table(ldada$staplo))/345
 
-dada<-na.omit(dada)
-
-names(dada)
-dada$staplo<-paste(dada$Stand, dada$Treatment)
-min(table(dada$staplo))/345
-max(table(dada$staplo))/345
-mean(table(dada$staplo))/345
-
-
-dim(dada)
+dim(ldada)
 # stand ages
-dada$Age[dada$Stand=="C1"]<-"~30 years old"
-dada$Age[dada$Stand=="C2"]<-"~30 years old"
-dada$Age[dada$Stand=="C3"]<-"~30 years old"
-dada$Age[dada$Stand=="C4"]<-"~60 years old"
-dada$Age[dada$Stand=="C5"]<-"~60 years old"
-dada$Age[dada$Stand=="C6"]<-"~60 years old" 
-dada$Age[dada$Stand=="C7"]<-"~100 years old"
-dada$Age[dada$Stand=="C8"]<-"~100 years old"
-dada$Age[dada$Stand=="C9"]<-"~100 years old"
+ldada$Age[ldada$Stand=="C1"]<-"~30 years old"
+ldada$Age[ldada$Stand=="C2"]<-"~30 years old"
+ldada$Age[ldada$Stand=="C3"]<-"~30 years old"
+ldada$Age[ldada$Stand=="C4"]<-"~60 years old"
+ldada$Age[ldada$Stand=="C5"]<-"~60 years old"
+ldada$Age[ldada$Stand=="C6"]<-"~60 years old" 
+ldada$Age[ldada$Stand=="C7"]<-"~100 years old"
+ldada$Age[ldada$Stand=="C8"]<-"~100 years old"
+ldada$Age[ldada$Stand=="C9"]<-"~100 years old"
 
-names(dada)
-dada.mean <-aggregate(list(refl=dada$refl), by=list(Stand=dada$Stand,Age=dada$Age, wvl=dada$wvl, Treatment=dada$Treatment), FUN="mean", na.rm=T)
-head(dada.mean)
-da <-aggregate(list(refl=dada$refl), by=list(wvl=dada$wvl, Age=dada$Age,Stand=dada$Stand), FUN="mean", na.rm=T)
-str(da)
-da$wvl<-as.numeric(da$wvl)
-head(da)
+# view individual trees
+ # Here Alex tried to visualize the spectra---
+C1_ldada<-ldada[ldada$Stand=="C1",]
+ggplot(C1_ldada, aes(x=wvl,col=Stand,group=tree, y=refl))+geom_line()+facet_wrap(~Treatment, nrow=4)
+
+names(ldada)
+ldada$tree<-paste(ldada$Stand, ldada$Treatment, ldada$treeID)
+ggplot(ldada, aes(x=wvl, y=refl,group=tree))+geom_point( )+facet_grid(Treatment~Stand)+geom_line()
+
+
+### calculate average plot level recltance by wavelength
+names(ldada)
+ldada.mean <-aggregate(list(refl=ldada$refl), by=list(Stand=ldada$Stand,Age=ldada$Age, wvl=ldada$wvl, Treatment=ldada$Treatment), FUN="mean", na.rm=T)
+head(ldada.mean)
+
+da.mean.stand <-aggregate(list(refl=ldada$refl), by=list(wvl=ldada$wvl, Age=ldada$Age,Stand=ldada$Stand), FUN="mean", na.rm=T)
 
 library(ggplot2)
-f2<-ggplot(da, aes(x=wvl, y=refl))+geom_point( )+theme_classic()+theme(text=element_text(size=16))+
+f2<-ggplot(ldada.mean, aes(x=wvl, y=refl))+geom_point( )+facet_grid(Treatment~Stand)
+f2
+
+theme_classic()+theme(text=element_text(size=16))+
   xlab("")+ylab("Normalized reflectance")+ggtitle("Spectral signature of 9 stands")
 f2
 
@@ -79,7 +94,8 @@ dada$Ntrmt <- factor(  ifelse(dada$Treatment == "N" | dada$Treatment == "NP", "N
 dada$Ptrmt <- factor(  ifelse(dada$Treatment %in% c("P", "NP"), "P", "NoP"))
 
 
-### manipulate dataframe
+
+
 
 names(dada)
 library(tidyr)

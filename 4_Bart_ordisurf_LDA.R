@@ -9,8 +9,8 @@ library(agricolae)
 
 
 ## dada contains the tree top reflectance. Add 'Stand Age' column
-dada<-read.csv("data_folder/actual_tops_9_24.csv")
-
+dada<-read.csv("actual_tops_10_02.csv")
+dada<-dada[,-1]
 
 
 dada$Age[dada$Stand=="C1"]<-"~30 years old"
@@ -28,11 +28,14 @@ table(dada$Stand, dada$Treatment)
 
 
 ## chem contains the foliar N and P from 2017 measurements
-chem <- read.csv("bart_resin_melnhe_10_30_2019_Young.csv")
-chem$Trt[chem$Trt=="Con"] <- "Control"
+chem <- read.csv("R_input\\bart_resin_melnhe_10_30_2019_Young.csv")
+head(chem)
+table(chem$Trt)
+#chem$Trt[chem$Trt=="Con"] <- "Control"
 chem$treat_stand<-paste(chem$Stand, chem$Trt)
 
 ## dadam contains the plot-averaged spectra
+names(dada)
 spectra_gather<-gather(dada, "wvl","refl",8:352)
 head(spectra_gather)
 table(spectra_gather$Stand)
@@ -50,13 +53,11 @@ dim(dadam)
 library(tidyr)
 head(dadam)
 pre_lda<-spread(dadam, wvl,refl) ### means
-dim(pre_lda)
+pre_lda<-pre_lda[,3:348]
 
 
-dat_lda<-pre_lda_spectra[ ,] # take out stand and age
+dat_lda<-pre_lda
 head(dat_lda)
-str(dat_lda)
-dim(dat_lda)
 
 res <- lda(as.factor(Treatment) ~., data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
 
@@ -69,14 +70,14 @@ str(out)
 out <- cbind(dadam[,c( )],out)
 
 out$Treatment<-dadam$Treatment
-out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
+out$Treatment<-factor(out$Treatment, levels=c("Con","N","P","NP"))
 out$Stand<-dadam$Stand
 out$staplo<-paste(dadam$Stand, dadam$Treatment)
 out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
 out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 out$Age<-dadam$Age
 
-
+head(out)
 
 dev.off()
 #par(mfrow=c(1,2))
