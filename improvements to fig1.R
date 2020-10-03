@@ -30,11 +30,8 @@ ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) +
 
 
 ######  PART2:  9 stands color coded plots
-#Use this but for the whole site?
-
-byTileAOP("DP3.30010.001", site="BART", year="2017", 
-          check.size = F,buffer = 100,
-          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+# this grabs data for the whole site.
+byFileAOP(dpID = "DP3.30010.001", site = "BART", year = "2017", check.size = T, savepath="R_input")
 
 
 
@@ -59,11 +56,11 @@ byTileAOP("DP3.30010.001", site="BART", year="2017",
           check.size = F,buffer = 100,
           easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
 
-byTileAOP("DP3.30015.001", site="BART", year="2017", 
-          check.size = F,buffer = 100,
-          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+#byTileAOP("DP3.30015.001", site="BART", year="2017", 
+#          check.size = F,buffer = 100,
+#          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
 
-# read in rgb tower
+# read in rgb image
 img_C3<-stack("neon_downloads\\DP3.30010.001\\2019\\FullSite\\D01\\2019_BART_5\\L3\\Camera\\Mosaic\\2019_BART_5_316000_4878000_image.tif")
 # plot rgb image
 plotRGB(img_C3,axes=TRUE, main="Stand C3")

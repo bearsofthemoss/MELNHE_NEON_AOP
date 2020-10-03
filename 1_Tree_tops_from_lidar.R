@@ -5,16 +5,29 @@ library(ForestTools)
 library(raster)
 library(rgdal)
 library(rgeos)
-#library(dplyr)
+library(sp)
+library(stringr) # this is for data management
+library(tidyr)
+
 
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
 
 # read in shapefile
-stands<-readOGR("data_files\\plot_shp","Bartlett_intensive_sites_30x30")
-stands=spTransform(stands,CRS("+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs
-+ellps=WGS84 +towgs84=0,0,0")) # To convert it to WGS8
+plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
+
+# transform to UTM coordinates
+crss <- make_EPSG()
+
+UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
+  dplyr::filter(grepl("19N", note))
+
+stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+
+# centroids are the 'plot centers'. code for Lidar tiles works with point data
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+
 
 stdf<-as.data.frame(stands)
 stdf$staplo<-paste(stdf$stand, stdf$plot)
@@ -46,37 +59,33 @@ C8<-stands[stands$stand=="C8",]
 C9<-stands[stands$stand=="C9",]
 
 ############################################################################################################
-
-# Now to read in NEon data 
-## these are the coordinates for the N and P addition plots in MELNHE. Used for downloading lidar from neonUtilities
-easting<-c(  313000, 314000,   31800,31800,316000 ,318000,314000 ,317000, 315000 ,315000 ,316000,317000  )
-northing<-c(4879000,4879000, 4881000,488000,4878000 ,4880000  ,4878000 ,4878000,4880000 ,4880000,4880000,4879000   )
-
-# just C6
-easting<-317000
-northing<-4878000
+# these are the easting and northings for the plot locations
+east <- centroids[, 1]
+north <-centroids[, 2]
 
 # this downloads the data and saves it to your specified directory.
 ## # this will ask you if you want to download the files to your computer
-byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, easting=easting, northing=northing, savepath="C:\\Users\\aryoung\\Desktop\\mel_NEON\\Downloads")
+#byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 100, 
+#          easting=east, northing=north, 
+#          savepath="R_input")
 
 # once you download them, you'll need to set wd and tead each file.  Here they are.
 # setwd()    # enter your wd.
-chm.C1a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
-chm.C1b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
+chm.C1a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
+chm.C1b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
 chm.C1 <- raster::merge(chm.C1a,chm.C1b)
-chm.C2a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-chm.C2b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C2a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
+chm.C2b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
 chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C3<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
-chm.C4<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-chm.C5<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
-chm.C6<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
-chm.C7<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
+chm.C3<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
+chm.C4<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C5<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
+chm.C6<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
+chm.C7<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
-chm.C9<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
+chm.C9<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
 
 
 
@@ -271,10 +280,9 @@ m9nptops <- vwf(CHM = m9np, winFun = lin.C9, minHeight = 3)
 m9nptops$Treatment<-"NP"
 
 
-
 #######################################################################
-## is there a way to combine chapefiles in R?
-# maybe rbind will do the trick.
+### combine tops
+#
 C1_ttops <- rbind(m1ctops, m1ntops, m1ptops, m1nptops)
 C1_ttops$Stand<-"C1"
 C2_ttops <- rbind(m2ctops, m2ntops, m2ptops, m2nptops)
@@ -294,7 +302,6 @@ C8_ttops$Stand<-"C8"
 C9_ttops <- rbind(m9ctops, m9ntops, m9ptops, m9nptops)
 C9_ttops$Stand<-"C9"
 
-table(C9_ttops$Treatment)
 
 ## do another round of rbinding.
 bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
@@ -302,7 +309,6 @@ bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
                   C7_ttops, C8_ttops, C9_ttops)
 
 plot(bart_ttops)
-
 plot(chm.C1, add=T)
 plot(chm.C2, add=T)
 plot(chm.C3, add=T)
@@ -316,6 +322,55 @@ plot(bart_ttops, add=T)
 
 ######################################################################################################
 
+
+## this writing of the shapefil could be made to work in the new github framework we're working in.
 # write the shapefile
 #dir.create("write_shape_from_R")
 #writeOGR(obj=bart_ttops,dsn="write_shape_from_R"  ,layer="bart_ttops_6_22_2020", driver="ESRI Shapefile")
+
+
+
+######################################################################
+
+#Better inspect tree tops, average crown width
+plot(chm.C9)
+plot(C9_ttops, add=T)
+pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
+
+tch9<-crop(chm.C9, m9ntops)
+pc9<-crop(pic.C9, m9ntops)
+
+plot(tch9)
+plot(C9_ttops, add=T, pch=16, cex=.7)
+
+
+C9_ttops$treeID<-c(1:163)
+
+# Create polygon crown map
+C9_crownsPoly <- mcws(treetops = C9_ttops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
+C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
+
+# plot chm and rgb next to each other
+par(mfrow=c(1,2))
+
+# Plot CHM
+plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
+plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1.4)
+
+plotRGB(pc9, axes=F )
+plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
+
+#3 compare this against the Rgb image for C9
+
+
+
+
+# Compute average crown diameter
+crownsPoly[["crownDiameter"]] <- sqrt(crownsPoly[["crownArea"]]/ pi) * 2
+
+# Mean crown diameter
+mean(crownsPoly$crownDiameter)
+
+
