@@ -374,3 +374,86 @@ crownsPoly[["crownDiameter"]] <- sqrt(crownsPoly[["crownArea"]]/ pi) * 2
 mean(crownsPoly$crownDiameter)
 
 
+
+##################
+
+#Compare to actual top numbers
+
+
+## # read in actual trees per 30 m to compare
+actual<-read.csv("C:\\Users\\aryoung\\Downloads\\compare_treetop_actual_C6.csv")
+table(actual$Stand)
+
+# just some formatting
+btt<-as.data.frame(bart_ttops)
+
+head(btt)
+head(actual)
+
+table(btt$Treatment)
+
+btt[btt$Treatment=="Control","Treatment" ]<-"C"
+btt$staplo<-paste(btt$Stand, btt$Treatment)
+btt$num<-c("ttop")
+bt<-as.data.frame(tapply(btt$num, list(btt$staplo, btt$num), length))
+bt$staplo<-rownames(bt)
+
+head(btt)
+
+table(actual$staplo)
+table(bt$staplo)
+
+actual$ttops<-bt$ttop[match(actual$staplo, bt$staplo)]
+
+str(actual)
+
+library(ggplot2)
+library(ggrepel)
+
+# stand ages
+actual$Age[actual$Stand=="C1"]<-"~30 years old"
+actual$Age[actual$Stand=="C2"]<-"~30 years old"
+actual$Age[actual$Stand=="C3"]<-"~30 years old"
+actual$Age[actual$Stand=="C4"]<-"~60 years old"
+actual$Age[actual$Stand=="C5"]<-"~60 years old"
+actual$Age[actual$Stand=="C6"]<-"~60 years old" 
+actual$Age[actual$Stand=="C7"]<-"~100 years old"
+actual$Age[actual$Stand=="C8"]<-"~100 years old"
+actual$Age[actual$Stand=="C9"]<-"~100 years old"
+
+actual$Age<-factor(actual$Age, levels=c("~30 years old","~60 years old","~100 years old"))
+
+g.1<-ggplot(actual,aes(x=ttops, y=actual, col=Age, label=Stand))+geom_point() +xlab("LiDAR derived tree tops")+geom_text_repel() + 
+  ylab("# of 10+ cm stems")+xlim(75)+ylim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
+g.1
+
+#write.csv(actual, "actual to lidar.csv")
+
+head(actual)
+
+
+#33 bring in canopy complexity
+cc<-read.csv("C:\\Users\\aryoung\\Downloads\\MELNHE canopy complexity(1).csv")
+
+table(cc$Treatment)
+table(actual$staplo)
+
+cc$stat<-paste(cc$Stand, cc$Treatment)
+table(cc$stat)
+table(actual$staplo)
+
+actual$cc<-cc$mean.max.canopy.ht.aop[match(actual$staplo, cc$stat)]
+
+
+head(actual)
+actual$alg<-actual$cc*0.02+0.5
+g.2<-ggplot(actual,aes(x=cc, y=actual, col=Age, label=Stand))+geom_point() +xlab("Mean max canopy height")+geom_text_repel() + 
+  ylab("# of 10+ cm stems")+xlim(0,30)+ylim(0,150)+theme_classic()+ theme(text=element_text(size=20))
+g.2
+
+
+library(ggpubr)
+dev.off()
+ggarrange(g.1, g.2,ncol=2, common.legend=T, legend="bottom")
+
+

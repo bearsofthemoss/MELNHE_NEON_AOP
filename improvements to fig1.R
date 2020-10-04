@@ -30,14 +30,69 @@ ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) +
 
 
 ######  PART2:  9 stands color coded plots
-# this grabs data for the whole site.
-byFileAOP(dpID = "DP3.30010.001", site = "BART", year = "2017", check.size = T, savepath="R_input")
+# read in shapefile
+plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
+
+# transform to UTM coordinates
+crss <- make_EPSG()
+UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
+  dplyr::filter(grepl("19N", note))
+stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+# centroids are the 'plot centers'. code for Lidar tiles works with point data
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+
+# this grabs 15 cm Rgb data for the whole site.
+#byFileAOP(dpID = "DP3.30010.001", site = "BART", year = "2017", check.size = T, savepath="R_input")
+
+#3 read in the 20 rgb tifs for panel 2
+t11<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_313000_4878000_image.tif")
+t12<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_313000_4879000_image.tif")
+t13<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_313000_4880000_image.tif")
+t14<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_313000_4881000_image.tif")
+#
+t21<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
+t22<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4879000_image.tif")
+t23<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4880000_image.tif")
+t24<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4881000_image.tif")
+#
+t31<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4878000_image.tif")
+t32<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4879000_image.tif")
+t33<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4880000_image.tif")
+t34<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4881000_image.tif")
+#
+t41<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
+t42<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4879000_image.tif")
+t43<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4880000_image.tif")
+t44<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4881000_image.tif")
+#
+t51<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4878000_image.tif")
+t52<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
+t53<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4880000_image.tif")
+t54<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4881000_image.tif")
+#
+t61<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_318000_4878000_image.tif")
+t62<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_318000_4879000_image.tif")
+t63<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_318000_4880000_image.tif")
+t64<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_318000_4881000_image.tif")
 
 
+t.bart<-merge(t11,t12,t13, t14,
+          t21,t22,t23, t24,
+          t31,t32,t33, t34,
+          t41,t42,t43, t44,
+          t51,t52,t53, t54,
+          t61,t62,t63, t64)
+
+land<-extent(stands)
+land<-land+200 # add 100 m on each side
+pic.bart<-crop(t.bart, land)
+
+plotRGB(pic.bart)
+plot(stands, add=T, col="pink",lwd=2)
 
 ######  Part 3 and 4
 #stands<-readOGR("data_files\\plot_shp","Bartlett_intensive_sites_30x30")
-
+library(sf)
 stands<-readOGR("C:\\Users\\Dropcopter2\\Documents\\R\\hyperspectral R\\mel_NEON\\plot_shp","Bartlett_intensive_sites_30x30")
 
 stands=spTransform(stands,CRS("+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs
@@ -55,6 +110,11 @@ center.C3
 byTileAOP("DP3.30010.001", site="BART", year="2017", 
           check.size = F,buffer = 100,
           easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+
+
+# loop through 
+#  Read in tif
+
 
 #byTileAOP("DP3.30015.001", site="BART", year="2017", 
 #          check.size = F,buffer = 100,

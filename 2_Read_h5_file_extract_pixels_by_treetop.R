@@ -77,9 +77,6 @@ north <-centroids[, 2]
 ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
 dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
 
-# AY saw 23 files in ff. and 23 files in dd. 9_22_2020
-# AY used plot centers and got 10 files in each 9_23_2020
-
 ############################################################################################
 #### Begin hyperspectral data management
 # Extract image information
@@ -256,7 +253,7 @@ for (k in 1:length(ff)){
   
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade <= 0.5 ### changed from >=0.1 
+  shade_mask <- dsm_shade <= 0.8 ### changed from >=0.1 #3 Alex tried 0.2, got just 2 trees in C1 control
   
   # Mask RGB for testing optimal threshold defined above
   # cube_no_shade <- raster::mask(hsiStack, shade_mask, maskvalue = 0)
@@ -314,11 +311,34 @@ for (k in 1:length(ff)){
 
 ### combine and save
 spectra_all <- do.call(rbind, spectra_df)
+head(spectra_all[ ,1:10])
 
-str(spectra_)
-# head(spectra_all)
-# names(spectra_all)
-write.csv(spectra_all, file="./actual_tops_10_02.csv")
+ldada<-gather(spectra_all, "wvl","refl",7:351)
+ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
+ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
+ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
+
+
+# look at number of obs per plot
+table(ldada$Treatment, ldada$Stand)/345  
+table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
+
+# min,max, and mean number of tree tops by plot.  6 is probably too low right?
+min(table(ldada$staplo))/345
+max(table(ldada$staplo))/345
+mean(table(ldada$staplo))/345
+
+
+
+
+
+ table(is.na(spectra_all$Band_2396.71))
+
+ head(spectra_all)
+ names(spectra_all)
+write.csv(spectra_all, file="./actual_tops_10_03_shade_less_than_0.8.csv")
+
+
 
 
 

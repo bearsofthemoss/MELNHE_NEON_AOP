@@ -11,8 +11,10 @@ library(data.table)
 
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada<-read.csv("actual_tops_10_02.csv")
+dada<-read.csv("actual_tops_10_03_shade_less_than_0.8.csv")
 dada<-dada[,-1]
+
+names(dada)
 
 # make a 'long' version of dada
 ldada<-gather(dada, "wvl","refl",7:351)

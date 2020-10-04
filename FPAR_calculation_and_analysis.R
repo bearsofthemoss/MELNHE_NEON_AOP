@@ -44,3 +44,13 @@ north
 #            northing = north,
 #            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
 # the code did not have the bart_tiles for savepath-  I renamed the folder, and updated the savepath for consistency Ay 9_22_2020
+
+fpC78<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_141517_fPAR.tif")
+fpC3<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_143341_fPAR.tif")
+fpC9<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_145952_fPAR.tif")
+fpC1<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_151221_fPAR.tif")
+fpC1<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_154540_fPAR.tif")
+fp6_m<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_150606_fPAR.tif")
+
+plot(fp6_m)
+plot(stands, add=T)
