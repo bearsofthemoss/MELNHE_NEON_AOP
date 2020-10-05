@@ -65,9 +65,9 @@ north <-centroids[, 2]
 
 # this downloads the data and saves it to your specified directory.
 ## # this will ask you if you want to download the files to your computer
-#byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 100, 
-#          easting=east, northing=north, 
-#          savepath="R_input")
+byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 100, 
+          easting=east, northing=north, 
+          savepath="R_input")
 
 # once you download them, you'll need to set wd and tead each file.  Here they are.
 # setwd()    # enter your wd.
@@ -325,8 +325,8 @@ plot(bart_ttops, add=T, axes=T)
 
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
-#dir.create("write_shape_from_R")
-#writeOGR(obj=bart_ttops,dsn="write_shape_from_R"  ,layer="bart_ttops_6_22_2020", driver="ESRI Shapefile")
+
+writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ESRI Shapefile")
 
 
 

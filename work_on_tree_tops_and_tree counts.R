@@ -1,4 +1,27 @@
 
+#3 get basal area for each plot
+
+library(vegan)
+tree<-read.csv("data_folder/10+cm.csv")
+table(tree$Stand)
+tree$staplo<-paste(tree$Stand, tree$Plot) 
+dim(tree)
+tree<-tree[tree$Plot!="5",] # no calcium
+
+# Create community matrix 'com', and environmental 'envdata' as dataframes
+
+# Each row will be a plot, each column will be the value of abundance of that tree species.
+co<-aggregate(tree$BA.m2, list(tree$staplo,Stand=tree$Stand, Age=tree$Age, Species=tree$Species), FUN="sum", simplify=T)
+names(co)
+com<-spread(co, "Species","x")
+com[is.na(com)]=0
+com<-as.data.frame(com)
+com
+
+#33## make  bap
+bap<-aggregate(tree$BA.m2, list(staplo=tree$staplo,Stand=tree$Stand, Age=tree$Age), FUN="sum", simplify=T)
+bap
+
 
 #3 here is where I'd like to 
 
