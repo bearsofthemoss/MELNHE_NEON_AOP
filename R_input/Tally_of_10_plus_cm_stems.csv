@@ -1,37 +1,37 @@
-Stand,staplo,actual
-C1,C1 C,15
-C1,C1 N,11
-C1,C1 NP,20
-C1,C1 P,22
-C2,C2 C,21
-C2,C2 N,38
-C2,C2 NP,16
-C2,C2 P,37
-C3,C3 C,85
-C3,C3 N,88
-C3,C3 NP,101
-C3,C3 P,93
-C4,C4 C,104
-C4,C4 N,120
-C4,C4 NP,107
-C4,C4 P,98
-C5,C5 C,93
-C5,C5 N,89
-C5,C5 NP,89
-C5,C5 P,85
-C6,C6 C,140
-C6,C6 N,148
-C6,C6 NP,132
-C6,C6 P,145
-C7,C7 C,54
-C7,C7 N,49
-C7,C7 NP,33
-C7,C7 P,36
-C8,C8 C,48
-C8,C8 N,44
-C8,C8 NP,28
-C8,C8 P,46
-C9,C9 C,32
-C9,C9 N,41
-C9,C9 NP,43
-C9,C9 P,46
+"X","Stand","staplo","actual","Age"
+"1","C1","C1 Control",15,"~30 years old"
+"2","C1","C1 N",11,"~30 years old"
+"3","C1","C1 NP",20,"~30 years old"
+"4","C1","C1 P",22,"~30 years old"
+"5","C2","C2 Control",21,"~30 years old"
+"6","C2","C2 N",38,"~30 years old"
+"7","C2","C2 NP",16,"~30 years old"
+"8","C2","C2 P",37,"~30 years old"
+"9","C3","C3 Control",85,"~30 years old"
+"10","C3","C3 N",88,"~30 years old"
+"11","C3","C3 NP",101,"~30 years old"
+"12","C3","C3 P",93,"~30 years old"
+"13","C4","C4 Control",104,"~60 years old"
+"14","C4","C4 N",120,"~60 years old"
+"15","C4","C4 NP",107,"~60 years old"
+"16","C4","C4 P",98,"~60 years old"
+"17","C5","C5 Control",93,"~60 years old"
+"18","C5","C5 N",89,"~60 years old"
+"19","C5","C5 NP",89,"~60 years old"
+"20","C5","C5 P",85,"~60 years old"
+"21","C6","C6 Control",140,"~60 years old"
+"22","C6","C6 N",148,"~60 years old"
+"23","C6","C6 NP",132,"~60 years old"
+"24","C6","C6 P",145,"~60 years old"
+"25","C7","C7 Control",54,"~100 years old"
+"26","C7","C7 N",49,"~100 years old"
+"27","C7","C7 NP",33,"~100 years old"
+"28","C7","C7 P",36,"~100 years old"
+"29","C8","C8 Control",48,"~100 years old"
+"30","C8","C8 N",44,"~100 years old"
+"31","C8","C8 NP",28,"~100 years old"
+"32","C8","C8 P",46,"~100 years old"
+"33","C9","C9 Control",32,"~100 years old"
+"34","C9","C9 N",41,"~100 years old"
+"35","C9","C9 NP",43,"~100 years old"
+"36","C9","C9 P",46,"~100 years old"

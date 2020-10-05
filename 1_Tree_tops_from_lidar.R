@@ -8,15 +8,15 @@ library(rgeos)
 library(sp)
 library(stringr) # this is for data management
 library(tidyr)
-
-
+dev.off()
+par(mfrow=c(1,1))
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
 
 # read in shapefile
 plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
-
+plot(plots)
 # transform to UTM coordinates
 crss <- make_EPSG()
 
@@ -318,12 +318,12 @@ plot(chm.C6, add=T)
 plot(chm.C7, add=T)
 plot(chm.C8, add=T)
 plot(chm.C9, add=T)
-plot(bart_ttops, add=T)
+plot(bart_ttops, add=T, axes=T)
 
 ######################################################################################################
 
 
-## this writing of the shapefil could be made to work in the new github framework we're working in.
+## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 #dir.create("write_shape_from_R")
 #writeOGR(obj=bart_ttops,dsn="write_shape_from_R"  ,layer="bart_ttops_6_22_2020", driver="ESRI Shapefile")
@@ -332,128 +332,126 @@ plot(bart_ttops, add=T)
 
 ######################################################################
 
-#Better inspect tree tops, average crown width
-plot(chm.C9)
-plot(C9_ttops, add=T)
-pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
-
-tch9<-crop(chm.C9, m9ntops)
-pc9<-crop(pic.C9, m9ntops)
-
-plot(tch9)
-plot(C9_ttops, add=T, pch=16, cex=.7)
-
-
-C9_ttops$treeID<-c(1:163)
-
-# Create polygon crown map
-C9_crownsPoly <- mcws(treetops = C9_ttops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
-C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
-
-# plot chm and rgb next to each other
-par(mfrow=c(1,2))
-
-# Plot CHM
-plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
-plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1.4)
-
-plotRGB(pc9, axes=F )
-plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
-
-#3 compare this against the Rgb image for C9
-
-
-
-
-# Compute average crown diameter
-crownsPoly[["crownDiameter"]] <- sqrt(crownsPoly[["crownArea"]]/ pi) * 2
-
-# Mean crown diameter
-mean(crownsPoly$crownDiameter)
-
-
-
-##################
 
 #Compare to actual top numbers
 
 
 ## # read in actual trees per 30 m to compare
-actual<-read.csv("C:\\Users\\aryoung\\Downloads\\compare_treetop_actual_C6.csv")
-table(actual$Stand)
+tally<-read.csv("R_input\\Tally_of_10_plus_cm_stems.csv")
+tally<-tally[,-1]
 
-# just some formatting
-btt<-as.data.frame(bart_ttops)
+# Format lidar ttops
+bart_ttops$staplo<-paste(bart_ttops$Stand, bart_ttops$Treatment)
+btt<-data.frame(tapply(bart_ttops$treeID , list(bart_ttops$staplo), length))
+btt$staplo<-rownames(btt)
+names(btt)[1]<-"lidar"
 
-head(btt)
-head(actual)
-
-table(btt$Treatment)
-
-btt[btt$Treatment=="Control","Treatment" ]<-"C"
-btt$staplo<-paste(btt$Stand, btt$Treatment)
-btt$num<-c("ttop")
-bt<-as.data.frame(tapply(btt$num, list(btt$staplo, btt$num), length))
-bt$staplo<-rownames(bt)
-
-head(btt)
-
-table(actual$staplo)
-table(bt$staplo)
-
-actual$ttops<-bt$ttop[match(actual$staplo, bt$staplo)]
-
-str(actual)
-
-library(ggplot2)
-library(ggrepel)
-
-# stand ages
-actual$Age[actual$Stand=="C1"]<-"~30 years old"
-actual$Age[actual$Stand=="C2"]<-"~30 years old"
-actual$Age[actual$Stand=="C3"]<-"~30 years old"
-actual$Age[actual$Stand=="C4"]<-"~60 years old"
-actual$Age[actual$Stand=="C5"]<-"~60 years old"
-actual$Age[actual$Stand=="C6"]<-"~60 years old" 
-actual$Age[actual$Stand=="C7"]<-"~100 years old"
-actual$Age[actual$Stand=="C8"]<-"~100 years old"
-actual$Age[actual$Stand=="C9"]<-"~100 years old"
-
-actual$Age<-factor(actual$Age, levels=c("~30 years old","~60 years old","~100 years old"))
-
-g.1<-ggplot(actual,aes(x=ttops, y=actual, col=Age, label=Stand))+geom_point() +xlab("LiDAR derived tree tops")+geom_text_repel() + 
-  ylab("# of 10+ cm stems")+xlim(75)+ylim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
-g.1
-
-#write.csv(actual, "actual to lidar.csv")
-
-head(actual)
+tally$Treatment<-btt$Treatment[match(tally$staplo,btt$staplo)]
+tally$lidar<-btt$lidar[match(tally$staplo,btt$staplo)]
 
 
-#33 bring in canopy complexity
-cc<-read.csv("C:\\Users\\aryoung\\Downloads\\MELNHE canopy complexity(1).csv")
+names(tally)
 
-table(cc$Treatment)
-table(actual$staplo)
+tally$Age<-factor(tally$Age, levels=c("~30 years old","~60 years old","~100 years old"))
 
-cc$stat<-paste(cc$Stand, cc$Treatment)
-table(cc$stat)
-table(actual$staplo)
-
-actual$cc<-cc$mean.max.canopy.ht.aop[match(actual$staplo, cc$stat)]
+f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Actual trees")+geom_text_repel() + 
+  ylab("Lidar tree tops")+ylim(0,75)+xlim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
 
 
-head(actual)
-actual$alg<-actual$cc*0.02+0.5
-g.2<-ggplot(actual,aes(x=cc, y=actual, col=Age, label=Stand))+geom_point() +xlab("Mean max canopy height")+geom_text_repel() + 
-  ylab("# of 10+ cm stems")+xlim(0,30)+ylim(0,150)+theme_classic()+ theme(text=element_text(size=20))
-g.2
 
+
+spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
+spec$staplo<-paste(spec$Var2, spec$Var1)
+
+tally$spec<-spec$Freq[match(tally$staplo, spec$staplo)]
+
+f.2<-ggplot(tally ,aes(x=lidar, y=spec, col=Age, label=Stand))+geom_point() +xlab("lidar tree tops")+geom_text_repel() + 
+  ylab("Shade mask tree tops")+ylim(0,75)+xlim(0,75)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
+f.2
+head(tally)
 
 library(ggpubr)
-dev.off()
-ggarrange(g.1, g.2,ncol=2, common.legend=T, legend="bottom")
+ggarrange(f.1, f.2, common.legend = 2, nrow=1, legend="bottom")
 
 
+
+####################################################################################
+
+##############################################################################
+par(mfrow=c(3,3))
+
+#Better inspect tree tops, average crown width
+plot(chm.C3, axes=F)
+plot(C3, add=T)
+plot(chm.C5, axes=F)
+plot(C5, add=T)
+plot(chm.C9, axes=F)
+plot(C9, add=T, lwd=3)
+
+####
+pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
+pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
+pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
+
+
+
+
+#####
+tch3<-crop(chm.C3, m3ntops)
+pc3<-crop(pic.C3, m3ntops)
+##
+tch5<-crop(chm.C5, m5ntops)
+pc5<-crop(pic.C5, m5ntops)
+##
+tch9<-crop(chm.C9, m9ntops)
+pc9<-crop(pic.C9, m9ntops)
+
+
+########################################################
+
+# plot chm and rgb next to each other
+
+
+# Create polygon crown map
+C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
+C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
+C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
+
+
+# Plot CHM
+plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
+plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C3_ttops, add=T, pch=17, cex=1)
+plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
+plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C5_ttops, add=T, pch=17, cex=1)
+plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
+plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1)
+
+#33
+
+
+# PLot RGB
+plotRGB(pc3, axes=F )
+plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
+plotRGB(pc5, axes=F )
+plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
+plotRGB(pc9, axes=F )
+plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
+
+
+
+
+
+
+# Compute average crown diameter
+C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
+mean(C9n_crownsPoly$crownDiameter)
+
+
+
+##################

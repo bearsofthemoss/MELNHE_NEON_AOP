@@ -149,7 +149,7 @@ for (k in 1:length(ff)){
   #########################################################
   
   #########################################################
-  ## index hyperspectral .h5 file 'f', call it nami. Use the 15th slot to match the .h5 tile to the chm .tif file 
+  ## index hyperspectral .h5 file 'f', call it nami. Use the 11th slot to match the .h5 tile to the chm .tif file 
   nami<-sapply(strsplit(f,"/"),"[",11)  
   nami
   
@@ -158,8 +158,6 @@ for (k in 1:length(ff)){
    plot(plots_UTM, add=T, col=2)
    text(coordinates(plots_UTM), labels=plots_UTM$stand, cex=0.8)
 
-   plot(plots_UTM, col="pink")
-   plot(plots_UTM[plots_UTM$stand=="C1",])
   
   # For Anna's wd: save if needed
   # writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), overwrite=T,
@@ -184,8 +182,8 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  plot(ndvi_calc)
-  plot(plots_UTM, col=2, add=T)
+  #plot(ndvi_calc)
+  #plot(plots_UTM, col=2, add=T)
   
   #For Anna's wd: save if needed
   # writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), 
@@ -221,7 +219,7 @@ for (k in 1:length(ff)){
   cube_norm <- raster::calc(cube_masked, fun=bright_norm)
   names(cube_norm) <- names(cube_masked)
   
-  plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
+  #plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
   
   ### Shade mask
   nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
@@ -253,42 +251,13 @@ for (k in 1:length(ff)){
   
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade <= 0.8 ### changed from >=0.1 #3 Alex tried 0.2, got just 2 trees in C1 control
-  
-  # Mask RGB for testing optimal threshold defined above
-  # cube_no_shade <- raster::mask(hsiStack, shade_mask, maskvalue = 0)
-  
-  # Select subset to examine threshold
-  # better: clip to extent of stand (centroid plus 200 m buffer)
-  
-  ## Alex #'d these out to reduce time
-  ## ok, but important to look at results (plots) after processing and adjust shade mask threshold as needed!
-  
-  # plotRGB(hsiStack, r = 56, g = 28, b = 14, stretch = 'lin')
-  # plot(plots_UTM, add=T, col=5)
-  # mini <- drawExtent()
-  # 
-  # mini_cube <- crop(hsiStack,mini)
-  # mini_dsm <- crop(dsm_shade,mini)
-  # 
-  # # plot
-  # plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
-  # plot(plots_UTM, add=T, border=2)
-  
-  # plot(mini_dsm)
-  # plot(plots_UTM, add=T, border="red")
+  shade_mask <- dsm_shade >= 0.1
+    # Alex examined each age class and 0.8 seemed ok
   
   ###################
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
   
-  # plot
-   plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
-  
-  # mini_noshade <- crop(cube_no_shade,mini)
-  # plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
-  # plot(plots_UTM, add=T, border=2)å
-  # plot(trees, add=T, col="yellow")
   
   ################################################################################################
   ################################################################################################
@@ -297,7 +266,36 @@ for (k in 1:length(ff)){
   # Select trees within extent of tile
   inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
   trees_in <- trees[as.vector(inout),]
+ 
+ #################################################################################################
+
+  # get the mini area of the control plot for each tile?
+  mini <- extent(trees_in[trees_in$Treatment=="Control",])
+  mini_cube <- crop(hsiStack,mini)
+  mini_dsm <- crop(dsm_shade,mini)
+ 
+  # Make plot
+  par(mfrow=c(2,2))
+  # large tile
+  plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
+  plot(plots_UTM, col="yellow", add=T)
+  # control plot
+  plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
+  plot(plots_UTM, add=T, border=2, lwd=5)
+  # plot shade mask
+  plot(mini_dsm)
+  plot(plots_UTM, add=T, border=2, lwd=5)
+  plot(trees, add=T,pch=16, col=2)
+    # plot control plot after shade mask
+   mini_noshade <- crop(cube_no_shade,mini)
+   plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
+   plot(plots_UTM, add=T, border=2, lwd=5)
+   plot(trees, add=T, pch=16, col=2)
   
+  # If you want to write the shade mask for figure 1
+  #writeRaster(mini_noshade, "C5C_no_shade", overwrite=T,format="raster")
+  
+   #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
   if(length(trees_in) >0){
     spectra <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)
@@ -307,12 +305,12 @@ for (k in 1:length(ff)){
   }
 }
 
-  head(spectra_df)
 
 ### combine and save
 spectra_all <- do.call(rbind, spectra_df)
 head(spectra_all[ ,1:10])
 
+## make a 'long' dada
 ldada<-gather(spectra_all, "wvl","refl",7:351)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
@@ -329,20 +327,5 @@ max(table(ldada$staplo))/345
 mean(table(ldada$staplo))/345
 
 
-
-
-
- table(is.na(spectra_all$Band_2396.71))
-
- head(spectra_all)
- names(spectra_all)
-write.csv(spectra_all, file="./actual_tops_10_03_shade_less_than_0.8.csv")
-
-
-
-
-
-
-
-
+write.csv(spectra_all, file="./actual_tops_10_04_greater_0.1.csv")
 

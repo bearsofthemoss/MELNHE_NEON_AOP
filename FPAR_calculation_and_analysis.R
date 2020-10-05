@@ -27,17 +27,17 @@ crss <- make_EPSG()
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
   dplyr::filter(grepl("19N", note))
 
-plots_UTM <- spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
+stands <- spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
 
-# centroids are the 'plot centers'. This script works with point data.
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
-centroids
-# these are the easting and northings for the stand locations
-east <- centroids[, 1]
-east
-north <-centroids[, 2]
-north
-## If you need to download the tiles
+C1<-stands[stands$stand=="C1",]
+C2<-stands[stands$stand=="C2",]
+C3<-stands[stands$stand=="C3",]
+C4<-stands[stands$stand=="C4",]
+C5<-stands[stands$stand=="C5",]
+C6<-stands[stands$stand=="C6",]
+C7<-stands[stands$stand=="C7",]
+C8<-stands[stands$stand=="C8",]
+C9<-stands[stands$stand=="C9",]
 
 #byTileAOP(dpID="DP3.30006.001",site="BART",
 #            year="2017", easting= east,
@@ -48,9 +48,48 @@ north
 fpC78<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_141517_fPAR.tif")
 fpC3<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_143341_fPAR.tif")
 fpC9<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_145952_fPAR.tif")
-fpC1<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_151221_fPAR.tif")
-fpC1<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_154540_fPAR.tif")
-fp6_m<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_150606_fPAR.tif")
+fpC24<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_151221_fPAR.tif")
+fpC15<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_154540_fPAR.tif")
+fpC6_m<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_150606_fPAR.tif")
+#33#
+fpar.C1<-crop(fpC1, C1)
+fpar.C2<-crop(fpC24, C2)
+fpar.C3<-crop(fpC73, C3)
+fpar.C4<-crop(fpC24, C4)
+fpar.C5<-crop(fpC15, C5)
+fpar.C6<-crop(fpC6_m, C6)
+fpar.C7<-crop(fpC78, C7)
+fpar.C8<-crop(fpC78, C8)
+fpar.C9<-crop(fpC9, C9)
 
-plot(fp6_m)
-plot(stands, add=T)
+
+plot(fpar.C7)
+plot(fpar.C8)
+plot(fpar.C9)
+
+#3 
+fpar<-merge(fpC78, fpC3, fpC9, fpC1, fpC24, fp6_m )
+
+plot(fpar)
+plot(plots_UTM, add=T)
+
+
+
+
+use<- list(raster::extract(fpar,trees,df=T, sp=T))
+fp <-as.data.frame( do.call(rbind, use))
+names(fp)[7]<-"value"
+head(fp)
+
+ggplot(fp, aes(x=height, y=value, col=Treatment))+geom_point()+geom_smooth(se=F, method="lm")
+ggplot(fp, aes(x=Stand, y=value, col=Treatment))+geom_boxplot()+scale_color_manual(values=c("black","blue","red","purple"))+
+  ggtitle("fPAR from flight line")+theme_classic()
+
+
+#N*P Anova
+fp$Treatment<-factor(fp$Treatment, levels=c("Control","N","P","NP"))
+fp$Ntrmt <- factor(  ifelse(fp$Treatment == "N" | fp$Treatment == "NP", "N", "NoN"))
+fp$Ptrmt <- factor(  ifelse(fp$Treatment %in% c("P", "NP"), "P", "NoP"))
+fp$staplo<-paste(fp$Stand, fp$Treatment)
+
+anova(lmer(value ~Ntrmt*Ptrmt+(1|Stand/staplo), data=fp))

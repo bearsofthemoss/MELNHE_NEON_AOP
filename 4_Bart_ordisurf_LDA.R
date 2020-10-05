@@ -96,6 +96,8 @@ legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","r
 ######
 #3 add stand age
 ## bap is from two to 10 and 10 plus
+
+#333 ALex needs to add this here. 
 head(bap)
 out$ba<-bap$BA[match(out$staplo, bap$stat)]
 
