@@ -35,7 +35,7 @@ bright_norm <- function(x){
 # tree tops
 #trees <- readOGR("./R_input/","bart_ttops_6_22_2020")
 # Alex's tree tops
- trees <- readOGR("R_input","bart_ttops_6_22_2020")
+ trees <- readOGR("R_input","bart_ttops_10_4_2020")
 
 
 # transform to UTM coordinates
@@ -53,7 +53,7 @@ centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
 # these are the easting and northings for the stand locations
 east <- centroids[, 1]
 north <-centroids[, 2]
-
+east
 ## If you need to download the tiles
 
 #byTileAOP(dpID="DP3.30006.001",site="BART",
@@ -74,16 +74,23 @@ north <-centroids[, 2]
  dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
 
 # Anna's
-ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
-dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
+#ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
+#dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
 
 ############################################################################################
 #### Begin hyperspectral data management
 # Extract image information
 spectra_df <- list()
 
-for (k in 1:length(ff)){
-  (f <- ff[k])
+###### get shademask for stands
+#rC3<-316000_4878000
+#rC5<-314000_4878000
+#rC9<-317000_4879000
+ff
+
+# 
+#for (k in 1:length(ff)){
+  (f <- ff[10])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -293,7 +300,7 @@ for (k in 1:length(ff)){
    plot(trees, add=T, pch=16, col=2)
   
   # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C5C_no_shade", overwrite=T,format="raster")
+  #writeRaster(mini_noshade, "C3C_no_shade", overwrite=T,format="raster")
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.

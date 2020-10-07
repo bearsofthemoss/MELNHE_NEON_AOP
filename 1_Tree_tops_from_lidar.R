@@ -8,13 +8,14 @@ library(rgeos)
 library(sp)
 library(stringr) # this is for data management
 library(tidyr)
-dev.off()
-par(mfrow=c(1,1))
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
 
-# read in shapefile
+# This code relies heavily on the ForestTools package- helpful information here
+### https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
+
+# read in shapefile of plot locations
 plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
 plot(plots)
 # transform to UTM coordinates
@@ -326,7 +327,7 @@ plot(bart_ttops, add=T, axes=T)
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 
-writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ESRI Shapefile")
+#writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ESRI Shapefile")
 
 
 
@@ -338,7 +339,9 @@ writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ES
 
 ## # read in actual trees per 30 m to compare
 tally<-read.csv("R_input\\Tally_of_10_plus_cm_stems.csv")
-tally<-tally[,-1]
+
+head(tally)
+
 
 # Format lidar ttops
 bart_ttops$staplo<-paste(bart_ttops$Stand, bart_ttops$Treatment)
@@ -351,14 +354,23 @@ tally$lidar<-btt$lidar[match(tally$staplo,btt$staplo)]
 
 
 names(tally)
+# add in stand ages
+tally$Age[tally$Stand=="C1"]<-"~30 years old"
+tally$Age[tally$Stand=="C2"]<-"~30 years old"
+tally$Age[tally$Stand=="C3"]<-"~30 years old"
+tally$Age[tally$Stand=="C4"]<-"~60 years old"
+tally$Age[tally$Stand=="C5"]<-"~60 years old"
+tally$Age[tally$Stand=="C6"]<-"~60 years old" 
+tally$Age[tally$Stand=="C7"]<-"~100 years old"
+tally$Age[tally$Stand=="C8"]<-"~100 years old"
+tally$Age[tally$Stand=="C9"]<-"~100 years old"
 
 tally$Age<-factor(tally$Age, levels=c("~30 years old","~60 years old","~100 years old"))
 
-f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Actual trees")+geom_text_repel() + 
+f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Number of 10+ cm trees")+geom_text_repel() + 
   ylab("Lidar tree tops")+ylim(0,75)+xlim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
 
-
-
+f.1
 
 spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
 spec$staplo<-paste(spec$Var2, spec$Var1)

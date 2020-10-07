@@ -130,7 +130,7 @@ out$ba<-bap$x[match(out$staplo, bap$staplo )]
 dev.off()
 par(mfrow=c(1,1))
 
-
+out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
 plot(out$LD1, out$LD2, type="n",bty="l", main="Basal area", xlab="LD 1 (76%)",ylab="LD 2 (24%)")
 points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
        pch=c(16,17,15)[as.factor(out$Age)], cex=2)

@@ -70,11 +70,13 @@ ldada$tree<-paste(ldada$Stand, ldada$Treatment, ldada$treeID)
 ldada$group.tree<-paste(ldada$tree, ldada$group)
 
 # Just view 1 stand
-C1_ldada<-ldada[ldada$Stand=="C8",]
+C1_ldada<-ldada[ldada$staplo=="C3 Control",]
 
 # Nice!
-ggplot(C1_ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()+facet_wrap(~Treatment, nrow=4)
-ggplot(ldada, aes(x=wvl,col=Treatment,group=group, y=refl))+geom_line()+facet_wrap(~Age, nrow=3)
+ggplot(C1_ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()
+
+
+#ggplot(ldada, aes(x=wvl,col=Treatment,group=group, y=refl))+geom_line()+facet_wrap(~Age, nrow=3)
 
 
 ### calculate average plot level recltance by wavelength
