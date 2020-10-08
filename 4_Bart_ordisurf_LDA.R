@@ -25,7 +25,7 @@ dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
 
 ## chem contains the resin available N and P from 2017 measurements
-chem <- read.csv("R_input\\bart_resin_melnhe_10_30_2019_Young.csv")
+chem <- read.csv("data_folder\\bart_resin_melnhe_10_30_2019_Young.csv")
 chem$treat_stand<-paste(chem$Stand, chem$Trt)
 
 library(tidyr)
@@ -52,12 +52,8 @@ head(pre_lda[1:10])
 dim(pre_lda)
 dat_lda<-pre_lda[,c(3,5:349)]
 head(dat_lda[1:10,1:10])
-
 res <- lda(as.factor(Treatment) ~., data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
-
 (prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
-
-
 out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(res$scaling))
 
 ## Add back in plot level information
@@ -71,6 +67,29 @@ out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
 out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 
+##  tree-level
+names(dada)
+dada<-dada[complete.cases(dada),]
+t.lda<-dada[,c(5,7:349)]
+names(t.lda)
+
+
+res <- lda(as.factor(Treatment) ~., data = t.lda, CV=F) ### try resampling spectra to coarser resolution
+(prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
+out <-  as.data.frame(as.matrix(t.lda[,-1]) %*% as.matrix(res$scaling))
+
+## Add back in plot level information
+out$Stand<-dada$Stand
+out$Age<-dada$Age
+out$Treatment<-dada$Treatment
+out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
+
+out$staplo<-paste(out$Stand, out$Treatment)
+out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
+out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
+
+#3
+dev.off()
 par(mfrow=c(1,2))
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)")
 title(main="a",   cex.main=1.5,adj = 0)

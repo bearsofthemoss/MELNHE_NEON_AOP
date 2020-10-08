@@ -47,12 +47,7 @@ min(table(ldada$staplo))/345
 max(table(ldada$staplo))/345
 mean(table(ldada$staplo))/345
 
-dim(ldada)
-
-# view individual trees
- # Here Alex tried to visualize the spectra---
-
-
+#### this is for line plots
 li<-subset(ldada, ldada$wvl<=1340)
 sw<-subset(ldada, ldada$wvl>=1445 & ldada$wvl<=1790)
 ir<-subset(ldada, ldada$wvl>=1995)
@@ -61,10 +56,7 @@ li$group<-"1"
 sw$group<-"2"
 ir$group<-"3"
 #
-table(li$wvl)
-table(sw$wvl)
-table(ir$wvl)
-# move forward without 'band' bands
+# move forward without 'bad' bands
 ldada<-rbind(li,sw,ir)
 ldada$tree<-paste(ldada$Stand, ldada$Treatment, ldada$treeID)
 ldada$group.tree<-paste(ldada$tree, ldada$group)
@@ -133,7 +125,7 @@ head(gat)
 
 gat$pri<-(gat$`528.76`-gat$`553.8`)/(gat$`528.76` +gat$`553.8`)
 
-anova(lmer(pri ~Ntrmt*Ptrmt*Age+(1|Stand/staplo), data=gat))
+anova(lmer(pri ~Ntrmt*Ptrmt+Age+(1|Stand/staplo), data=gat))
 
 ggplot(gat, aes(x=Treatment, y=pri*-1, fill=Treatment))+geom_boxplot()+
   facet_wrap(~Age)+scale_fill_manual(values=c("grey","blue","red","purple"))+
@@ -165,13 +157,16 @@ xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=
 
 ############################################
 
-avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand, Treatment=red$Treatment, group=red$group, Age=red$Age), FUN="mean")
+avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand, Treatment=red$Treatment,staplo=red$staplo, Ntrmt=red$Ntrmt, Ptrmt=red$Ptrmt, group=red$group, Age=red$Age), FUN="mean")
 
 ggplot(avg.vis, aes(x=Stand, y=refl, col=Treatment))+geom_point()+
 scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
   xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
   ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
 
+
+head(avg.vis)
+anova(lmer(refl ~Ntrmt*Ptrmt+Age+(1|Stand), data=avg.vis))
 
 ###################################################################################
 ## write a function

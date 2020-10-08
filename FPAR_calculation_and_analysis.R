@@ -12,13 +12,11 @@ library(rgeos)
 
 # get fpar
 
+# Alex's plots
+plots <- readOGR("R_input","Bartlett_intensive_sites_30x30")
 
-plots <- readOGR("R_input\\fwdneoncoverageofourtrees","Bartlett_intensive_sites_30x30")
-
-# tree tops
-# Anna's tree tops:# trees <- readOGR("./R_input/tree_tops","bart_ttops_6_22_2020")
 # Alex's tree tops
-trees <- readOGR("R_input\\tree_tops","bart_ttops_6_22_2020")
+trees <- readOGR("R_input","bart_ttops_10_4_2020")
 
 
 # transform to UTM coordinates
@@ -27,8 +25,17 @@ crss <- make_EPSG()
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
   dplyr::filter(grepl("19N", note))
 
-stands <- spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
+# plots_UTM <- sp::spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
+plots_UTM <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
 
+# centroids are the 'plot centers'. This script works with point data.
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
+
+# these are the easting and northings for the stand locations
+east <- centroids[, 1]
+north <-centroids[, 2]
+
+#
 C1<-stands[stands$stand=="C1",]
 C2<-stands[stands$stand=="C2",]
 C3<-stands[stands$stand=="C3",]
@@ -52,7 +59,7 @@ fpC24<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_151221_fPAR
 fpC15<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_154540_fPAR.tif")
 fpC6_m<-raster("R_input\\fPAR_data_portal\\NEON_D01_BART_DP1_20170814_150606_fPAR.tif")
 #33#
-fpar.C1<-crop(fpC1, C1)
+fpar.C1<-crop(fpC15, C1)
 fpar.C2<-crop(fpC24, C2)
 fpar.C3<-crop(fpC73, C3)
 fpar.C4<-crop(fpC24, C4)
@@ -68,7 +75,7 @@ plot(fpar.C8)
 plot(fpar.C9)
 
 #3 
-fpar<-merge(fpC78, fpC3, fpC9, fpC1, fpC24, fp6_m )
+fpar<-merge(fpC78, fpC3, fpC9, fpC15, fpC24, fpC6_m )
 
 plot(fpar)
 plot(plots_UTM, add=T)
