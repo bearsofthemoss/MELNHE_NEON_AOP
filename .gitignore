@@ -29,6 +29,7 @@ Thumbs.db
 
 # RStudio files
 .Rproj.user/
+./R_output/
 
 # produced vignettes
 vignettes/*.html
