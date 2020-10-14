@@ -303,9 +303,9 @@ letters <- as.character(tuk_dat$groups)
 #### Kappa plot
 pdf("./R_output/PLSDA_kappas_treat.pdf",width = 5,height = 4)
 par(bty="l")
-boxplot(kapp$Kappa~kapp$ncomps,ylim=c(0,1.1),
+boxplot(kapp$Kappa~kapp$ncomps,ylim=c(0,0.6),
         xlab="Number of components",ylab="Kappa")
-text(x=1:20, y=rep(1,20),letters)
+text(x=1:20, y=rep(0.65,20),letters)
 dev.off()
 
 #####################
