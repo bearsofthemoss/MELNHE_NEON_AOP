@@ -7,10 +7,6 @@ library(rgdal)
 library(rgeos)
 #library(dplyr)
 
-
-# Set wd intentionally
-setwd("C:\\Users\\aryoung\\Desktop\\mel_NEON")
-
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
