@@ -43,53 +43,53 @@ centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
 
 # this downloads 15 cm Rgb data for the whole site.
 #byFileAOP(dpID = "DP3.30010.001", site = "BART", year = "2017", check.size = T, savepath="R_input")
-
-
 pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
 C3<-stands[stands$stand=="C3",]
-land<-extent(C3)
-land<-land+50 # add 100 m on each side
-pic.bart<-crop(pic.C3, land)
-
-
-
-# IMage of stand C3
-plotRGB(pic.bart)
-plot(C3, add=T, border=c("blue","purple","red","black")[as.factor(C3$plot)],lwd=6)
-
-######  Part 3 and 4
-library(sf)
-control<-C3[C3$plot=="4", ]
+control<-C3[C3$plot=="3", ]
 control3<-extent(control)+10
-co.bart<-crop(pic.bart, control3)
+co.bart<-crop(pic.C3, control3)
 
-#### plot shade mask
+
+par(mfrow=c(1,1))
+#3333 Rgb image
+plotRGB(co.bart)
+
+#### plot chm
 chm_C3<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
 chm3<-crop(chm_C3,control3)
-m3chm<-crop(chm_C3,control)
-
+plot(chm3)
 #3 do treE top detection
 lin.C3 <- function(x){x * 0.002}
 m3tops <- vwf(CHM = m3chm, winFun = lin.C3, minHeight = 3)
 C3crownsPoly <- mcws(treetops = m3tops, CHM = m3chm, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# add treetop
+plot(C3crownsPoly, border = "black", lwd = 0.5, add = TRUE)
+plot(m3tops, add=T, pch=17, cex=1)
 
-# Plot Rgb with treetops
+## shade mask crop
+
+shade<-raster("C3C_no_shade2.grd")
+shade<-crop(shade, co.bart)
+plot(shade)
 plotRGB(co.bart)
-plot(C3crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(m3tops, add=T, pch=17, cex=1)
+shade_mask <- is.na(shade)
+plot(shade_mask)
 
 
-# plot chm with treetops
-plot(chm3)
-plot(C3crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(m3tops, add=T, pch=17, cex=1)
+f_no_shade1 <- raster::mask(co.bart, shade_mask, maskvalue = 0)
+
+#3 how are they different extent?
+extent(co.bart)
+extent(shade_mask)
+
+###################
+# Apply to processed images
+cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
 
 
-f<-raster("C3C_no_shade.grd")
-plot(f)
-plot(C3crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(m3tops, add=T, pch=17, cex=1)
 
+
+#################################################################################################################################
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
 dada<-read.csv("actual_tops_10_04_greater_0.1.csv")
 dada<-dada[,-1]

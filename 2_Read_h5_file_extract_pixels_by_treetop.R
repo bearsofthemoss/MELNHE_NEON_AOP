@@ -89,8 +89,8 @@ spectra_df <- list()
 ff
 
 # 
-#for (k in 1:length(ff)){
-  (f <- ff[10])
+for (k in 1:length(ff)){
+  (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -259,7 +259,6 @@ ff
   ############################
   # Find ideal threshold
   shade_mask <- dsm_shade >= 0.1
-    # Alex examined each age class and 0.8 seemed ok
   
   ###################
   # Apply to processed images
@@ -300,7 +299,7 @@ ff
    plot(trees, add=T, pch=16, col=2)
   
   # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C3C_no_shade", overwrite=T,format="raster")
+  #writeRaster(mini_noshade, "C3C_no_shade2", overwrite=T,format="raster")
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.

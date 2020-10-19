@@ -40,6 +40,8 @@ dadam <- dadam[complete.cases(dadam),] ### pixels
 dadam$wvl<-as.numeric(gsub(".*_","",dadam$wvl))
 names(dadam)
 head(dadam)
+
+
 ########################
 ###### LDA ##############
 #  maximizes group differences
@@ -83,14 +85,14 @@ out$Stand<-dada$Stand
 out$Age<-dada$Age
 out$Treatment<-dada$Treatment
 out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
-
+table(out$Treatment)
 out$staplo<-paste(out$Stand, out$Treatment)
 out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
 out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 #3
 dev.off()
-par(mfrow=c(1,2))
+par(mfrow=c(1,1))
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)")
 title(main="a",   cex.main=1.5,adj = 0)
 points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
@@ -99,7 +101,7 @@ points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Trea
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
 ordisurf(out[,c(1,2)]~total_N,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[as.factor(out$Treatment)] ,bty ="n", cex=1.3) 
+legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
 
 #### P
 plot(out$LD1, out$LD2, type="n",bty="l", col="grey50",xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.5)
@@ -110,13 +112,12 @@ points( main="a",out$LD1, out$LD2, col=c("black","blue","red","purple")[as.facto
 
 ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
 ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[as.factor(out$Treatment)] ,bty ="n", cex=1.3) 
+legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
+legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
 
 ######
 #3 add stand age
 ## bap is from two to 10 and 10 plus
-
-#333 ALex needs to add this here. 
 tree<-read.csv("data_folder/10+cm.csv")
 tree$staplo<-paste(tree$Stand, tree$Plot) 
 tree<-tree[tree$Plot!="5",] # no calcium
@@ -168,5 +169,41 @@ legend("topleft", legend = unique(out$Treatment), pch=23,col=c("black","blue","r
 
 #Here we could ask how much the tree species explained the spectral variation by plot
 
+############ quick adonis test
+## Add back in plot level information
+dada$staplo<-paste(dada$Stand, dada$Treatment)
+dada$total_N<-chem$total_N[match(dada$staplo, chem$treat_stand )]
+dada$total_P<-chem$P[match(dada$staplo, chem$treat_stand )]
+dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
 
 
+names(dada)
+spec.matrix<-dada[,7:351]
+adonis(spec.matrix ~ dada$total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
+
+spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
+# spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels
+plot(spec.pca,type="l")
+summary(spec.pca)
+
+plot(spec.pca)
+
+
+
+head(pcdat)
+pcdat$Trt<-factor(pcdat$Trt, levels=c("Control","N","P","NP"))
+
+PC1<-spec.pca$x[,1]
+PC2<-spec.pca$x[,2]
+PC3<-spec.pca$x[,3]
+PC4<-spec.pca$x[,4]
+PC5<-spec.pca$x[,5]
+PC6<-spec.pca$x[,6]
+
+ pcdat<-data.frame(PC1,PC2,PC3,PC4, PC5, PC6)
+dim(dada)
+perm<-cbind(dada[,c(1:6,352:356) ],pcdat)
+
+head(perm[1:10])
+
+adonis(perm[,7:12] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
