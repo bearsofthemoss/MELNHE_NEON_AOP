@@ -31,6 +31,7 @@ Thumbs.db
 .Rproj.user/
 R_output/
 R_output.zip
+data_folder/
 
 # produced vignettes
 vignettes/*.html
