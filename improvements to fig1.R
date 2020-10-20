@@ -16,7 +16,7 @@ library(rgdal)
 library(rgeos)
 ###########
 
-
+par(mfrow=c(2,2))
 ###### PART 1:   Map of NH
 world <- ne_countries(scale = "medium", returnclass = "sf")
 sites <- data.frame(longitude = c(-71.28731), latitude = c(44.06388 ))
@@ -30,56 +30,127 @@ ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) +
 
 
 ######  PART2:  9 stands color coded plots
-#Use this but for the whole site?
+# read in shapefile
+plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
 
-byTileAOP("DP3.30010.001", site="BART", year="2017", 
-          check.size = F,buffer = 100,
-          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+# transform to UTM coordinates
+crss <- make_EPSG()
+UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
+  dplyr::filter(grepl("19N", note))
+stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+# centroids are the 'plot centers'. code for Lidar tiles works with point data
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+
+# this downloads 15 cm Rgb data for the whole site.
+#byFileAOP(dpID = "DP3.30010.001", site = "BART", year = "2017", check.size = T, savepath="R_input")
+pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
+C3<-stands[stands$stand=="C3",]
+control<-C3[C3$plot=="3", ]
+control3<-extent(control)+10
+co.bart<-crop(pic.C3, control3)
+
+
+par(mfrow=c(1,1))
+#3333 Rgb image
+plotRGB(co.bart)
+
+#### plot chm
+chm_C3<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
+chm3<-crop(chm_C3,control3)
+plot(chm3)
+#3 do treE top detection
+lin.C3 <- function(x){x * 0.002}
+m3tops <- vwf(CHM = m3chm, winFun = lin.C3, minHeight = 3)
+C3crownsPoly <- mcws(treetops = m3tops, CHM = m3chm, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# add treetop
+plot(C3crownsPoly, border = "black", lwd = 0.5, add = TRUE)
+plot(m3tops, add=T, pch=17, cex=1)
+
+## shade mask crop
+
+shade<-raster("C3C_no_shade2.grd")
+shade<-crop(shade, co.bart)
+plot(shade)
+plotRGB(co.bart)
+shade_mask <- is.na(shade)
+plot(shade_mask)
+
+
+f_no_shade1 <- raster::mask(co.bart, shade_mask, maskvalue = 0)
+
+#3 how are they different extent?
+extent(co.bart)
+extent(shade_mask)
+
+###################
+# Apply to processed images
+cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
 
 
 
-######  Part 3 and 4
-#stands<-readOGR("data_files\\plot_shp","Bartlett_intensive_sites_30x30")
 
-stands<-readOGR("C:\\Users\\Dropcopter2\\Documents\\R\\hyperspectral R\\mel_NEON\\plot_shp","Bartlett_intensive_sites_30x30")
+#################################################################################################################################
+## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
+dada<-read.csv("actual_tops_10_04_greater_0.1.csv")
+dada<-dada[,-1]
 
-stands=spTransform(stands,CRS("+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs
-+ellps=WGS84 +towgs84=0,0,0")) # To convert it to WGS8
+# stand ages
+dada$Age[dada$Stand=="C1"]<-"~30 years old"
+dada$Age[dada$Stand=="C2"]<-"~30 years old"
+dada$Age[dada$Stand=="C3"]<-"~30 years old"
+dada$Age[dada$Stand=="C4"]<-"~60 years old"
+dada$Age[dada$Stand=="C5"]<-"~60 years old"
+dada$Age[dada$Stand=="C6"]<-"~60 years old" 
+dada$Age[dada$Stand=="C7"]<-"~100 years old"
+dada$Age[dada$Stand=="C8"]<-"~100 years old"
+dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
-stands$staplo<-paste(stands$stand, stands$plot)
 
-C3<-stands[stands$staplo=="C3 1",]
-center.C3 <- as.data.frame(getSpPPolygonsLabptSlots(C3))
-center.C3
 
-### stand C5
-# download tile for RGB
+names(dada)
 
-byTileAOP("DP3.30010.001", site="BART", year="2017", 
-          check.size = F,buffer = 100,
-          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
+# make a 'long' version of dada
+ldada<-gather(dada, "wvl","refl",7:351)
+ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
+ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
+ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
-byTileAOP("DP3.30015.001", site="BART", year="2017", 
-          check.size = F,buffer = 100,
-          easting=center.C3[,1], northing=center.C3[,2] , savepath="neon_downloads")
 
-# read in rgb tower
-img_C3<-stack("neon_downloads\\DP3.30010.001\\2019\\FullSite\\D01\\2019_BART_5\\L3\\Camera\\Mosaic\\2019_BART_5_316000_4878000_image.tif")
-# plot rgb image
-plotRGB(img_C3,axes=TRUE, main="Stand C3")
-# crop tile from AOP by plot extent
-pC3<-crop(img_C3,C3)
+# look at number of obs per plot
+table(ldada$Treatment, ldada$Stand)/345  
+table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
-# read in chm raster
-chm_C3<-raster("C:\\Users\\Dropcopter2\\Documents\\GitHub\\MELNHE_NEON_AOP\\neon_downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
-plot(chm_C3)
-lC3<-crop(chm_C3,C3)
+# min,max, and mean number of tree tops by plot.  6 is probably too low right?
+min(table(ldada$staplo))/345
+max(table(ldada$staplo))/345
+mean(table(ldada$staplo))/345
 
-# plotting
-plotRGB(pC3,axes=TRUE, main="Bartlett Experimental Forest")
-plot(C3, add=T, lwd=6)
+dim(ldada)
 
-par(mfrow=c(1,2))
-plot(lC3)
-plot(C3, add=T, lwd=6)
+# view individual trees
+# Here Alex tried to visualize the spectra---
+
+
+li<-subset(ldada, ldada$wvl<=1340)
+sw<-subset(ldada, ldada$wvl>=1445 & ldada$wvl<=1790)
+ir<-subset(ldada, ldada$wvl>=1995)
+# check the values
+li$group<-"1"
+sw$group<-"2"
+ir$group<-"3"
+#
+table(li$wvl)
+table(sw$wvl)
+table(ir$wvl)
+# move forward without 'band' bands
+ldada<-rbind(li,sw,ir)
+ldada$tree<-paste(ldada$Stand, ldada$Treatment, ldada$treeID)
+ldada$group.tree<-paste(ldada$tree, ldada$group)
+
+# Just view 1 stand
+C1_ldada<-ldada[ldada$staplo=="C3 Control",]
+
+# Nice!
+ggplot(C1_ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()
+
 

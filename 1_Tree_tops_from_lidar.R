@@ -5,16 +5,30 @@ library(ForestTools)
 library(raster)
 library(rgdal)
 library(rgeos)
-#library(dplyr)
-
+library(sp)
+library(stringr) # this is for data management
+library(tidyr)
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
 
-# read in shapefile
-stands<-readOGR("data_files\\plot_shp","Bartlett_intensive_sites_30x30")
-stands=spTransform(stands,CRS("+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs
-+ellps=WGS84 +towgs84=0,0,0")) # To convert it to WGS8
+# This code relies heavily on the ForestTools package- helpful information here
+### https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
+
+# read in shapefile of plot locations
+plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
+plot(plots)
+# transform to UTM coordinates
+crss <- make_EPSG()
+
+UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
+  dplyr::filter(grepl("19N", note))
+
+stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+
+# centroids are the 'plot centers'. code for Lidar tiles works with point data
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+
 
 stdf<-as.data.frame(stands)
 stdf$staplo<-paste(stdf$stand, stdf$plot)
@@ -46,37 +60,33 @@ C8<-stands[stands$stand=="C8",]
 C9<-stands[stands$stand=="C9",]
 
 ############################################################################################################
-
-# Now to read in NEon data 
-## these are the coordinates for the N and P addition plots in MELNHE. Used for downloading lidar from neonUtilities
-easting<-c(  313000, 314000,   31800,31800,316000 ,318000,314000 ,317000, 315000 ,315000 ,316000,317000  )
-northing<-c(4879000,4879000, 4881000,488000,4878000 ,4880000  ,4878000 ,4878000,4880000 ,4880000,4880000,4879000   )
-
-# just C6
-easting<-317000
-northing<-4878000
+# these are the easting and northings for the plot locations
+east <- centroids[, 1]
+north <-centroids[, 2]
 
 # this downloads the data and saves it to your specified directory.
 ## # this will ask you if you want to download the files to your computer
-byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, easting=easting, northing=northing, savepath="C:\\Users\\aryoung\\Desktop\\mel_NEON\\Downloads")
+byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 100, 
+          easting=east, northing=north, 
+          savepath="R_input")
 
 # once you download them, you'll need to set wd and tead each file.  Here they are.
 # setwd()    # enter your wd.
-chm.C1a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
-chm.C1b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
+chm.C1a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
+chm.C1b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
 chm.C1 <- raster::merge(chm.C1a,chm.C1b)
-chm.C2a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-chm.C2b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C2a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
+chm.C2b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
 chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C3<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
-chm.C4<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-chm.C5<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
-chm.C6<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
-chm.C7<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8a<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8b<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
+chm.C3<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
+chm.C4<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C5<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
+chm.C6<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
+chm.C7<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
-chm.C9<-raster("Downloads\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
+chm.C9<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
 
 
 
@@ -271,10 +281,9 @@ m9nptops <- vwf(CHM = m9np, winFun = lin.C9, minHeight = 3)
 m9nptops$Treatment<-"NP"
 
 
-
 #######################################################################
-## is there a way to combine chapefiles in R?
-# maybe rbind will do the trick.
+### combine tops
+#
 C1_ttops <- rbind(m1ctops, m1ntops, m1ptops, m1nptops)
 C1_ttops$Stand<-"C1"
 C2_ttops <- rbind(m2ctops, m2ntops, m2ptops, m2nptops)
@@ -294,7 +303,6 @@ C8_ttops$Stand<-"C8"
 C9_ttops <- rbind(m9ctops, m9ntops, m9ptops, m9nptops)
 C9_ttops$Stand<-"C9"
 
-table(C9_ttops$Treatment)
 
 ## do another round of rbinding.
 bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
@@ -302,7 +310,6 @@ bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
                   C7_ttops, C8_ttops, C9_ttops)
 
 plot(bart_ttops)
-
 plot(chm.C1, add=T)
 plot(chm.C2, add=T)
 plot(chm.C3, add=T)
@@ -312,10 +319,151 @@ plot(chm.C6, add=T)
 plot(chm.C7, add=T)
 plot(chm.C8, add=T)
 plot(chm.C9, add=T)
-plot(bart_ttops, add=T)
+plot(bart_ttops, add=T, axes=T)
 
 ######################################################################################################
 
+
+## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
-#dir.create("write_shape_from_R")
-#writeOGR(obj=bart_ttops,dsn="write_shape_from_R"  ,layer="bart_ttops_6_22_2020", driver="ESRI Shapefile")
+
+#writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ESRI Shapefile")
+
+
+
+######################################################################
+
+
+#Compare to actual top numbers
+
+
+## # read in actual trees per 30 m to compare
+tally<-read.csv("R_input\\Tally_of_10_plus_cm_stems.csv")
+
+head(tally)
+
+
+# Format lidar ttops
+bart_ttops$staplo<-paste(bart_ttops$Stand, bart_ttops$Treatment)
+btt<-data.frame(tapply(bart_ttops$treeID , list(bart_ttops$staplo), length))
+btt$staplo<-rownames(btt)
+names(btt)[1]<-"lidar"
+
+tally$Treatment<-btt$Treatment[match(tally$staplo,btt$staplo)]
+tally$lidar<-btt$lidar[match(tally$staplo,btt$staplo)]
+
+
+names(tally)
+# add in stand ages
+tally$Age[tally$Stand=="C1"]<-"~30 years old"
+tally$Age[tally$Stand=="C2"]<-"~30 years old"
+tally$Age[tally$Stand=="C3"]<-"~30 years old"
+tally$Age[tally$Stand=="C4"]<-"~60 years old"
+tally$Age[tally$Stand=="C5"]<-"~60 years old"
+tally$Age[tally$Stand=="C6"]<-"~60 years old" 
+tally$Age[tally$Stand=="C7"]<-"~100 years old"
+tally$Age[tally$Stand=="C8"]<-"~100 years old"
+tally$Age[tally$Stand=="C9"]<-"~100 years old"
+
+tally$Age<-factor(tally$Age, levels=c("~30 years old","~60 years old","~100 years old"))
+
+f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Number of 10+ cm trees")+geom_text_repel() + 
+  ylab("Lidar tree tops")+ylim(0,75)+xlim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
+
+f.1
+
+spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
+spec$staplo<-paste(spec$Var2, spec$Var1)
+
+tally$spec<-spec$Freq[match(tally$staplo, spec$staplo)]
+
+f.2<-ggplot(tally ,aes(x=lidar, y=spec, col=Age, label=Stand))+geom_point() +xlab("lidar tree tops")+geom_text_repel() + 
+  ylab("Shade mask tree tops")+ylim(0,75)+xlim(0,75)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
+f.2
+head(tally)
+
+library(ggpubr)
+ggarrange(f.1, f.2, common.legend = 2, nrow=1, legend="bottom")
+
+
+
+####################################################################################
+
+##############################################################################
+par(mfrow=c(3,3))
+
+#Better inspect tree tops, average crown width
+plot(chm.C3, axes=F)
+plot(C3, add=T)
+plot(chm.C5, axes=F)
+plot(C5, add=T)
+plot(chm.C9, axes=F)
+plot(C9, add=T, lwd=3)
+
+####
+pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
+pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
+pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
+
+
+
+
+#####
+tch3<-crop(chm.C3, m3ntops)
+pc3<-crop(pic.C3, m3ntops)
+##
+tch5<-crop(chm.C5, m5ntops)
+pc5<-crop(pic.C5, m5ntops)
+##
+tch9<-crop(chm.C9, m9ntops)
+pc9<-crop(pic.C9, m9ntops)
+
+
+########################################################
+
+# plot chm and rgb next to each other
+
+
+# Create polygon crown map
+C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
+C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
+C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
+
+
+# Plot CHM
+plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
+plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C3_ttops, add=T, pch=17, cex=1)
+plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
+plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C5_ttops, add=T, pch=17, cex=1)
+plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
+plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1)
+
+#33
+
+
+# PLot RGB
+plotRGB(pc3, axes=F )
+plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
+plotRGB(pc5, axes=F )
+plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
+plotRGB(pc9, axes=F )
+plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
+
+
+
+
+
+
+# Compute average crown diameter
+C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
+mean(C9n_crownsPoly$crownDiameter)
+
+
+
+##################
