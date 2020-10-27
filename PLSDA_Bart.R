@@ -9,13 +9,18 @@ library(agricolae)
 library(tidyverse)
 
 dat <- read.csv("./data_folder/actual_tops_10_04_greater_0.1.csv", row.names = 1)
+
 dat <- dat[complete.cases(dat),] ### remove NAs
 
 age <- read.csv("./data_folder/age_classes.csv")
 
 dati <- dat %>% left_join(age, by="Stand") %>%
-  mutate(treat_age=paste(Treatment, Age, sep = "_")) %>%
+  mutate(treat_age=paste(Stand, Treatment, sep = "_")) %>%
   select(1:6,352:353,7:351) 
+
+# see minimum. Alex changed this from 77 to 11.25
+min(table(dati$treat_age))/100*75
+
 
 ### Prepare data
 wv <- colnames(dati)[9:ncol(dati)] ### define wvl range for spectral matrix, check your column names
@@ -35,6 +40,7 @@ nsims <- 100 ### number of iterations, try 50, or 100?
 compi <- 15 ### max number of components, something to play with, too many and the model crashes
 ctrl <- trainControl(method = "repeatedcv", repeats = 10, number=10,
                      summaryFunction = multiClassSummary)
+
 mods <- list()
 
 for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shouldn't matter though
@@ -49,9 +55,10 @@ for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shoul
   trainclass <- classi[inTrain]
   testclass <- classi[!(inTrain)]
   plsFit <- train(traini, trainclass, method = "pls", tuneLength = compi,
-                  trControl = ctrl)
+                  trControl =  trainControl(method="LOOCV"))
   # trControl = trainControl(method="LOOCV")  ### use leaf-one-out CV for small sample sizes
-   mods[[nsim]] <- plsFit
+  # trControl = ctrl (used to be this for 25% 75 %) 
+  mods[[nsim]] <- plsFit
 }
 
 ### Sample overview
@@ -260,8 +267,9 @@ for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shoul
   trainclass <- classi[inTrain]
   testclass <- classi[!(inTrain)]
   plsFit <- train(traini, trainclass, method = "pls", tuneLength = compi,
-                  trControl = ctrl)
+                  trControl = trainControl(method="LOOCV")  )
   # trControl = trainControl(method="LOOCV")  ### use leaf-one-out CV for small sample sizes
+  # used to be ctrl
   mods[[nsim]] <- plsFit
 }
 
@@ -437,6 +445,6 @@ mm$ww <- as.numeric(substr(row.names(mm), 6, nchar(row.names(mm))))
 row.names(mm)<- NULL
 
 names(mm) <- c("mean_abs_loading", "sd_abs_loading", "wvl")
-write.csv(mmx, "./R_output/PLSDA_abs_loadings_treat_10comps.csv", row.names = F)
+write.csv(mm, "./R_output/PLSDA_abs_loadings_treat_10comps.csv", row.names = F)
 
 #### END ##########

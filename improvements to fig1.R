@@ -85,6 +85,10 @@ extent(shade_mask)
 ###################
 # Apply to processed images
 cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+#############################################################################
+
+nami<-sapply(strsplit(f,"/"),"[",11)  
+nami
 
 
 

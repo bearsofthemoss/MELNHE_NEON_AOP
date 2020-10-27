@@ -9,7 +9,7 @@ library(agricolae)
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-read.csv("actual_tops_10_04_greater_0.1.csv")
+dada<-read.csv("R_input/actual_tops_10_26_greater_0.1.csv")
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
@@ -25,8 +25,10 @@ dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
 
 ## chem contains the resin available N and P from 2017 measurements
-chem <- read.csv("data_folder\\bart_resin_melnhe_10_30_2019_Young.csv")
+chem <- read.csv("R_input/bart_resin_melnhe_10_30_2019_Young.csv")
 chem$treat_stand<-paste(chem$Stand, chem$Trt)
+
+head(chem)
 
 library(tidyr)
 # gather spectra for averaging
@@ -92,11 +94,11 @@ out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 #3
 dev.off()
-par(mfrow=c(1,1))
+par(mfrow=c(1,2))
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)")
 title(main="a",   cex.main=1.5,adj = 0)
 points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=2)
+       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
 
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
@@ -105,9 +107,9 @@ legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","r
 
 #### P
 plot(out$LD1, out$LD2, type="n",bty="l", col="grey50",xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.5)
-title(main="b",   cex.main=2,adj = 0)
+title(main="b",   cex.main=  1.5,adj = 0)
 points( main="a",out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=2)
+       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 
 ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))

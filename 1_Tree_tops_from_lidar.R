@@ -16,7 +16,7 @@ options(stringsAsFactors=F)
 ### https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
 
 # read in shapefile of plot locations
-plots<-readOGR("R_input","Bartlett_intensive_sites_30x30")
+plots<-readOGR("data_folder","Bartlett_intensive_sites_30x30")
 plot(plots)
 # transform to UTM coordinates
 crss <- make_EPSG()
@@ -65,28 +65,29 @@ east <- centroids[, 1]
 north <-centroids[, 2]
 
 # this downloads the data and saves it to your specified directory.
-## # this will ask you if you want to download the files to your computer
-byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 100, 
+# this will ask you if you want to download the files to your computer
+#  commented outif you don't need to download it. 
+byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, 
           easting=east, northing=north, 
-          savepath="R_input")
+          savepath="data_folder")
 
 # once you download them, you'll need to set wd and tead each file.  Here they are.
 # setwd()    # enter your wd.
-chm.C1a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
-chm.C1b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
+chm.C1a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
+chm.C1b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
 chm.C1 <- raster::merge(chm.C1a,chm.C1b)
-chm.C2a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-chm.C2b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C2a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
+chm.C2b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
 chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C3<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
-chm.C4<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-chm.C5<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
-chm.C6<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
-chm.C7<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8a<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8b<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
+chm.C3<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
+chm.C4<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C5<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
+chm.C6<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
+chm.C7<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
+chm.C8b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
-chm.C9<-raster("R_input\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
+chm.C9<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
 
 
 
@@ -147,12 +148,12 @@ m9np<-crop(chm.C9, C9[C9$treat=="NP",])
 lin.C1 <- function(x){x * 0.002}
 lin.C2 <- function(x){x * 0.002}
 lin.C3 <- function(x){x * 0.002}
-lin.C4 <- function(x){x * 0.02 + .5}
-lin.C5 <- function(x){x * 0.02 + .5}
-lin.C6 <- function(x){x * 0.02 + .5}
-lin.C7 <- function(x){x * 0.02 + .5}
-lin.C8 <- function(x){x * 0.02 + .5}
-lin.C9 <- function(x){x * 0.02 + .5}
+lin.C4 <- function(x){x * 0.02}
+lin.C5 <- function(x){x * 0.02}
+lin.C6 <- function(x){x * 0.02}
+lin.C7 <- function(x){x * 0.02}
+lin.C8 <- function(x){x * 0.02}
+lin.C9 <- function(x){x * 0.02}
 
 #############################################################################
 # start automating tree tops
@@ -308,7 +309,7 @@ C9_ttops$Stand<-"C9"
 bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
                   C4_ttops, C5_ttops, C6_ttops,
                   C7_ttops, C8_ttops, C9_ttops)
-
+par(mfrow=c(1,1))
 plot(bart_ttops)
 plot(chm.C1, add=T)
 plot(chm.C2, add=T)
@@ -327,7 +328,7 @@ plot(bart_ttops, add=T, axes=T)
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 
-#writeOGR(obj=bart_ttops,dsn="R_input"  ,layer="bart_ttops_10_4_2020", driver="ESRI Shapefile")
+#writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_10_26_2020", driver="ESRI Shapefile")
 
 
 
@@ -367,6 +368,7 @@ tally$Age[tally$Stand=="C9"]<-"~100 years old"
 
 tally$Age<-factor(tally$Age, levels=c("~30 years old","~60 years old","~100 years old"))
 
+library(ggrepel)
 f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Number of 10+ cm trees")+geom_text_repel() + 
   ylab("Lidar tree tops")+ylim(0,75)+xlim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
 
