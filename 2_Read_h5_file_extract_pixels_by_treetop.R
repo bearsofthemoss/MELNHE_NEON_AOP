@@ -299,7 +299,7 @@ for (k in 1:length(ff)){
    plot(trees, add=T, pch=16, col=2)
   
   # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C3C_no_shade2", overwrite=T,format="raster")
+  #writeRaster(mini_noshade, "C7_no_shade", overwrite=T,format="raster")
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
