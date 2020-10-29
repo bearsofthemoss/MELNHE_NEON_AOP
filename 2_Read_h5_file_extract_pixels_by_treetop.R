@@ -27,18 +27,18 @@ bright_norm <- function(x){
 
 ## plots
 # Anna's plot file
-#plots <- readOGR("./R_input","Bartlett_intensive_sites_30x30")
+#plots <- readOGR("./data_folder","Bartlett_intensive_sites_30x30")
 
 # Alex's plots
- plots <- readOGR("R_input","Bartlett_intensive_sites_30x30")
+ plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
 
 # tree tops
-#trees <- readOGR("./R_input/","bart_ttops_6_22_2020")
+#trees <- readOGR("./data_folder/","bart_ttops_6_22_2020")
 # Alex's tree tops
- trees <- readOGR("R_input","bart_ttops_10_4_2020")
+ trees <- readOGR("data_folder","bart_ttops_10_26_2020")
 
 
-# transform to UTM coordinates
+# transform to UTM coordinate
 crss <- make_EPSG()
 
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
@@ -59,21 +59,21 @@ east
 #byTileAOP(dpID="DP3.30006.001",site="BART",
 #            year="2017", easting= east,
 #            northing = north,
-#            buffer=70, savepath = "./R_input/Bart_tiles",check.size = T)
+#            buffer=70, savepath = "./data_folder/Bart_tiles",check.size = T)
 
 
 # Download DSMs
 #byTileAOP(dpID="DP3.30024.001",site="BART",
 #          year="2017", easting= east,
 #          northing = north,
-#          buffer=50, savepath = "./R_input/Bart_DSM/",check.size = T)
+#          buffer=50, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 #PC- Alex's wd
- ff <- list.files("R_input/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
- dd <- list.files("R_input/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
+ ff <- list.files("data_folder/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
+ dd <- list.files("data_folder/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
 
-# Anna's
+ # Anna's
 #ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
 #dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
 
@@ -299,7 +299,7 @@ for (k in 1:length(ff)){
    plot(trees, add=T, pch=16, col=2)
   
   # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C3C_no_shade2", overwrite=T,format="raster")
+  #writeRaster(mini_noshade, "C7_no_shade", overwrite=T,format="raster")
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
@@ -316,6 +316,9 @@ for (k in 1:length(ff)){
 spectra_all <- do.call(rbind, spectra_df)
 head(spectra_all[ ,1:10])
 
+
+
+
 ## make a 'long' dada
 ldada<-gather(spectra_all, "wvl","refl",7:351)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
@@ -327,11 +330,13 @@ ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 table(ldada$Treatment, ldada$Stand)/345  
 table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
+
+# needC2
 # min,max, and mean number of tree tops by plot.  6 is probably too low right?
 min(table(ldada$staplo))/345
 max(table(ldada$staplo))/345
 mean(table(ldada$staplo))/345
 
 
-write.csv(spectra_all, file="./actual_tops_10_04_greater_0.1.csv")
+write.csv(spectra_all, file="R_input/actual_tops_10_26_greater_0.1.csv")
 
