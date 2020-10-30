@@ -91,7 +91,7 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 tree<-read.csv("R_input/10+cm.csv")
 tree<-tree[tree$Plot!="5",] # no calcium
 library(tidyr)
-bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
+bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand, Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
 bap$staplo<-paste(bap$Stand, bap$Plot)
 bap$Treatment<-sapply(bap$staplo,switch,
                        "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
@@ -114,12 +114,13 @@ gav<-aggregate(list(pri=gat$pri), by=list(Stand=gat$Stand, Treatment=gat$Treatme
 
 ## choose the bands for the red edge and AVG VIS
 red<-subset(ldada, ldada$wvl>400 & ldada$wvl<700)
-rd<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,wvl=red$wvl, Treatment=red$Treatment,Age=red$Age), FUN="mean")
-avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,BA=red$BA, Treatment=red$Treatment,staplo=red$staplo, Ntrmt=red$Ntrmt, Ptrmt=red$Ptrmt, Age=red$Age), FUN="mean")
-avg.vis
+names(red)
+red.wav<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,wvl=red$wvl, Treatment=red$Treatment,Age=red$Age), FUN="mean")
+rd<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,BA=red$BA, Treatment=red$Treatment,Age=red$Age), FUN="mean")
+avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,BA=red$BA, tree=red$group.tree,Treatment=red$Treatment,staplo=red$staplo, Ntrmt=red$Ntrmt, Ptrmt=red$Ptrmt, Age=red$Age), FUN="mean")
 
 #33 graph to show treatment effect in red edge
-ggplot(rd, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
+ggplot(red.wav, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
 facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
 xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
   ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
@@ -132,68 +133,17 @@ g1<-ggplot(gav, aes(x=BA, y=pri, col=Treatment))+geom_point()+scale_color_manual
   scale_fill_manual(values=c("grey","blue","red","purple"))+theme_classic()+geom_smooth(method="lm", se=F)+
   ylab("Photochemical reflective index")+xlab("Basal area (m2)")+theme(text=element_text(size=20))+ggtitle("a")
 g1
-g2<-ggplot(avg.vis, aes(x=BA, y=refl, col=Treatment))+geom_point()+
+g2<-ggplot(rd, aes(x=BA, y=refl, col=Treatment))+geom_point()+
 scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
   xlab("Basal area (m2)")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
   ggtitle("b")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F)
-
+g2
 ggarrange(g1, g2, common.legend=T, legend="bottom")
 
 head(avg.vis)
-anova(lmer(refl ~Ntrmt*Ptrmt+Age+(1|Stand), data=avg.vis))
-anova(lmer(pri ~Ntrmt*Ptrmt+(1|Stand/staplo), data=gat))
+anova(lmer(refl ~log(BA)+Ntrmt*Ptrmt+(1|Stand/staplo), data=avg.vis))
+anova(lmer(pri ~log(BA)+Ntrmt*Ptrmt+(1|Stand/staplo), data=gat))
 
+table(gat$Stand,gat$staplo)
 
-
-###################################################################################
-## write a function
-s.lme <- function(y, Age,Stand, Ntrmt, Ptrmt){
-  lme1<-anova(lmer(y ~ Ntrmt*Ptrmt+Age+(1|Stand/staplo)))
-  return(lme1)}
-
-## create output list to store loop output 
-output.lme<-list()
-names(dada)
-dada$staplo<-paste(dada$Stand, dada$Treatment)
-for(i in c(7:351)){ 
-  y = dada[,i]
-  Ntrmt=dada$Ntrmt
-  Ptrmt=dada$Ptrmt
-  Age=dada$Age
-  Stand= dada$Stand
-  staplo= dada$staplo
-  output.lme[[i-5]] <- s.lme(y, Age,Stand, Ntrmt, Ptrmt)}
-
-## manipulate loop output
-d.lme<- as.data.frame(rbindlist(output.lme))
-d.lme$Source<-rep(c("Ntrmt","Ptrmt","Age","N*P"))
-d.lme$resp.var<-rep(names(dada)[c(7:351)], each=4)
-
-## spot check, do we see the same result for wavelength 1,010?
-d.lme[d.lme$resp.var=="Band_754.12",]
-
-anova(lmer(dada$Band_754.12 ~Ntrmt*Ptrmt+Age+(1|Stand/staplo), data=dada))
-
-
-### looks like we do. nice!
-
-## re-order dataframe columns for convenience
-d.l.result<-d.lme[ ,c(8,7,3,4,1,2,5,6)]
-head(d.l.result)
-
-
-
-d.l.result$adj.p<-p.adjust(d.l.result$`Pr(>F)`, method="hochberg",n=length(d.l.result$`Pr(>F)`))
-
-d.l.result[d.l.result$adj.p <0.05,]
-
-
-
-# export p-value results
-dls<-spread(d.l.result[ ,c(1,2,8)] , Source,`Pr(>F)`)
-head(dls)
-
-
-
-#write.csv(dls, file="./R_output/response_for_wavelenths_10_21_19.csv")
-
+head(gat)
