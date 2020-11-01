@@ -54,6 +54,19 @@ ldada.mean <-aggregate(list(refl=ldada$refl), by=list( wvl=ldada$wvl, group=ldad
 abs.tr<-read.csv("R_output/PLSDA_abs_loadings_treat_10comps.csv")
 abs.age<-read.csv("R_output/PLSDA_abs_loadings_age_11comps.csv")
 
+
+co.var <- function(x)(    100*sd(x)/mean(x))
+ldada.cv <-aggregate(ldada$refl, by=list( wvl=ldada$wvl, group=paste(ldada$group, ldada$Treatment) , Treatment=ldada$Treatment), co.var)
+head(ldada.cv)
+
+ggplot(ldada.cv, aes(x=wvl, y=x, col=Treatment, group=group))+geom_line(lwd=.8)+theme_classic()+
+  theme(text=element_text(size=16))+xlab("wavelength (nm)")+ylab("Coefficient of Variation")+ggtitle("c)  CV for all wavelengths by Treatment")+
+#  facet_wrap(~Treatment)+
+  scale_linetype_manual(values=c("solid","dotdash"))+theme(legend.position = c(.95, .95),
+                                                           legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))
+
+
+
 # bring in abs into ldada.mean
 ldada.mean$abs.load.treatment<-abs.tr$mean_abs_loading[match(ldada.mean$wvl, abs.tr$wvl)]
 ldada.mean$abs.load.age<-abs.age$mean_abs_loading[match(ldada.mean$wvl, abs.age$wavelength)]
@@ -61,11 +74,17 @@ abs<-gather(ldada.mean, "type","value",4:5)
 abs$group<-paste(abs$group, abs$type)
 head(abs)
 ### Graphs for abs loadinggs in comparison to spectra
-f2<-ggplot(abs, aes(x=wvl, y=value, linetype=type, group=group))+geom_line(lwd=.8)+theme_classic()+
+f2<-ggplot(abs, aes(x=wvl, y=value, col=type, group=group))+geom_line(lwd=.8)+theme_classic()+
   theme(text=element_text(size=16))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Importance for prediction")+
-  scale_linetype_manual(values=c("solid","dotdash"))+theme(legend.position = c(.95, .95),
+  scale_color_manual(values=c("green","black"))+theme(legend.position = c(.95, .95),
     legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))
 f2
+
+quantile(abs$value[abs$type=="abs.load.age"], .95)
+table(abs$value[abs$type=="abs.load.age"]>.17122)
+
+quantile(abs$value[abs$type=="abs.load.treatment"], .95)
+table(abs$value[abs$type=="abs.load.treatment"]>.14253)
 
 f1<-ggplot(ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()+theme_classic()+
   theme(text=element_text(size=16))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("a)  Hyperspectral reflectance for all trees")+
@@ -124,6 +143,13 @@ ggplot(red.wav, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
 facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
 xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
   ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
+
+################
+
+co.var<-function(x) 100*(sd(x,na.rm=TRUE)/mean(x,na.rm=TRUE))
+aggregate(ldada$refl, by=list(ldada$wvl, ldada$Treatment, ldada$Age),data=ldada,co.var)
+
+
 
 
 ############################################
