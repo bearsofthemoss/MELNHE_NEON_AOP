@@ -57,33 +57,31 @@ abs.age<-read.csv("R_output/PLSDA_abs_loadings_age_11comps.csv")
 
 
 co.var <- function(x)(    100*sd(x)/mean(x))
-ldada.cv <-aggregate(ldada$refl, by=list( wvl=ldada$wvl, group=paste(ldada$group, ldada$Treatment) , Treatment=ldada$Treatment), co.var)
+ldada$Treatment<-factor(ldada$Treatment, levels=c("Control","N","P","NP"))
+ldada.cv <-aggregate(ldada$refl, by=list( wvl=ldada$wvl,group=paste(ldada$group, ldada$Treatment) , Treatment=ldada$Treatment), co.var)
 ggplot(ldada.cv, aes(x=wvl, y=x, col=Treatment, group=group))+geom_line(lwd=.8)+theme_classic()+
-  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("Coefficient of Variation")+ggtitle("c)  CV for all wavelengths by Treatment")
+  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("Coefficient of Variation")+ggtitle("c)  CV for all wavelengths by Treatment")+
+  scale_color_manual(values=c("black","blue","red","purple"))
 
 
 
 # bring in abs into ldada.mean
 ldada.mean$Treatment_classification<-abs.tr$mean_abs_loading[match(ldada.mean$wvl, abs.tr$wvl)]
 ldada.mean$Age_classification<-abs.age$mean_abs_loading[match(ldada.mean$wvl, abs.age$wavelength)]
-#abs<-gather(ldada.mean, "type","value",4:5)  # for plotting both in one graph
-#abs$group<-paste(abs$group, abs$type)
-#head(abs)
+abs<-gather(ldada.mean, "type","value",4:5)  # for plotting both in one graph
+abs$group<-paste(abs$group, abs$type)
+head(abs)
 ### Graphs for abs loadinggs in comparison to spectra
 
-f3<-ggplot(ldada.mean, aes(x=wvl, y=Age_classification,  group=group))+geom_line(lwd=.8)+theme_classic()+
-  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("c)  Importance for forest age prediction")+
- theme(legend.position = c(.95, .95),
-    legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))+
-   geom_hline(yintercept=quantile(abs$value[abs$type=="Age_classification"], .97), linetype="dashed", color = "black")
-
-f3
-
-f2<-ggplot(ldada.mean, aes(x=wvl, y=Treatment_classification,  group=group))+geom_line(lwd=.8)+theme_classic()+
-  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Importance for nutrient addition prediction")+
+f2<-ggplot(abs, aes(x=wvl, y=value, col=type, group=group))+geom_line(lwd=.8)+theme_classic()+
+  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Importance wavelenths for classification")+
  theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))+
-  geom_hline(yintercept=quantile(abs$value[abs$type=="Treatment_classification"], .97), linetype="dashed", color = "black")
-
+  scale_color_manual(values=c("green","black"))+ theme(legend.title = element_blank())+
+  geom_text(x=720, y=.235, size=5,label="710-735", col="black")+
+  geom_text(x=940, y=.207, size=5, label="935-945", col="black")+
+  geom_text(x=1122, y=.28, size=5, label="1120-1135", col="black")+ylim(0,.3)+
+  geom_text(x=1550, y=.19, size=5, label="1545-1555", col="black")
+ 
 f2
 
 
@@ -95,13 +93,13 @@ abs[abs$value>quantile(abs$value[abs$type=="Treatment_classification"], .97),]
 
 
 f1<-ggplot(ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()+theme_classic()+
-  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("Normalized reflectance")+ggtitle("a)  Hyperspectral reflectance for all trees")+
-  theme(legend.position = "bottom")
-          
-          
+  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("Normalized reflectance")+ggtitle("a)  Hyperspectral reflectance for all trees")+
+  theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))
+
 f1 
+
 library(ggpubr)
-ggarrange(f1, f2,f3, nrow=3)
+ggarrange(f1, f2, nrow=2)
 
 
 # Just view 1 stand
@@ -137,7 +135,7 @@ ldada$BA<-bap$x[match(ldada$staplo, bap$staplo)]
 ## calculate plot-level PRI avg
 gat<-spread(ldada, "wvl","refl")
 gat$pri<-(gat$`528.76`-gat$`553.8`)/(gat$`528.76` +gat$`553.8`)
-gav<-aggregate(list(pri=gat$pri), by=list(Stand=gat$Stand, Treatment=gat$Treatment, BA=gat$BA), FUN="mean", na.rm=T)
+gav<-aggregate(list(pri=gat$pri), by=list(Stand=gat$Stand,Age=gat$Age, Treatment=gat$Treatment, BA=gat$BA), FUN="mean", na.rm=T)
 
 
 ## choose the bands for the red edge and AVG VIS
@@ -159,16 +157,16 @@ xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=
 ############################################
 
 
-g1<-ggplot(gav, aes(x=BA, y=pri, col=Treatment))+geom_point()+scale_color_manual(values=c("black","blue","red","purple"))+
-  scale_fill_manual(values=c("grey","blue","red","purple"))+theme_classic()+geom_smooth(method="lm", se=F)+
-  ylab("Photochemical reflective index")+xlab("Basal area (m2)")+theme(text=element_text(size=20))+ggtitle("a")
+g1<-ggplot(gav, aes(x=BA, y=pri, col=Treatment,group=Treatment, shape=Age))+geom_point(size=2,)+scale_color_manual(values=c("black","blue","red","purple"))+
+  scale_fill_manual(values=c("grey","blue","red","purple"))+theme_classic()+geom_smooth(method="lm", se=F, size=2, linetype="dashed")+
+  ylab("Photochemical reflective index")+xlab("Basal area (m2)")+theme(text=element_text(size=20))+ggtitle("b")
 g1
-g2<-ggplot(rd, aes(x=BA, y=refl, col=Treatment))+geom_point()+
+g2<-ggplot(rd, aes(x=BA, y=refl, shape=Age, group=Treatment, col=Treatment))+geom_point(size=2)+
 scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
   xlab("Basal area (m2)")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
-  ggtitle("b")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F)
+  ggtitle("a")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
 g2
-ggarrange(g1, g2, common.legend=T, legend="bottom")
+ggarrange(g2, g1, common.legend=T, legend="bottom")
 
 head(avg.vis)
 anova(lmer(refl ~log(BA)+Ntrmt*Ptrmt+(1|Stand/staplo), data=avg.vis))
@@ -177,3 +175,23 @@ anova(lmer(pri ~log(BA)+Ntrmt*Ptrmt+(1|Stand/staplo), data=gat))
 table(gat$Stand,gat$staplo)
 
 head(gat)
+
+######################################
+
+
+#corr plots
+
+tabs_perc<-read.csv("R_output/PLSDA_confuperc_age_11comps (1).csv")
+
+col <- colorRampPalette(c("black","black","brown","gold","forestgreen")) 
+
+
+corrplot::corrplot(tabs_perc, p.mat = tabs_perc, insig = "p-value", sig.level = -1, addCoef.col = 1,
+                   tl.srt = 70,col = col(20),cl.lim = c(0, 1),tl.col = 1, tl.offset =1.5, 
+                   cl.ratio = 0.2, cl.align.text = "l", cl.cex = 0.9, 
+                   mar=c(1,3,3,3))
+mtext("Prediction",2,at=3, line=-3, cex=1.3)
+mtext("Reference",at = 2, line = 0, cex=1.3)
+dev.off()
+
+finmods_age_11comps
