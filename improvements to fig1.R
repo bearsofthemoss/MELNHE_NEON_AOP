@@ -1,13 +1,11 @@
 library(ggplot2)
-theme_set(theme_classic())
 library(sf)
 library(maps)
-library(rnaturalearth)
-library(rnaturalearthdata)
 #
 library(ggmap)
 library(gridExtra)
 #
+library(broom)
 
 library(neonUtilities)
 library(ForestTools)
@@ -16,28 +14,93 @@ library(rgdal)
 library(rgeos)
 ###########
 
-par(mfrow=c(2,2))
-###### PART 1:   Map of NH
-world <- ne_countries(scale = "medium", returnclass = "sf")
-sites <- data.frame(longitude = c(-71.28731), latitude = c(44.06388 ))
-states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
-states <- cbind(states, st_coordinates(st_centroid(states)))
-
-ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) + 
-  geom_point(data = sites, aes(x = longitude, y = latitude), size = 4, shape = 23, fill = "darkred") +
-  coord_sf(xlim = c(-75, -67), ylim = c(40, 47), expand = FALSE)
+## google account
+register_google( )
+google_account()
+has_google_key()
+google_key()  
 
 
-
-######  PART2:  9 stands color coded plots
-# read in shapefile
-plots<-readOGR("data_folder","Bartlett_intensive_sites_30x30")
+#### load plots
+plots<-readOGR("R_Output","Bartlett_intensive_sites_30x30")
 
 # transform to UTM coordinates
 crss <- make_EPSG()
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
   dplyr::filter(grepl("19N", note))
 stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+
+# make lat long re projection
+spgeo <- spTransform(stands, CRS("+proj=longlat +datum=WGS84"))
+cen <- as.data.frame(getSpPPolygonsLabptSlots(spgeo))
+
+spgeo$staplo<-paste(spgeo$stand, spgeo$plot)
+spgeo
+cen$staplo<-spgeo$staplo
+cen
+
+names(cen)[names(cen) == "V1"] <- "lon"
+names(cen)[names(cen) == "V2"] <- "lat"
+
+# compute the mean lat and lon
+ll_means<-sapply(cen[1:2], mean)
+
+
+Bart <- get_map(location = ll_means,  maptype = "terrain", source = "google", zoom =7)
+mel <- get_map(location = ll_means,  maptype = "satellite", source = "google", zoom =13)
+C4 <- get_map(location = sapply(cen[1:4,1:2], mean),  maptype = "satellite", source = "google", zoom =18)
+
+
+m1<-ggmap(Bart)+geom_point(data=cen[1,],shape=21,col="gold", size=15, stroke=4)+
+  geom_text(data =cen[1,] , aes(label = paste("Bartlett Experimental Forest")), angle = 0, hjust = .5, vjust=-3,size=7, color = "white")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        rect = element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+ggtitle("a")
+m1
+
+m2<-ggmap(mel)+  geom_point(data =cen, aes(x=lon, y=lat),size=3, col="gold")+guides(size=F, col=F)+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        rect = element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+ggtitle("b")
+m2  
+
+C4C<-fortify(spgeo[1,])
+C4C$Treatment<-"N"
+C4N<-fortify(spgeo[2,])
+C4N$Treatment<-"N+P"
+C4P<-fortify(spgeo[3,])
+C4P$Treatment<-"P"
+C4NP<-fortify(spgeo[4,])
+C4NP$Treatment<-"Control"
+
+C4_plots<-rbind(C4C, C4N, C4P, C4NP)
+
+
+C4_plots$Treatment<-factor(C4_plots$Treatment, levels=c("Control","N","P","N+P"))
+m3<-ggmap(C4)+  
+  geom_polygon(data = C4_plots, aes(long, lat, fill=Treatment,group = group,alpha=0.2), col="gold", size=2)+
+  scale_fill_manual(values=c("black","red","blue","purple"))+theme(legend.position = "bottom")+guides(alpha=F)+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        rect = element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        legend.text=element_text(size=15))+ggtitle("c")
+m3
+library(ggpubr)
+
+ggarrange(m1, m2, m3, nrow=1, common.legend = T, legend="right")
+
+
+######  PART2:  9 stands color coded plots
+# read in shapefile
 C7<-stands[stands$stand =="C7",]
 # centroids are the 'plot centers'. code for Lidar tiles works with point data
 centroids <- as.data.frame(getSpPPolygonsLabptSlots(C7))
