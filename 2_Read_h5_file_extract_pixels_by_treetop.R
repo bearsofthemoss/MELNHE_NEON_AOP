@@ -89,8 +89,8 @@ spectra_df <- list()
 ff
 
 # 
-for (k in 1:length(ff)){
-  (f <- ff[k])
+#for (k in 1:length(ff)){
+  (f <- ff[4])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")

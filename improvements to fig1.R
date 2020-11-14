@@ -84,6 +84,8 @@ dev.off()
 plot(chm7, axes=F, box=F, legend=T)
 #plot(C7crownsPoly, border = "white", lwd = 0.5, add = TRUE)
 plot(m7tops, add=T, pch=21,bg="blue",col="white", cex=1.5)
+tiff("R_output/lidar_fig",width=12*dpi, height=10*dpi, res=dpi)
+dev.off()
 
 plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
 #plot(C7crownsPoly, border = "white", lwd = 0.5, add = TRUE)
