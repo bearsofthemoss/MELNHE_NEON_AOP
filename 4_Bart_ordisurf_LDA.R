@@ -78,7 +78,7 @@ out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 #3
 dev.off()
-par(mfrow=c(1,3))
+par(mfrow=c(1,1))
 ##### N
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.6)
 title(main="  a",   cex.main=1.5,adj = 0)

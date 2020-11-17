@@ -15,7 +15,9 @@ library(rgeos)
 ###########
 
 ## google account
-register_google( )
+register_google("AIzaSyB7234pEGzoCTh
+@#
+6KH2zJash0oplcQ-GzeE" )
 google_account()
 has_google_key()
 google_key()  
@@ -32,6 +34,7 @@ stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
 
 # make lat long re projection
 spgeo <- spTransform(stands, CRS("+proj=longlat +datum=WGS84"))
+fortify(spgeo)
 cen <- as.data.frame(getSpPPolygonsLabptSlots(spgeo))
 
 spgeo$staplo<-paste(spgeo$stand, spgeo$plot)
@@ -51,14 +54,15 @@ mel <- get_map(location = ll_means,  maptype = "satellite", source = "google", z
 C4 <- get_map(location = sapply(cen[1:4,1:2], mean),  maptype = "satellite", source = "google", zoom =18)
 
 
-m1<-ggmap(Bart)+geom_point(data=cen[1,],shape=21,col="gold", size=15, stroke=4)+
-  geom_text(data =cen[1,] , aes(label = paste("Bartlett Experimental Forest")), angle = 0, hjust = .5, vjust=-3,size=7, color = "white")+
+m1<-ggmap(Bart)+geom_point(data=cen[1,],shape=21,col="gold", size=55, stroke=4)+
+#  geom_text(data =cen[1,] , aes(label = paste("Bartlett Experimental Forest")), angle = 0, hjust = .5, vjust=-3,size=7, color = "white")+
+  xlim(-74, -68)+ylim(41.7,45.5)+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         rect = element_blank(),
         axis.title.y=element_blank(),
-        axis.title.x=element_blank())+ggtitle("a")
+        axis.title.x=element_blank())+ggtitle("a")+ theme(plot.title = element_text(size = 40, face = "bold"))
 m1
 
 m2<-ggmap(mel)+  geom_point(data =cen, aes(x=lon, y=lat),size=3, col="gold")+guides(size=F, col=F)+
@@ -67,9 +71,34 @@ m2<-ggmap(mel)+  geom_point(data =cen, aes(x=lon, y=lat),size=3, col="gold")+gui
         axis.ticks = element_blank(),
         rect = element_blank(),
         axis.title.y=element_blank(),
-        axis.title.x=element_blank())+ggtitle("b")
+        axis.title.x=element_blank())+ggtitle("b")+theme(plot.title = element_text(size = 40, face = "bold"))
 m2  
+##############
 
+#  SPGEO for all 9 stands
+Cstand<-fortify(spgeo)
+table(Cstand$id)
+
+
+Cstand$Treatment<-rep(c("Control","N","P","N+P"), each=13)
+Cstand
+ggmap(mel)+  
+  geom_polygon(data = Cstand, aes(long, lat, fill=Treatment,group = group),size=10)+
+  geom_polygon(data = Cstand, aes(long, lat, fill=Treatment,group = group),col="white",size=0.5)+
+  scale_fill_manual(values=c("black","red","blue","purple"))+theme(legend.position = "bottom")+guides(alpha=F)+
+  xlim(-71.318, -71.265)+ylim(44.037, 44.06)+theme(legend.position = "bottom")+theme(plot.title = element_text(size = 40, face = "bold"))
+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        rect = element_blank(),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        legend.text=element_text(size=15))+ggtitle("c")
+
+
+
+##################
 C4C<-fortify(spgeo[1,])
 C4C$Treatment<-"N"
 C4N<-fortify(spgeo[2,])
@@ -86,13 +115,15 @@ C4_plots$Treatment<-factor(C4_plots$Treatment, levels=c("Control","N","P","N+P")
 m3<-ggmap(C4)+  
   geom_polygon(data = C4_plots, aes(long, lat, fill=Treatment,group = group,alpha=0.2), col="gold", size=2)+
   scale_fill_manual(values=c("black","red","blue","purple"))+theme(legend.position = "bottom")+guides(alpha=F)+
+  xlim(-71.32225, -71.3204)+ylim(44.0417, 44.0431)
+m3
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         rect = element_blank(),
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
-        legend.text=element_text(size=15))+ggtitle("c")
+        legend.text=element_text(size=15))+ggtitle("c")+theme(plot.title = element_text(size = 40, face = "bold"))
 m3
 library(ggpubr)
 
@@ -107,20 +138,26 @@ centroids <- as.data.frame(getSpPPolygonsLabptSlots(C7))
 east<-centroids$V1
 north<-centroids$V2
 
-# this downloads 15 cm Rgb data for the whole site.
+# this downloads 15 cm Rgb data for one plot.
 byTileAOP("DP3.30010.001", site="BART", year="2017", check.size = F,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
 
 pic.C7<-stack("data_folder\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4880000_image.tif")
 C7<-stands[stands$stand=="C7",]
-control<-C7[C7$plot=="1", ]
+control<-C7[C7$plot=="3", ]
 control3<-extent(control)+10
-co.bart<-crop(pic.C3, control3)
+co.bart<-crop(pic.C7, control3)
 
 
+# this downlaods the lidar chm data
+byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = F,buffer = 200, 
+          easting=east, northing=north, 
+          savepath="data_folder")
 
-#### plot chm
+
+north
+east
 chm_C7<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
 chm7<-crop(chm_C7,control3)
 # do treE top detection
@@ -132,23 +169,28 @@ C7crownsPoly <- mcws(treetops = m7tops, CHM = chm7, format = "polygons", minHeig
 #3 3 band tiff with shade mask
 # read in mini_noshade with C7 no shade?
 
-mini<-extent(control3)
-mini_noshade <- crop(cube_no_shade,mini)
 
 ############################
-par(mfrow=c(1,3))
+par(mfrow=c(1,1))
 #3333 Rgb image
 plotRGB(co.bart)
 
 # add treetops to chm
-plot(chm7, axes=F, box=F, legend=F)
-plot(C7crownsPoly, border = "white", lwd = 0.5, add = TRUE)
-plot(m7tops, add=T, pch=17,col="red", cex=1.5)
+plot(chm7, axes=F, box=F, legend=T,)
+plot(C7crownsPoly, border = "white", lwd = 2, add = TRUE)
+plot(m7tops, add=T, pch=24,cex=2.5, col="black", bg="yellow")
 
-plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
-plot(C7crownsPoly, border = "white", lwd = 0.5, add = TRUE)
-plot(m7tops, add=T, pch=17, col="red",cex=1.5)
 
+
+cube_no_shade <- stack("C7_no_shade.grd")
+cube_no_shade
+mini<-extent(control3)
+mini
+mini_noshade <- crop(cube_no_shade,mini)
+
+plotRGB(mini_noshade, r = 56, g = 30, b = 20, stretch = 'lin')
+plot(C7crownsPoly, border = "white", lwd = 2, add = TRUE)
+plot(m7tops, add=T, pch=24,cex=2.5, col="black", bg="yellow")
 
 
 #################################################################################################################################
