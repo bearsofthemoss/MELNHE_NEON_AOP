@@ -105,9 +105,15 @@ boxplot(kapp$Kappa~kapp$ncomps,ylim=c(0,1.1),
 text(x=1:20, y=rep(1,20),letters)
 dev.off()
 
+par(bty="l")
+boxplot(kapp$Kappa~kapp$ncomps,ylim=c(0,1.1),
+        xlab="Number of components",ylab="Kappa")
+text(x=1:20, y=rep(1,20),letters)
+
+
 #####################
 #### Final model ###
-compi <- 11 ### select number of components
+compi <- 9 ### select number of components
 finmods <- list()
 nsims=100
 
@@ -127,7 +133,7 @@ for (nsim in 1:nsims){
                       method = "simpls")
   finmods[[nsim]] <- finalModel
 }
-saveRDS(finmods, "./R_output/finmods_age_11comps.rds")
+saveRDS(finmods, "./R_output/finmods_age_9comps.rds")
 
 ### Probabilities and confusion matrix
 probis <- list()
@@ -204,11 +210,11 @@ for (i in 1:length(sums)){
 
 colnames(tabs_perc) <- colnames(confus[[1]]$table)
 rownames(tabs_perc) <- rownames(confus[[1]]$table)
-write.csv(tabs_perc,"./R_output/PLSDA_confuperc_age_11comps.csv")
+write.csv(tabs_perc,"./R_output/PLSDA_confuperc_age_9comps.csv")
 
 col <- colorRampPalette(c("black","black","brown","gold","forestgreen")) 
 
-pdf("./R_output/PLSDA_corrplot_age_11comps.pdf",width = 7,height = 6,pointsize = 13)
+pdf("./R_output/PLSDA_corrplot_age_9comps.pdf",width = 7,height = 6,pointsize = 13)
 corrplot::corrplot(tabs_perc, p.mat = tabs_perc, insig = "p-value", sig.level = -1, addCoef.col = 1,
          tl.srt = 70,col = col(20),cl.lim = c(0, 1),tl.col = 1, tl.offset =1.5, 
          cl.ratio = 0.2, cl.align.text = "l", cl.cex = 0.9, 
@@ -234,7 +240,7 @@ mm$ww <- as.numeric(substr(row.names(mm), 6, nchar(row.names(mm))))
 row.names(mm)<- NULL
 
 names(mm) <- c("mean_abs_loading", "sd_abs_loading", "wavelength")
-write.csv(mm, "./R_output/PLSDA_abs_loadings_age_11comps.csv", row.names = F)
+write.csv(mm, "./R_output/PLSDA_abs_loadings_age_9comps.csv", row.names = F)
 
 
 ################################
