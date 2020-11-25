@@ -2,7 +2,8 @@
 # Background and data sources
   
 library(vegan)
-tree<-read.csv("data_folder/10+cm.csv")
+library(tidyr)
+tree<-read.csv("R_input/10+cm.csv")
 table(tree$Stand)
 tree$Plot.ID<-paste(tree$Stand, tree$Plot) 
 dim(tree)
@@ -34,6 +35,8 @@ m1 <- metaMDS(use, distance = "bray", k = 2, trymax = 200,
 
 sites<-rownames(use)
 
+
+par(mfrow=c(1,1))
 # Visualize the NMDS ordination
 plot(m1, display = c("sites", "species"), choices = c(1,2), type = "n", shrink = TRUE)
 
@@ -58,3 +61,7 @@ legend("topright", legend = paste(c("Mid","Old","Young")),
 ordiellipse(m1, com$Stand, display = "sites", kind = "sd", label = T, cex=2)
 
 title(main ="NMDS Ordination of MELNHE Plots in Bartlett")
+
+
+
+

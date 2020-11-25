@@ -161,11 +161,17 @@ g1<-ggplot(gav, aes(x=BA, y=pri, col=Treatment,group=Treatment, shape=Age))+geom
   scale_fill_manual(values=c("grey","blue","red","purple"))+theme_classic()+geom_smooth(method="lm", se=F, size=2, linetype="dashed")+
   ylab("Photochemical reflective index")+xlab("Basal area (m2)")+theme(text=element_text(size=20))+ggtitle("b")
 g1
-g2<-ggplot(rd, aes(x=BA, y=refl, shape=Age, group=Treatment, col=Treatment))+geom_point(size=2)+
+
+
+g2<-ggplot(rd, aes(x=BA, y=refl, shape=Age,size=3, group=Treatment, col=Treatment))+geom_point(size=2)+
 scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
   xlab("Basal area (m2)")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
-  ggtitle("a")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
+  ggtitle("")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
 g2
+
+
+write.csv(rd, file="avg.vis.csv")
+
 ggarrange(g2, g1, common.legend=T, legend="bottom")
 
 head(avg.vis)

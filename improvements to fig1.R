@@ -15,9 +15,9 @@ library(rgeos)
 ###########
 
 ## google account
-register_google("AIzaSyB7234pEGzoCTh
-@#
-6KH2zJash0oplcQ-GzeE" )
+register_google("AIzaSyB7234pEGzoC
+                #
+                Th6KH2zJash0oplcQ-GzeE" )
 google_account()
 has_google_key()
 google_key()  
@@ -34,9 +34,9 @@ stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
 
 # make lat long re projection
 spgeo <- spTransform(stands, CRS("+proj=longlat +datum=WGS84"))
-fortify(spgeo)
+as<-fortify(spgeo)
 cen <- as.data.frame(getSpPPolygonsLabptSlots(spgeo))
-
+as
 spgeo$staplo<-paste(spgeo$stand, spgeo$plot)
 spgeo
 cen$staplo<-spgeo$staplo
@@ -86,7 +86,7 @@ ggmap(mel)+
   geom_polygon(data = Cstand, aes(long, lat, fill=Treatment,group = group),size=10)+
   geom_polygon(data = Cstand, aes(long, lat, fill=Treatment,group = group),col="white",size=0.5)+
   scale_fill_manual(values=c("black","red","blue","purple"))+theme(legend.position = "bottom")+guides(alpha=F)+
-  xlim(-71.318, -71.265)+ylim(44.037, 44.06)+theme(legend.position = "bottom")+theme(plot.title = element_text(size = 40, face = "bold"))
+  xlim(-71.323, -71.265)+ylim(44.037, 44.06)+theme(legend.position = "bottom")+theme(plot.title = element_text(size = 40, face = "bold"))
 
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -151,9 +151,9 @@ co.bart<-crop(pic.C7, control3)
 
 
 # this downlaods the lidar chm data
-byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = F,buffer = 200, 
-          easting=east, northing=north, 
-          savepath="data_folder")
+#byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = F,buffer = 200, 
+#          easting=east, northing=north, 
+#          savepath="data_folder")
 
 
 north
@@ -174,12 +174,13 @@ C7crownsPoly <- mcws(treetops = m7tops, CHM = chm7, format = "polygons", minHeig
 par(mfrow=c(1,1))
 #3333 Rgb image
 plotRGB(co.bart)
+plot(control, add=T, lwd=20)
 
 # add treetops to chm
 plot(chm7, axes=F, box=F, legend=T,)
 plot(C7crownsPoly, border = "white", lwd = 2, add = TRUE)
 plot(m7tops, add=T, pch=24,cex=2.5, col="black", bg="yellow")
-
+plot(control, add=T, lwd=20)
 
 
 cube_no_shade <- stack("C7_no_shade.grd")
@@ -191,7 +192,7 @@ mini_noshade <- crop(cube_no_shade,mini)
 plotRGB(mini_noshade, r = 56, g = 30, b = 20, stretch = 'lin')
 plot(C7crownsPoly, border = "white", lwd = 2, add = TRUE)
 plot(m7tops, add=T, pch=24,cex=2.5, col="black", bg="yellow")
-
+plot(control, add=T, lwd=20)
 
 #################################################################################################################################
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
