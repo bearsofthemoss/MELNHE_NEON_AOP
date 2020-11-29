@@ -15,7 +15,9 @@ library(rgeos)
 ###########
 
 ## google account
-register_google("AIzaSyB7234pEGzoCTh6KH2zJash0oplcQ-GzeE" )
+register_google("AIzaSyB7234pEGzoCT
+                ##
+                h6KH2zJash0oplcQ-GzeE" )
 google_account()
 has_google_key()
 google_key()  
