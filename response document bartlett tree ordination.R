@@ -35,19 +35,38 @@ m1 <- metaMDS(use, distance = "bray", k = 2, trymax = 200,
 
 sites<-rownames(use)
 
-
+dev.off()
 par(mfrow=c(1,1))
 # Visualize the NMDS ordination
-plot(m1, display = c("sites", "species"), choices = c(1,2), type = "n", shrink = TRUE)
 
 com$Age<-factor(com$Age, levels=c("Young","Mid-aged","Old"))
-points(m1, display = "sites" , pch = c(0,1,2)[as.factor(com$Age)], cex=2)
 
+col_vector <- factor(com$Age)
+col_palette <- palette()[col_vector]
+col_palette
+
+
+m1$points
+
+points<-as.data.frame(m1$points)
+points$Age<-com$Age
+points$Stand<-com$Stand
+library(tidyverse)
+library(ggplot2)
+ggplot(points, aes(x=MDS1, y=MDS2, col=Age, group=Stand,label=Stand))+geom_point(size=2)+xlab("NMDS 1")+ylab("NMDS 2")+
+  stat_ellipse(aes(x=MDS1, y=MDS2,color=Age,group=Stand,label=Stand),type = "t", level=0.9, size=3)+theme_bw()  +
+   theme(text=element_text(size=20))+scale_color_manual(values=c("green","lime green","forest green"))
+
+
+
+## NMDS ordination in base R
+plot(m1, display = c("sites", "species"), choices = c(1,2), type = "n", shrink = TRUE)
+points(m1, display = "sites", pch = c(0,1,2)[as.factor(com$Age)], cex=2, col=com$Age)
 legend("topright", legend = paste(c("Young","Mid-aged","Old")),pch = c(0,1,2), cex=2)
+text(m1, labels=points$Stand, cex= 1,pos=4) ### label points
+ordiellipse(m1 ,com$Stand, display = "sites", kind = "sd", label = T, cex=2, col=col_palette  )
 
-ordiellipse(m1 ,com$Stand, display = "sites", kind = "sd", label = T, cex=2)
-
-title(main ="NMDS Ordination of MELNHE Plots in Bartlett")
+title(main ="NMDS Ordination of MELNHE Plots in Bartlett Experimental Forest")
 
 
 

@@ -78,26 +78,26 @@ out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 #3
 dev.off()
-par(mfrow=c(1,1))
+par(mfrow=c(1,3))
 ##### N
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.6)
-title(main="  a",   cex.main=1.5,adj = 0)
+title(main="  a",   cex.main=3,adj = 0)
 points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=2)
+       pch=c(16,17,15)[as.factor(out$Age)], cex=3.5)
 
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
+ordiellipse(out[,c(1,2)], groups = out$Treatment, lty = 1, col = c("black","blue","red","purple"), lwd=5)
 ordisurf(out[,c(1,2)]~total_N,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
+legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=2) 
 
 #### P
 plot(out$LD1, out$LD2, type="n",bty="l", col="grey50",xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.6)
-title(main="  b",   cex.main=  1.5,adj = 0)
+title(main="  b",   cex.main=  3,adj = 0)
 points( main="a",out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=2)
+       pch=c(16,17,15)[as.factor(out$Age)], cex=3.5)
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
+ordiellipse(out[,c(1,2)], groups = out$Treatment,  lty = 1, col = c("black","blue","red","purple"), lwd=5)
 ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
 #legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
 #legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
@@ -127,14 +127,15 @@ out$ba<-bap$x[match(out$staplo, bap$staplo )]
 
 out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
 plot(out$LD1, out$LD2, type="n",bty="l", main="", xlab="LD 1 (57%)",ylab="LD 2 (43%)",  cex.lab=1.6)
-title(main="  c",   cex.main=1.5,adj = 0)
+title(main="  c",   cex.main=4,adj = 0)
 points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=2)
+       pch=c(16,17,15)[as.factor(out$Age)], cex=3.5)
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 
 ordisurf(out[,c(1,2)]~ba,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
+ordiellipse(out[,c(1,2)], groups = out$Age,  lty = 1, col = c("black"), lwd=5)
 
-legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
+legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=2) 
 
 
 
