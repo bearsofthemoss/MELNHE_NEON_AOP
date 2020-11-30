@@ -16,7 +16,7 @@ options(stringsAsFactors=F)
 ### https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
 
 # read in shapefile of plot locations
-plots<-readOGR("data_folder","Bartlett_intensive_sites_30x30")
+plots<-readOGR("R_output","Bartlett_intensive_sites_30x30")
 plot(plots)
 # transform to UTM coordinates
 crss <- make_EPSG()
@@ -63,7 +63,9 @@ C9<-stands[stands$stand=="C9",]
 # these are the easting and northings for the plot locations
 east <- centroids[, 1]
 north <-centroids[, 2]
+east
 
+north
 # this downloads the data and saves it to your specified directory.
 # this will ask you if you want to download the files to your computer
 #  commented outif you don't need to download it. 
@@ -374,7 +376,10 @@ f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +x
 
 f.1
 
-spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
+dada<-read.csv("R_input/actual_tops_10_26_greater_0.1.csv")
+dada<-dada[,-1]   # when saving the .csv, the first column values are just X
+spec<-as.data.frame(table(dada$Treatment, dada$Stand) )
+spec
 spec$staplo<-paste(spec$Var2, spec$Var1)
 
 tally$spec<-spec$Freq[match(tally$staplo, spec$staplo)]

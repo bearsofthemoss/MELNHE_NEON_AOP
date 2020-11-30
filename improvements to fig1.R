@@ -15,13 +15,15 @@ library(rgeos)
 ###########
 
 ## google account
-register_google("AIzaSyB7234pEGzoCT
-                ##
-                h6KH2zJash0oplcQ-GzeE" )
+library(ggmap)
+register_google("AIzaSyB7234pEGzoCTh6KH2zJash0oplcQ-GzeE" )
+
 google_account()
 has_google_key()
 google_key()  
 
+#devtools::install_github('oswaldosantos/ggsn')
+library(ggsn)
 
 #### load plots
 plots<-readOGR("R_Output","Bartlett_intensive_sites_30x30")
@@ -49,11 +51,13 @@ names(cen)[names(cen) == "V2"] <- "lat"
 ll_means<-sapply(cen[1:2], mean)
 
 
-Bart <- get_map(location = ll_means,  maptype = "hybrid", source = "google", zoom =7)
+Bart <- get_map(location = ll_means,  maptype = "terrain", source = "google", zoom =7)
 mel <- get_map(location = ll_means,  maptype = "satellite", source = "google", zoom =13)
 C4 <- get_map(location = sapply(cen[1:4,1:2], mean),  maptype = "satellite", source = "google", zoom =18)
 
 
+str(Bart)
+library(ggsn)
 m1<-ggmap(Bart)+geom_point(data=cen[1,],shape=21,col="gold", size=55, stroke=4)+
 #  geom_text(data =cen[1,] , aes(label = paste("Bartlett Experimental Forest")), angle = 0, hjust = .5, vjust=-3,size=7, color = "white")+
   theme(axis.text.x = element_blank(),
@@ -61,8 +65,13 @@ m1<-ggmap(Bart)+geom_point(data=cen[1,],shape=21,col="gold", size=55, stroke=4)+
         axis.ticks = element_blank(),
         rect = element_blank(),
         axis.title.y=element_blank(),
-        axis.title.x=element_blank())+ggtitle("a")+ theme(plot.title = element_text(size = 40, face = "bold"))
-m1
+        axis.title.x=element_blank())+ggtitle("a")+ theme(plot.title = element_text(size = 40, face = "bold"))+
+  scalebar( x.min=-74.8, x.max=-67.8, y.min=41.5, y.max=56.5 ,location = "bottomright", dist = 100, transform=TRUE, dist_unit="km")
+           
+
+  m1
+
+cen
 
 ##############
 
@@ -84,7 +93,9 @@ m2<-ggmap(mel)+
         rect = element_blank(),
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
-        legend.text=element_text(size=15))+ggtitle("b")
+        legend.text=element_text(size=15))+ggtitle("b")+
+  scalebar( x.min=-71.323, x.max=-71.265, y.min=44.037, y.max=44.06 ,location = "bottomright", dist = 1, transform=TRUE, dist_unit="km",
+            st.dist = TRUE, st.bottom = FALSE, st.size = 20,st.color = "black", box.fill = c("black", "white"), box.color="white")
 
 m2
 
@@ -102,6 +113,8 @@ C4_plots<-rbind(C4C, C4N, C4P, C4NP)
 
 
 C4_plots$Treatment<-factor(C4_plots$Treatment, levels=c("Control","N","P","N+P"))
+
+
 m3<-ggmap(C4)+  
   geom_polygon(data = C4_plots, aes(long, lat, fill=Treatment,group = group,alpha=0.2), col="gold", size=2)+
   scale_fill_manual(values=c("black","blue","red","purple"))+theme(legend.position = "bottom")+guides(alpha=F)+
@@ -112,9 +125,17 @@ m3<-ggmap(C4)+
         rect = element_blank(),
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
-        legend.text=element_text(size=15))+ggtitle("c")+theme(plot.title = element_text(size = 40, face = "bold"))
+        legend.text=element_text(size=15))+ggtitle("c")+theme(plot.title = element_text(size = 40, face = "bold"))+
+  scalebar( x.min=-71.3, x.max=-67.8, y.min=41.5, y.max=56.5 ,location = "bottomright", dist = 100, transform=TRUE, dist_unit="km")
+
+str(C4)
 m3
+
 library(ggpubr)
+
+
+
+ggarrange(m1, m2, nrow=1, common.legend = T, legend="bottom")
 
 ggarrange(m1, m2, m3, nrow=1, common.legend = T, legend="bottom")
 
