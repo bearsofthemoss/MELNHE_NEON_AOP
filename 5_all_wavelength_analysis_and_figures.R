@@ -74,7 +74,7 @@ head(abs)
 ### Graphs for abs loadinggs in comparison to spectra
 
 f2<-ggplot(abs, aes(x=wvl, y=value, col=type, group=group))+geom_line(lwd=.8)+theme_classic()+
-  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Importance wavelenths for classification")+
+  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Important wavelengths for classification")+
  theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))+
   scale_color_manual(values=c("green","black"))+ theme(legend.title = element_blank())+
   geom_text(x=720, y=.235, size=5,label="710-735", col="black")+
@@ -93,7 +93,7 @@ abs[abs$value>quantile(abs$value[abs$type=="Treatment_classification"], .97),]
 
 
 f1<-ggplot(ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()+theme_classic()+
-  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("Normalized reflectance")+ggtitle("a)  Hyperspectral reflectance for all trees")+
+  theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("Normalized reflectance")+ggtitle("a)  Tree top spectral reflectance")+
   theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))
 
 f1 
