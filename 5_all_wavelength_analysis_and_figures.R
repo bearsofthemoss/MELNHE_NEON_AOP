@@ -153,25 +153,25 @@ xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=
 
 ################
 
-
 ############################################
 
 
 g1<-ggplot(gav, aes(x=BA, y=pri, col=Treatment,group=Treatment, shape=Age))+geom_point(size=2,)+scale_color_manual(values=c("black","blue","red","purple"))+
   scale_fill_manual(values=c("grey","blue","red","purple"))+theme_classic()+geom_smooth(method="lm", se=F, size=2, linetype="dashed")+
-  ylab("Photochemical reflective index")+xlab("Basal area (m2)")+theme(text=element_text(size=20))+ggtitle("b")
+  ylab("Photochemical reflectance index")+xlab("Basal area"~(m^2)*"")+theme(text=element_text(size=20))+ggtitle("b)")
 g1
 
 
 g2<-ggplot(rd, aes(x=BA, y=refl, shape=Age,size=3, group=Treatment, col=Treatment))+geom_point(size=2)+
 scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
-  xlab("Basal area (m2)")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
-  ggtitle("")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
+  xlab("Basal area"~(m^2)*"")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
+  ggtitle("a)")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
 g2
 
 
 write.csv(rd, file="avg.vis.csv")
 
+library(ggpubr)
 ggarrange(g2, g1, common.legend=T, legend="bottom")
 
 head(avg.vis)
@@ -187,7 +187,7 @@ head(gat)
 
 #corr plots
 
-tabs_perc<-read.csv("R_output/PLSDA_confuperc_age_11comps (1).csv")
+tabs_perc<-read.csv("R_output/PLSDA_confuperc_age_12_2.csv")
 
 col <- colorRampPalette(c("black","black","brown","gold","forestgreen")) 
 
@@ -201,3 +201,43 @@ mtext("Reference",at = 2, line = 0, cex=1.3)
 dev.off()
 
 finmods_age_11comps
+
+
+
+
+
+
+
+
+
+##############################
+
+# ggplot for corr plots
+trt<-read.csv("R_output/PLSDA_confuperc_treat_12_2.csv")
+age<-read.csv("R_output/PLSDA_confuperc_age_12_2.csv")
+
+head(age)
+head(trt)
+
+trt$perc<-round(trt[,3], 2)
+trt$Prediction<-factor(trt$Prediction, levels=c("Control","N","P","NP"))
+trt$Reference<-factor(trt$Reference, levels=c("NP","P","N","Control"))
+ggplot(trt, aes(Prediction, Reference )) +
+  xlab("Prediction") +ylab("Reference") +
+  geom_tile(aes(fill = perc), color = "black") +theme_classic()+
+  scale_fill_gradientn(colours = c("red", "light green", "forest green"), values = c(0,0.1,1))+
+  stat_bin2d(geom="text", aes(label=perc), size=6)+coord_fixed()+  
+  theme(legend.text = element_text(size = 12),
+        axis.title=element_text(size=16),
+        axis.title.x = element_text(size = 20, margin = margin(10,10,0,0)),
+        axis.text.x = element_text(angle = 340, hjust = 1),
+        legend.title = element_blank(),
+        axis.text=element_text(size=14),legend.position = "none",
+        axis.line = element_blank(),  axis.ticks = element_blank(),
+        panel.background = element_rect(fill="white"),
+        plot.background = element_rect(fill="white"))+  scale_x_discrete(position = "top")
+
+
+
+
+

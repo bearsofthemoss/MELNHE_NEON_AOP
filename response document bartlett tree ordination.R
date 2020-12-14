@@ -53,9 +53,12 @@ points$Age<-com$Age
 points$Stand<-com$Stand
 library(tidyverse)
 library(ggplot2)
-ggplot(points, aes(x=MDS1, y=MDS2, col=Age, group=Stand,label=Stand))+geom_point(size=2)+xlab("NMDS 1")+ylab("NMDS 2")+
-  stat_ellipse(aes(x=MDS1, y=MDS2,color=Age,group=Stand,label=Stand),type = "t", level=0.9, size=3)+theme_bw()  +
-   theme(text=element_text(size=20))+scale_color_manual(values=c("green","lime green","forest green"))
+library(ggforce)
+
+ggplot(points, aes(x=MDS1, y=MDS2, col=Age, group=Stand,label=Stand))+geom_point(size=4)+xlab("NMDS 1")+ylab("NMDS 2")+
+  geom_mark_ellipse(aes( label = Stand, size=3), label.fontsize = 20) +scale_color_manual(values=c("green","yellow","forest green"))+
+  theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+theme(text=element_text(size=20))+
+  guides(size=F)
 
 
 
