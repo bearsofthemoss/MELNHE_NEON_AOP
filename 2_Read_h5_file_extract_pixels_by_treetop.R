@@ -35,7 +35,7 @@ bright_norm <- function(x){
 # tree tops
 #trees <- readOGR("./data_folder/","bart_ttops_6_22_2020")
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops_10_26_2020")
+trees <- readOGR("data_folder","bart_ttops_10_26_2020")
 
 
 # transform to UTM coordinate
@@ -90,7 +90,7 @@ ff
 
 # 
 #for (k in 1:length(ff)){
-  (f <- ff[4])
+  (f <- ff[5])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -339,4 +339,9 @@ mean(table(ldada$staplo))/345
 
 
 write.csv(spectra_all, file="R_input/actual_tops_10_26_greater_0.1.csv")
-
+head(ldada)
+ldada$group=paste(ldada$treeID, ldada$Treatment)
+table(ldada$treeID)
+ggplot(ldada, aes(x=wvl, y=refl, group=group))+geom_line()+
+theme_classic()  
+  
