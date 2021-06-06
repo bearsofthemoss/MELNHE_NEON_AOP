@@ -64,6 +64,9 @@ C9<-stands[stands$stand=="C9",]
 east <- centroids[, 1]
 north <-centroids[, 2]
 
+east
+
+
 # this downloads the data and saves it to your specified directory.
 # this will ask you if you want to download the files to your computer
 #  commented outif you don't need to download it. 
@@ -140,6 +143,9 @@ m9p<-crop(chm.C9, C9[C9$treat=="P",])
 m9np<-crop(chm.C9, C9[C9$treat=="NP",])
 #####################################
 
+
+plot(C1, add=T)
+plot(chm.C1)
 ### define variable window function
 #0.05, and 0.6 are defaults
 
@@ -328,7 +334,7 @@ plot(bart_ttops, add=T, axes=T)
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 
-#writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_10_26_2020", driver="ESRI Shapefile")
+writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_4_24_2021", driver="ESRI Shapefile")
 
 
 

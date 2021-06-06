@@ -13,6 +13,7 @@ library(rgdal)
 library(rgeos)
 source("./band2raster.R")
 
+
 # brightness normalization function
 bright_norm <- function(x){
   x_norm <- x/sqrt(sum(x^2))
@@ -56,17 +57,17 @@ north <-centroids[, 2]
 east
 ## If you need to download the tiles
 
-#byTileAOP(dpID="DP3.30006.001",site="BART",
-#            year="2017", easting= east,
-#            northing = north,
-#            buffer=70, savepath = "./data_folder/Bart_tiles",check.size = T)
+byTileAOP(dpID="DP3.30006.001",site="BART",
+            year="2017", easting= east,
+            northing = north,
+            buffer=70, savepath = "./data_folder/Bart_tiles",check.size = T)
 
 
 # Download DSMs
-#byTileAOP(dpID="DP3.30024.001",site="BART",
-#          year="2017", easting= east,
-#          northing = north,
-#          buffer=50, savepath = "./data_folder/Bart_DSM/",check.size = T)
+byTileAOP(dpID="DP3.30024.001",site="BART",
+          year="2017", easting= east,
+          northing = north,
+          buffer=50, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 #PC- Alex's wd
