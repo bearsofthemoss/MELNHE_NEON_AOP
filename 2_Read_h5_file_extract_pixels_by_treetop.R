@@ -31,12 +31,11 @@ bright_norm <- function(x){
 #plots <- readOGR("./data_folder","Bartlett_intensive_sites_30x30")
 
 # Alex's plots
- plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
+plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
+plot(plots)
 
-# tree tops
-#trees <- readOGR("./data_folder/","bart_ttops_6_22_2020")
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops_10_26_2020")
+ trees <- readOGR("data_folder","bart_ttops_4_24_2021")
 
 
 # transform to UTM coordinate
@@ -54,20 +53,18 @@ centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
 # these are the easting and northings for the stand locations
 east <- centroids[, 1]
 north <-centroids[, 2]
-east
-## If you need to download the tiles
 
 byTileAOP(dpID="DP3.30006.001",site="BART",
             year="2017", easting= east,
             northing = north,
-            buffer=70, savepath = "./data_folder/Bart_tiles",check.size = T)
+            buffer=200, savepath = "./data_folder/Bart_tiles",check.size = T)
 
 
 # Download DSMs
 byTileAOP(dpID="DP3.30024.001",site="BART",
           year="2017", easting= east,
           northing = north,
-          buffer=50, savepath = "./data_folder/Bart_DSM/",check.size = T)
+          buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 #PC- Alex's wd
@@ -332,7 +329,11 @@ table(ldada$Treatment, ldada$Stand)/345
 table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
 
-# needC2
+
+
+# needC2 P!
+
+
 # min,max, and mean number of tree tops by plot.  6 is probably too low right?
 min(table(ldada$staplo))/345
 max(table(ldada$staplo))/345
