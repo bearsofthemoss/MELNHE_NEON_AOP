@@ -70,11 +70,18 @@ east
 # this downloads the data and saves it to your specified directory.
 # this will ask you if you want to download the files to your computer
 #  commented outif you don't need to download it. 
+
 byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
 
-# once you download them, you'll need to set wd and tead each file.  Here they are.
+# this downloads 15 cm Rgb data for the whole site.  # It will be used later
+byTileAOP("DP3.30010.001", site="BART", year="2017", check.size = F,buffer = 200, 
+          easting=east, northing=north, 
+          savepath="data_folder")
+
+
+# once you download them, you'll need to set wd and read each file.  Here they are.
 # setwd()    # enter your wd.
 chm.C1a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
 chm.C1b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
@@ -97,6 +104,8 @@ chm.C9<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3
 
 ## this makes a canopy height per plot
 ############################################
+plot(chm.C1)
+head(C1)
 m1c<-crop(chm.C1, C1[C1$treat=="Control",])
 m1n<-crop(chm.C1, C1[C1$treat=="N",])
 m1p<-crop(chm.C1, C1[C1$treat=="P",])
@@ -144,16 +153,17 @@ m9np<-crop(chm.C9, C9[C9$treat=="NP",])
 #####################################
 
 
-plot(C1, add=T)
+
 plot(chm.C1)
+plot(C1, add=T)
 ### define variable window function
 #0.05, and 0.6 are defaults
 
 ### this is important!  I adjusted trees here, based on 
 
-lin.C1 <- function(x){x * 0.002}
-lin.C2 <- function(x){x * 0.002}
-lin.C3 <- function(x){x * 0.002}
+lin.C <- function(x){x * 0.02}
+lin.C2 <- function(x){x * 0.02}
+lin.C3 <- function(x){x * 0.02}
 lin.C4 <- function(x){x * 0.02}
 lin.C5 <- function(x){x * 0.02}
 lin.C6 <- function(x){x * 0.02}
@@ -164,20 +174,37 @@ lin.C9 <- function(x){x * 0.02}
 #############################################################################
 # start automating tree tops
 #############################################################################
-plot(chm.C1)
-plot(C1, add=T)
+plot(C1)
+plot(chm.C1, add=T)
+
+plot(C1,add=T)
+
+plot(C1_ttops, add=T)
+
 
 m1c <- mask(crop(chm.C1, extent(C1[C1$Treatment=="Control",])), C1[C1$Treatment=="Control",])
 m1n <- mask(crop(chm.C1, extent(C1[C1$Treatment=="N",])),C1[C1$Treatment=="N",] )
 m1p <- mask(crop(chm.C1, extent(C1[C1$Treatment=="P",])),C1[C1$Treatment=="P",] )
 m1np <- mask(crop(chm.C1, extent(C1[C1$Treatment=="NP",])),C1[C1$Treatment=="NP",] )
-m1ctops <- vwf(CHM = m1c, winFun = lin.C1, minHeight = 12)
+
+
+library(ForestTools)
+library(uavRst)
+
+tpos<-treepos_FT(chm = m1c,
+  winFun = lin.C,
+  minTreeAlt = 4,
+  maxCrownArea = maxCrownArea,
+  verbose = TRUE)
+
+
+m1ctops <- vwf(CHM = m1c, winFun = lin.C, minHeight = 12)
 m1ctops$Treatment<-"Control"
-m1ntops <- vwf(CHM = m1n, winFun = lin.C1, minHeight = 3)
+m1ntops <- vwf(CHM = m1n, winFun = lin.C, minHeight = 3)
 m1ntops$Treatment<-"N"
-m1ptops <- vwf(CHM = m1p, winFun = lin.C1, minHeight = 3)
+m1ptops <- vwf(CHM = m1p, winFun = lin.C, minHeight = 3)
 m1ptops$Treatment<-"P"
-m1nptops<- vwf(CHM = m1np,winFun = lin.C1, minHeight = 3)
+m1nptops<- vwf(CHM = m1np,winFun = lin.C, minHeight = 3)
 m1nptops$Treatment<-"NP"
 ##
 m2c <- mask(crop(chm.C2, extent(C2[C2$Treatment=="Control",])), C2[C2$Treatment=="Control",])
@@ -334,7 +361,7 @@ plot(bart_ttops, add=T, axes=T)
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_4_24_2021", driver="ESRI Shapefile")
+writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2_19_2022_0.02", driver="ESRI Shapefile")
 
 
 
@@ -400,15 +427,9 @@ ggarrange(f.1, f.2, common.legend = 2, nrow=1, legend="bottom")
 ##############################################################################
 par(mfrow=c(3,3))
 
-#Better inspect tree tops, average crown width
-plot(chm.C3, axes=F)
-plot(C3, add=T)
-plot(chm.C5, axes=F)
-plot(C5, add=T)
-plot(chm.C9, axes=F)
-plot(C9, add=T, lwd=3)
 
 ####
+
 pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
 pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
 pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")

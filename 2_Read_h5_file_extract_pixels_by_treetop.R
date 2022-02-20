@@ -32,13 +32,20 @@ bright_norm <- function(x){
 
 # Alex's plots
 plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
-plot(plots)
 
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops_4_24_2021")
+ trees <- readOGR("data_folder","bart_ttops_2_19_2022_0.02")
+
+ 
+ par(mfrow=c(1,1))
+ 
+ plot(plots)
+plot(trees) 
 
 
-# transform to UTM coordinate
+
+ 
+ # transform to UTM coordinate
 crss <- make_EPSG()
 
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
@@ -50,14 +57,18 @@ plots_UTM <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
 # centroids are the 'plot centers'. This script works with point data.
 centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
 
-# these are the easting and northings for the stand locations
-east <- centroids[, 1]
-north <-centroids[, 2]
 
-byTileAOP(dpID="DP3.30006.001",site="BART",
-            year="2017", easting= east,
-            northing = north,
-            buffer=200, savepath = "./data_folder/Bart_tiles",check.size = T)
+
+
+
+# these are the easting and northings for the stand locations
+east <- centroids[, 2]
+north <-centroids[, 1]
+
+centroids
+
+byFileAOP(dpID="DP3.30006.001",site="BART",
+            year="2017", savepath = "./data_folder/Bart_tiles",check.size = T)
 
 
 # Download DSMs
@@ -69,8 +80,9 @@ byTileAOP(dpID="DP3.30024.001",site="BART",
 
 #PC- Alex's wd
  ff <- list.files("data_folder/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
+ 
  dd <- list.files("data_folder/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
-
+ff
  # Anna's
 #ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
 #dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
@@ -310,15 +322,16 @@ for (k in 1:length(ff)){
 }
 
 
+
 ### combine and save
 spectra_all <- do.call(rbind, spectra_df)
 head(spectra_all[ ,1:10])
 
 
-
+dim(spectra_all)
 
 ## make a 'long' dada
-ldada<-gather(spectra_all, "wvl","refl",7:351)
+ldada<-gather(spectra_all, "wvl","refl",6:350)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
@@ -331,14 +344,5 @@ table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
 
 
-# needC2 P!
-
-
-# min,max, and mean number of tree tops by plot.  6 is probably too low right?
-min(table(ldada$staplo))/345
-max(table(ldada$staplo))/345
-mean(table(ldada$staplo))/345
-
-
-write.csv(spectra_all, file="R_input/actual_tops_10_26_greater_0.1.csv")
+write.csv(spectra_all, file="R_input/actual_tops_2_20_greater_0.1.csv")
 
