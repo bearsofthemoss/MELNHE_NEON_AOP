@@ -19,17 +19,6 @@ bright_norm <- function(x){
   x_norm <- x/sqrt(sum(x^2))
   return(x_norm)}
 
-# Alex's wd:
-# setwd("C:\\Users\\aryoung\\Documents\\GitHub\\MELNHE_NEON_AOP")
-# Anna's wd:
-#setwd("~//Documents/CABO/Bartlett_Alex/")
-
-## read plot shapefiles
-
-## plots
-# Anna's plot file
-#plots <- readOGR("./data_folder","Bartlett_intensive_sites_30x30")
-
 # Alex's plots
 plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
 plot(plots)
