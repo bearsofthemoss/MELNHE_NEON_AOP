@@ -154,8 +154,10 @@ m9np<-crop(chm.C9, C9[C9$treat=="NP",])
 
 
 
-plot(chm.C1)
-plot(C1, add=T)
+
+plot(chm.C4)
+plot(C4, add=T)
+plot(C2, add=T)
 ### define variable window function
 #0.05, and 0.6 are defaults
 
@@ -189,13 +191,13 @@ m1np <- mask(crop(chm.C1, extent(C1[C1$Treatment=="NP",])),C1[C1$Treatment=="NP"
 
 
 library(ForestTools)
-library(uavRst)
-
-tpos<-treepos_FT(chm = m1c,
-  winFun = lin.C,
-  minTreeAlt = 4,
-  maxCrownArea = maxCrownArea,
-  verbose = TRUE)
+# library(uavRst)
+# 
+# tpos<-treepos_FT(chm = m1c,
+#   winFun = lin.C,
+#   minTreeAlt = 4,
+#   maxCrownArea = maxCrownArea,
+#   verbose = TRUE)
 
 
 m1ctops <- vwf(CHM = m1c, winFun = lin.C, minHeight = 12)
@@ -358,10 +360,12 @@ plot(bart_ttops, add=T, axes=T)
 ######################################################################################################
 
 
+table(bart_ttops$Stand, bart_ttops$Treatment)
+
 ## this writing of the shapefile could be made to work in the new github framework we're working in.
 # write the shapefile
 
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2_19_2022_0.02", driver="ESRI Shapefile")
+writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_3_13_2022_0.02", driver="ESRI Shapefile")
 
 
 

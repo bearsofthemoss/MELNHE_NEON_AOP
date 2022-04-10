@@ -67,22 +67,27 @@ north <-centroids[, 1]
 
 centroids
 
-byFileAOP(dpID="DP3.30006.001",site="BART",
-            year="2017", savepath = "./data_folder/Bart_tiles",check.size = T)
+byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
+          northing = north,
+          year="2019",buffer = 200, savepath = "./data_folder/Bart_tiles/",check.size = T)
 
 
 # Download DSMs
 byTileAOP(dpID="DP3.30024.001",site="BART",
-          year="2017", easting= east,
+          year="2019", easting= east,
           northing = north,
           buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 #PC- Alex's wd
- ff <- list.files("data_folder/Bart_tiles",pattern = ".h5", recursive = T, full.names = T)
- 
- dd <- list.files("data_folder/Bart_DSM",pattern = "DSM.tif", recursive = T, full.names = T)
+ ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
 ff
+ 
+
+length(ff) 
+dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
+dd
+#dd<- dd[c(c(2,4,12,13,6,12,3,8,5,7))] 
  # Anna's
 #ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
 #dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
@@ -92,15 +97,12 @@ ff
 # Extract image information
 spectra_df <- list()
 
-###### get shademask for stands
-#rC3<-316000_4878000
-#rC5<-314000_4878000
-#rC9<-317000_4879000
-ff
+length(ff)
 
-# 
+
+
 for (k in 1:length(ff)){
-  (f <- ff[k])
+   (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -167,7 +169,7 @@ for (k in 1:length(ff)){
   
   #########################################################
   ## index hyperspectral .h5 file 'f', call it nami. Use the 11th slot to match the .h5 tile to the chm .tif file 
-  nami<-sapply(strsplit(f,"/"),"[",11)  
+  nami<-sapply(strsplit(f,"/"),"[",13)  
   nami
   
   ### plot
@@ -199,8 +201,8 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  #plot(ndvi_calc)
-  #plot(plots_UTM, col=2, add=T)
+  plot(ndvi_calc, add=T)
+  plot(plots_UTM, col=2)
   
   #For Anna's wd: save if needed
   # writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), 
@@ -209,12 +211,8 @@ for (k in 1:length(ff)){
   # read again 
   # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
   h5closeAll()
-  ##################################################################################
-  
-  ##################################################################################
- 
-  ##################################################################################
 
+  
   ### Now that the tile is processed, we need to
   # Remove water absorption bands, index for good bands
   good <- which((as.numeric(wvl)>400 & as.numeric(wvl)<1340|
@@ -225,7 +223,7 @@ for (k in 1:length(ff)){
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.9 # set NDVI threshold, could be 0.6
+  ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
   # plot(ndvi_lim)
   # plot(plots_UTM, add=T)
   
@@ -313,18 +311,19 @@ for (k in 1:length(ff)){
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
-  if(length(trees_in) >0){
+  if(length(trees_in) >=1){
     spectra <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)
     spectra_df[[k]] <- as.data.frame(spectra@data)
   }else{
-    spectra_df[[4]] <- NULL
+    spectra_df[[k]] <- NULL
   }
 }
 
 
 
-### combine and save
+ ### combine and save
 spectra_all <- do.call(rbind, spectra_df)
+
 head(spectra_all[ ,1:10])
 
 
@@ -337,6 +336,10 @@ ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
 
+head(ldada)
+
+table(ldada$wvl)
+
 # look at number of obs per plot
 table(ldada$Treatment, ldada$Stand)/345  
 table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
@@ -344,5 +347,6 @@ table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
 
 
-write.csv(spectra_all, file="R_input/actual_tops_2_20_greater_0.1.csv")
+
+write.csv(spectra_all, file="R_input/actual_tops_4_10.csv")
 
