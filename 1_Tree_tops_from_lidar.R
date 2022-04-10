@@ -71,6 +71,11 @@ east
 # this will ask you if you want to download the files to your computer
 #  commented outif you don't need to download it. 
 
+byTileAOP(dpID="DP3.30015.001", site="BART", 
+          year="2017", easting=east,
+          northing=north,
+          buffer=200, savepath="data_folder")
+
 byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
@@ -83,6 +88,8 @@ byTileAOP("DP3.30010.001", site="BART", year="2017", check.size = F,buffer = 200
 
 # once you download them, you'll need to set wd and read each file.  Here they are.
 # setwd()    # enter your wd.
+
+getwd()
 chm.C1a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
 chm.C1b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
 chm.C1 <- raster::merge(chm.C1a,chm.C1b)
