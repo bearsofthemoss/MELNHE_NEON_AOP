@@ -9,7 +9,7 @@ library(agricolae)
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-read.csv("R_input/actual_tops_10_26_greater_0.1.csv")
+dada<-read.csv("R_input/actual_tops_4_10.csv")
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
@@ -32,11 +32,17 @@ head(chem)
 
 library(tidyr)
 # gather spectra for averaging
-spectra_gather<-gather(dada, "wvl","refl",7:351)
+names(dada)
+spectra_gather<-gather(dada, "wvl","refl",6:350)
+table(spectra_gather$height)
+
+names(spectra_gather)
+spectra_gather$plot<-paste(spectra_gather$Stand, spectra_gather$Treatment)
 head(spectra_gather)
 table(spectra_gather$Stand)
 # calculate plot-level average
-dadam <-aggregate(list(refl=spectra_gather$refl), by=list(Stand=spectra_gather$Stand,Age=spectra_gather$Age, wvl=spectra_gather$wvl, Treatment=spectra_gather$Treatment, Plot=spectra_gather$layer), FUN="mean", na.rm=T)
+names(spectra_gather)
+dadam <-aggregate(list(refl=spectra_gather$refl), by=list(Stand=spectra_gather$Stand,Age=spectra_gather$Age, wvl=spectra_gather$wvl, Treatment=spectra_gather$Treatment, Plot=spectra_gather$plot), FUN="mean", na.rm=T)
 dadam <- dadam[complete.cases(dadam),] ### pixels
 # convert wavelengths to just have numeric values
 dadam$wvl<-as.numeric(gsub(".*_","",dadam$wvl))
@@ -51,12 +57,22 @@ names(dadam)
 dim(dadam)
 library(tidyr)
 head(dadam)
-pre_lda<-spread(dadam, wvl,refl) ### means
+pre_lda<-spread(spectra_gather, wvl,refl) ### means
+
 head(pre_lda[1:10])
 dim(pre_lda)
-dat_lda<-pre_lda[,c(3,5:349)]
-head(dat_lda[1:10,1:10])
-res <- lda(as.factor(Treatment) ~., data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
+names(pre_lda)
+dat_lda<-pre_lda[,c(4,8:352)]
+dim(dat_lda)
+
+
+
+
+
+table(dat_lda$Treatment)
+dim(dat_lda)
+res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
+
 (prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
 out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(res$scaling))
 
@@ -74,7 +90,8 @@ out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 ##  tree-level
 names(dada)
 dada<-dada[complete.cases(dada),]
-t.lda<-dada[,c(5,7:349)]
+
+t.lda<-dada[,c(4,6:350)]
 names(t.lda)
 
 
@@ -120,16 +137,16 @@ legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(ou
 ######
 #3 add stand age
 ## bap is from two to 10 and 10 plus
-tree<-read.csv("data_folder/10+cm.csv")
+tree<-read.csv("R_input/10+cm.csv")
 tree$staplo<-paste(tree$Stand, tree$Plot) 
 tree<-tree[tree$Plot!="5",] # no calcium
 
 #33## make  bap
 bap<-aggregate(tree$BA.m2, list(staplo=tree$staplo,Plot=tree$Plot , Stand=tree$Stand, Age=tree$Age), FUN="sum", simplify=T)
-bap
 
 #333#333#############
-age_lda<-pre_lda[,c(2,5:349)]
+names(pre_lda)
+age_lda<-pre_lda[,c(6,8:352)]
 head(age_lda[1:10,1:10])
 
 
@@ -142,11 +159,19 @@ out <-  as.data.frame(as.matrix(age_lda[,-1]) %*% as.matrix(res$scaling))
 
 ## Add back in plot level information
 out$Stand<-pre_lda$Stand
-out$Plot<-pre_lda$Plot
-out$staplo<-paste(out$Stand, out$Plot)
+table(pre_lda$plot)
+out$Plot<-pre_lda$plot
+out$stat<-paste(out$Stand, out$Plot)
 out$Treatment<-pre_lda$Treatment
 out$Age<-pre_lda$Age
+head(out)
 #
+out$trt<-
+  
+  
+  head(out)
+table(out$staplo)
+head(bap)
 out$ba<-bap$x[match(out$staplo, bap$staplo )]
 
 dev.off()
@@ -158,6 +183,7 @@ points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Trea
        pch=c(16,17,15)[as.factor(out$Age)], cex=2)
 #text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
 
+head(out)
 ordisurf(out[,c(1,2)]~ba,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
 
 legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
@@ -180,8 +206,9 @@ dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
 
 
 names(dada)
-spec.matrix<-dada[,7:351]
-adonis(spec.matrix ~ dada$total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
+spec.matrix<-dada[,6:350]
+adonis(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
+
 
 spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
 # spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels
@@ -203,9 +230,13 @@ PC5<-spec.pca$x[,5]
 PC6<-spec.pca$x[,6]
 
  pcdat<-data.frame(PC1,PC2,PC3,PC4, PC5, PC6)
-dim(dada)
-perm<-cbind(dada[,c(1:6,352:356) ],pcdat)
+pcdat
+ dim(dada)
+perm<-cbind(dada[,c(1:5,351:355) ],pcdat)
 
+names(dada)
 head(perm[1:10])
+names(perm)
+adonis(perm[,11:16] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
 
-adonis(perm[,7:12] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
+

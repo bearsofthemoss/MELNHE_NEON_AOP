@@ -9,7 +9,7 @@ library(tidyr)
 library(data.table)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada<-read.csv("R_input/actual_tops_10_26_greater_0.1.csv")
+dada<-read.csv("R_input/actual_tops_4_10.csv")
 dada<-dada[,-1]
 
 # stand ages
@@ -23,13 +23,24 @@ dada$Age[dada$Stand=="C7"]<-"~100 years old"
 dada$Age[dada$Stand=="C8"]<-"~100 years old"
 dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
+names(dada)
+
 # make a 'long' version of dada
-ldada<-gather(dada, "wvl","refl",7:351)
+ldada<-gather(dada, "wvl","refl",6:350)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
-# min,max, and mean number of tree tops by plot.  6 is probably too low right?
+
+head(ldada)
+
+str(ldada)
+ggplot(ldada, aes(x=wvl, y=refl))+facet_wrap(~Stand)+geom_point()
+
+
+ggplot(ldada, aes(x=wvl, y=refl))+geom_point()
+
+# min,max, and mean number of tree tops by plot.
 min(table(ldada$staplo))/345
 max(table(ldada$staplo))/345
 mean(table(ldada$staplo))/345
@@ -46,6 +57,13 @@ ir$group<-"3"
 ldada<-rbind(li,sw,ir)
 ldada$tree<-paste(ldada$Stand, ldada$Treatment, ldada$treeID)
 ldada$group.tree<-paste(ldada$tree, ldada$group)
+
+
+
+
+
+
+
 #################################################################################################
 
 #### For figure of abs loadings
@@ -76,9 +94,10 @@ library(ggpubr)
 ggarrange(f1, f2, nrow=2)
 
 
-# Just view 1 stand
-C1_ldada<-ldada[ldada$staplo=="C7 Control",]
-ggplot(C1_ldada, aes(x=wvl,col=Stand,group=group.tree, y=refl))+geom_line()
+
+#
+str(ldada)
+
 #######################################################################################################
 
 ## Univariate analysis
@@ -108,21 +127,69 @@ ldada$BA<-bap$x[match(ldada$staplo, bap$staplo)]
 
 ## calculate plot-level PRI avg
 gat<-spread(ldada, "wvl","refl")
-gat$pri<-(gat$`528.76`-gat$`553.8`)/(gat$`528.76` +gat$`553.8`)
+names(gat)
+
+gat$pri<-(as.numeric(gat$`528.99`)- as.numeric(gat$`554.03`))/(as.numeric(gat$`528.99`) +as.numeric(gat$`554.03`))
+
+
+names(gat)
+
 gav<-aggregate(list(pri=gat$pri), by=list(Stand=gat$Stand, Treatment=gat$Treatment, BA=gat$BA), FUN="mean", na.rm=T)
 
 
+
 ## choose the bands for the red edge and AVG VIS
+
 red<-subset(ldada, ldada$wvl>400 & ldada$wvl<700)
+names(red)
 rd<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,wvl=red$wvl, Treatment=red$Treatment,Age=red$Age), FUN="mean")
 avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,BA=red$BA, Treatment=red$Treatment,staplo=red$staplo, Ntrmt=red$Ntrmt, Ptrmt=red$Ptrmt, Age=red$Age), FUN="mean")
 avg.vis
 
+### calculate sd for each wavelenth and stand
+st.err <- function(x) {  sd(x, na.rm=T)/sqrt(length(x))}
+rd.se<-aggregate(list(SE=red$refl), by=list(Stand=red$Stand,wvl=red$wvl, Treatment=red$Treatment,Age=red$Age), FUN=st.err)
+
+
+rd$se<-rd.se$SE
+
 #33 graph to show treatment effect in red edge
 ggplot(rd, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
 facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
+  geom_errorbar(data=rd, mapping=aes(x=wvl, ymin=refl-se, ymax=refl+se) )+
 xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
   ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
+
+###########
+
+edge<-subset(ldada, ldada$wvl<1100 & ldada$wvl>700)
+names(edge)
+ed<-aggregate(list(refl=edge$refl), by=list(Stand=edge$Stand,wvl=edge$wvl, Treatment=edge$Treatment,Age=edge$Age), FUN="mean")
+#avg.edge<-aggregate(list(refl=edge$refl), by=list(Stand=edge$Stand,BA=edge$BA, Treatment=edge$Treatment,staplo=edge$staplo, Ntrmt=edge$Ntrmt, Ptrmt=edge$Ptrmt, Age=edge$Age), FUN="mean")
+#avg.vis
+
+### calculate sd for each wavelenth and stand
+st.err <- function(x) {  sd(x, na.rm=T)/sqrt(length(x))}
+ed.se<-aggregate(list(SE=edge$refl), by=list(Stand=edge$Stand,wvl=edge$wvl, Treatment=edge$Treatment,Age=edge$Age), FUN=st.err)
+
+
+ed$se<-ed.se$SE
+
+#33 graph to show treatment effect in visible 
+ggplot(rd, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
+  facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
+  geom_errorbar(data=rd, mapping=aes(x=wvl, ymin=refl-se, ymax=refl+se) )+
+  xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
+  ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
+
+ggplot(ed, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
+  facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
+  geom_errorbar(data=rd, mapping=aes(x=wvl, ymin=refl-se, ymax=refl+se) )+
+  xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
+  ggtitle("Red edge wavelengths of light")+theme(legend.position="bottom")
+
+
+
 
 
 ############################################
@@ -140,8 +207,11 @@ scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
 ggarrange(g1, g2, common.legend=T, legend="bottom")
 
 head(avg.vis)
+
+library(lme4)
+library(lmerTest)
 anova(lmer(refl ~Ntrmt*Ptrmt+Age+(1|Stand), data=avg.vis))
-anova(lmer(pri ~Ntrmt*Ptrmt+(1|Stand/staplo), data=gat))
+anova(lmer(pri ~Ntrmt*Ptrmt+Age+(1|Stand/staplo), data=gat))
 
 
 
