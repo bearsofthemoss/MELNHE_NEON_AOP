@@ -8,24 +8,29 @@ library(corrplot)
 library(agricolae)
 library(tidyverse)
 
-dat <- read.csv("./data_folder/actual_tops_10_04_greater_0.1.csv", row.names = 1)
+dat <- read.csv("./R_input/actual_tops_4_10.csv", row.names = 1)
 
 dat <- dat[complete.cases(dat),] ### remove NAs
 
-age <- read.csv("./data_folder/age_classes.csv")
-
-dati <- dat %>% left_join(age, by="Stand") %>%
+age <- read.csv("./R_input/age_classes.csv")
+age
+names(dat)
+  dati <- dat %>% left_join(age, by="Stand") %>%
   mutate(treat_age=paste(Stand, Treatment, sep = "_")) %>%
-  select(1:6,352:353,7:351) 
+  select(1:5,6:352) 
+
 
 # see minimum. Alex changed this from 77 to 11.25
 min(table(dati$treat_age))/100*75
 
 
 ### Prepare data
-wv <- colnames(dati)[9:ncol(dati)] ### define wvl range for spectral matrix, check your column names
+wv <- colnames(dati)[6:ncol(dati)] ### define wvl range for spectral matrix, check your column names
 wvl <- substr(wv,6,nchar(wv))
-spec <- dati[,9:ncol(dati)] ### make spectral matrix
+head(wvl)
+  head(dati)
+
+spec <- dati[,6:ncol(dati)] ### make spectral matrix
 
 #### PLSDA differentiating AGE CLASSES #######
 classi <- as.factor(dati$Age) ### define classes 
@@ -37,7 +42,7 @@ for (i in 1:100){
 }
 
 nsims <- 100 ### number of iterations, try 50, or 100?
-compi <- 15 ### max number of components, something to play with, too many and the model crashes
+compi <- 9 ### max number of components, something to play with, too many and the model crashes
 ctrl <- trainControl(method = "repeatedcv", repeats = 10, number=10,
                      summaryFunction = multiClassSummary)
 
@@ -61,6 +66,7 @@ for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shoul
   mods[[nsim]] <- plsFit
 }
 
+ 
 ### Sample overview
 obs_cal <- dati[inTrain,] 
 table(obs_cal$treat_age)
