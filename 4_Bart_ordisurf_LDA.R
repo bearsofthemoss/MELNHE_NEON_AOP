@@ -1,6 +1,7 @@
 ### Ordinations ################
 ### Anna Schweiger Nov 6 2019- Alex Young 10_4_2020 ###
 library(tidyverse)
+
 library(MASS)
 library(plotly)
 library(vegan)
@@ -166,8 +167,7 @@ out$Treatment<-pre_lda$Treatment
 out$Age<-pre_lda$Age
 head(out)
 #
-out$trt<-
-  
+
   
   head(out)
 table(out$staplo)
