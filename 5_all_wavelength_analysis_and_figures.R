@@ -34,6 +34,9 @@ ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
 head(ldada)
 
+table(ldada$Treatment, ldada$Stand)  ## C2 had no P plot?   Think thats ok!
+
+
 str(ldada)
 ggplot(ldada, aes(x=wvl, y=refl))+facet_wrap(~Stand)+geom_point()
 

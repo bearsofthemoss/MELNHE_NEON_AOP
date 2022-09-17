@@ -23,9 +23,11 @@ bright_norm <- function(x){
 plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
 
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops_2_19_2022_0.02")
-
+ trees <- readOGR("data_folder","bart_ttops_3_13_2022_0.02")
+trees
  
+table(trees$Stand, trees$Treatment)
+
  par(mfrow=c(1,1))
  
  plot(plots)
@@ -337,5 +339,5 @@ table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 
 
 
-write.csv(spectra_all, file="R_input/actual_tops_4_10.csv")
+write.csv(spectra_all, file="R_input/actual_tops_7_29_2022.csv")
 
