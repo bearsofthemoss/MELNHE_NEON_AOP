@@ -41,6 +41,7 @@ names(spectra_gather)
 spectra_gather$plot<-paste(spectra_gather$Stand, spectra_gather$Treatment)
 head(spectra_gather)
 table(spectra_gather$Stand)
+
 # calculate plot-level average
 names(spectra_gather)
 dadam <-aggregate(list(refl=spectra_gather$refl), by=list(Stand=spectra_gather$Stand,Age=spectra_gather$Age, wvl=spectra_gather$wvl, Treatment=spectra_gather$Treatment, Plot=spectra_gather$plot), FUN="mean", na.rm=T)
@@ -88,6 +89,8 @@ out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
 out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 
+
+out
 ##  tree-level
 names(dada)
 dada<-dada[complete.cases(dada),]
@@ -111,7 +114,7 @@ out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
 out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
 
 #3
-dev.off()
+#dev.off()
 par(mfrow=c(1,2))
 plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)")
 title(main="a",   cex.main=1.5,adj = 0)
@@ -135,9 +138,23 @@ ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
 legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
 legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
 
+
+
+### 
+
+
+
+
+
+
+
+
+
 ######
 #3 add stand age
 ## bap is from two to 10 and 10 plus
+
+
 tree<-read.csv("R_input/10+cm.csv")
 tree$staplo<-paste(tree$Stand, tree$Plot) 
 tree<-tree[tree$Plot!="5",] # no calcium
@@ -207,8 +224,7 @@ dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
 
 names(dada)
 spec.matrix<-dada[,6:350]
-adonis(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
-
+adonis2(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
 
 spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
 # spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels

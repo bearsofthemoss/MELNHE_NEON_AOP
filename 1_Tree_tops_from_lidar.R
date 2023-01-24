@@ -76,12 +76,12 @@ byTileAOP(dpID="DP3.30015.001", site="BART",
           northing=north,
           buffer=200, savepath="data_folder")
 
-byTileAOP("DP3.30015.001", site="BART", year="2017", check.size = T,buffer = 200, 
+byTileAOP("DP3.30015.001", site="BART", year="2019", check.size = T,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
 
 # this downloads 15 cm Rgb data for the whole site.  # It will be used later
-byTileAOP("DP3.30010.001", site="BART", year="2017", check.size = F,buffer = 200, 
+byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
 
@@ -445,6 +445,8 @@ pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Cam
 pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
 pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
 
+getwd()
+pic.C2<- stack("data_folder\DP3.30010.001\neon-aop-products\2019\FullSite\D01\2019_BART_5\L3\Camera\Mosaic")
 
 
 
