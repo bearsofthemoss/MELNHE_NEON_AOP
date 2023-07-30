@@ -1,0 +1,7 @@
+*.tif
+*.csv
+
+*.Rproj.user/
+*.json
+*.RData
+*.Rhistory
