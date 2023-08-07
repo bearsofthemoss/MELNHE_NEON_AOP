@@ -4,10 +4,12 @@ library(sf)
 library(maps)
 library(rnaturalearth)
 library(rnaturalearthdata)
-#
+library(maps)
+library(ggspatial)
 library(ggmap)
 library(gridExtra)
-#
+library(ggpubr) # for showing 2 ggplots in 1 pane.
+
 
 library(neonUtilities)
 library(ForestTools)
@@ -18,14 +20,22 @@ library(rgeos)
 
 par(mfrow=c(2,2))
 ###### PART 1:   Map of NH
-world <- ne_countries(scale = "medium", returnclass = "sf")
+
 sites <- data.frame(longitude = c(-71.28731), latitude = c(44.06388 ))
-states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
-states <- cbind(states, st_coordinates(st_centroid(states)))
+
+urb <- ne_download(scale = 10, type = "urban_areas",returnclass = "sf", category = 'cultural', destdir = file.path(here::here()))
+state <- ne_download(scale = 10, type = "states",returnclass = "sf", category = 'cultural', destdir = file.path(here::here(),project_folder,"rnaturalearth_layers"))
+road <- ne_download(scale = 10, type = "roads",returnclass = "sf", category = 'cultural', destdir = file.path(here::here(),project_folder,"rnaturalearth_layers"))
+ocean <- ne_download(scale = 10, type = "ocean",returnclass = "sf", category = 'physical', destdir = file.path(here::here(),data_folder,"rnaturalearth_layers"))
+
 
 ggplot(data = world) +  geom_sf() +   geom_sf(data = states, fill = NA) + 
   geom_point(data = sites, aes(x = longitude, y = latitude), size = 4, shape = 23, fill = "darkred") +
-  coord_sf(xlim = c(-75, -67), ylim = c(40, 47), expand = FALSE)
+  coord_sf(xlim = c(-75, -67), ylim = c(40, 47), expand = FALSE)+
+  annotation_scale(location = "tl", width_hint = 0.4,pad_x = unit(.2, "in"), pad_y = unit(.3, "in"), unit_category = "imperial", text_cex = 1.5 ) +
+  annotation_north_arrow(location = "br", which_north = "true",
+                         pad_x = unit(.1, "in"), pad_y = unit(.55, "in"),
+                         style = north_arrow_fancy_orienteering)
 
 
 
@@ -38,22 +48,31 @@ crss <- make_EPSG()
 UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
   dplyr::filter(grepl("19N", note))
 stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
-C7<-stands[stands$stand =="C7",]
+
+
+dx <- subset(stands, stands$stand== "C2" | stands$stand == "C4")
+
+
 # centroids are the 'plot centers'. code for Lidar tiles works with point data
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(C7))
+centroids <- as.data.frame(getSpPPolygonsLabptSlots(dx))
 east<-centroids$V1
 north<-centroids$V2
 
+
 # this downloads 15 cm Rgb data for the whole site.
-byTileAOP("DP3.30010.001", site="BART", year="2017", check.size = F,buffer = 200, 
+byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200, 
           easting=east, northing=north, 
           savepath="data_folder")
 
-pic.C7<-stack("data_folder\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_315000_4880000_image.tif")
-C7<-stands[stands$stand=="C7",]
-control<-C7[C7$plot=="1", ]
-control3<-extent(control)+10
-co.bart<-crop(pic.C3, control3)
+pic.C24.1<-raster("data_folder\\DP3.30010.001\\neon-aop-products\\2019\\FullSite\\D01\\2019_BART_5\\L3\\Camera\\Mosaic\\2019_BART_5_317000_4880000_image.tif")
+
+
+plot(pic.C24.1)
+
+plot(dx)
+plotRGB(pic.C24.1, add=T)
+
+co.bart<-crop(pic.C24.1, dx)
 
 
 
