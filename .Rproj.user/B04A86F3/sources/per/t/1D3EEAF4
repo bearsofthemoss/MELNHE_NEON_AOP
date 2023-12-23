@@ -1,0 +1,26 @@
+{
+    "id": "1D3EEAF4",
+    "path": "~/GitHub/MELNHE_NEON_AOP/processing schema.R",
+    "project_path": "processing schema.R",
+    "type": "r_source",
+    "hash": "713469482",
+    "contents": "",
+    "dirty": false,
+    "created": 1702920217596.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "79,2",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1702922601,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1702922601176,
+    "read_only": false,
+    "read_only_alternatives": []
+}
