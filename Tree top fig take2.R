@@ -1,12 +1,14 @@
 
 #Compare to actual top numbers
-
+library(sf)
 
 ## Tree top analysis
 
 
 # Alex's tree tops
-trees <- readOGR("data_folder","bart_ttops")
+stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+
+trees <- st_read(file.path("data_folder","bart_ttops.shp"))
 
 lid_trees <- as.data.frame(table(trees$Stand, trees$Treatment))
 lid_trees$Stand <- lid_trees$Var1
@@ -25,11 +27,6 @@ tally<-read.csv("R_input\\Tally_of_10_plus_cm_stems.csv")
 
 # by 30x30 m area.   900 m2
 tally$density_hectare <-tally$actual  # / 900 * 10000
-
-
-
-
-
 
 
 tally$lid_density <-lid_trees$lid_density[match(tally$staplo,lid_trees$staplo)]
@@ -56,8 +53,9 @@ f.1<-ggplot(tally ,aes(x=density_hectare, y=lid_density, col=Age, label=Stand))+
 
 f.1
 
+names(tally)
 
-
+library(tidyr)
 tu <- gather(tally, "Type","density", c("density_hectare","lid_density"))
 
 ggplot(tu, aes(x=staplo, y=density, fill=Type)) + geom_bar(stat="identity", position="dodge") + 
@@ -67,6 +65,7 @@ ggplot(tu, aes(x=staplo, y=density, fill=Type)) + geom_bar(stat="identity", posi
   scale_fill_manual(values=c("darkgreen","darkblue")) + theme(legend.position="bottom")
 
 spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
+
 
 
 spec$staplo<-paste(spec$Var2, spec$Var1)
@@ -91,7 +90,16 @@ par(mfrow=c(3,3))
 
 ####
 
-pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
+lidar_path <- file.path(wd, "data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
+
+chm.C2a<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4881000_CHM.tif")
+
+chm.C1a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
+
+
+pic_path <- file.path(wd, "data_folder","DP3.30010.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Camera","Mosaic")
+
+pic.C3<-stack(file.path(pic.path("2017_BART_3_316000_4878000_image.tif")))
 pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
 pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
 

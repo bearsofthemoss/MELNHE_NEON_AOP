@@ -147,6 +147,7 @@ m9p<-crop(chm.C9, C9[C9$Treatment=="P",])
 m9np<-crop(chm.C9, C9[C9$Treatment=="NP",])
 #####################################
 
+##
 lin.C <- function(x){x * 0.02}
 lin.C2 <- function(x){x * 0.02}
 lin.C3 <- function(x){x * 0.02}

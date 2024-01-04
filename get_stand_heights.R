@@ -1,15 +1,4 @@
 
-# get LAI for 3 stands
-library(sp)
-library(rgdal)
-library(stringr) # this is for data management
-library(tidyr)
-library(ggplot2)
-library(raster)
-library(neonUtilities)
-library(rgdal)
-library(rgeos)
-
 
 ####  Alex Young  12-28-2023
 library(neonUtilities)
@@ -61,65 +50,41 @@ stands$Treatment<-sapply(stdf[ ,"staplo"],switch,
 
 
 
- east <- centroids[, 1]
- north <-centroids[, 2]
-
-# 
- byTileAOP(dpID="DP3.30012.001",site="BART",
-            year="2017", easting= east,
-            northing = north,
-            buffer=70, savepath = "LAI",check.size = T)
-
-
-
-#lf<-list.files(path="LAI\\DP3.30012.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Spectrometer\\LAI", recursive = T, full.names = T
-               
-lf<-list.files(path="LAI\\DP3.30012.001\\neon-aop-products\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Spectrometer\\LAI", recursive = T, full.names = T)
-
-
-l8<-raster(lf[1])
-l7<-raster(lf[1])
-l9<-raster(lf[5])
-
-
-par(mfrow=c(1,3))
-plot(C7, main="Stand C7")
-plot(l8, add=T)
-plot(C7, add=T)
-
-plot(C8, main="Stand C8")
-plot(l8, add=T)
-plot(C8, add=T)
-
-plot(C9, main="Stand C9")
-plot(l9, add=T)
-plot(C9, add=T)
+# east <- centroids[, 1]
+# north <-centroids[, 2]
+#
+# the lidar chm
+# byTileAOP(dpID="DP3.30015.001", site="BART", 
+#           year="2019", easting=east,
+#           northing=north,
+#           buffer=500, savepath="data_folder")
 
 
 
-#3 
-lai<-merge(l8, l9 )
 
+lidar_path <- file.path(wd, "data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 
-plot(lai)
-plot(old, add=T)
-
-old$staplo<-paste(old$stand, old$plot)
-old
-
-old
-
-head(old)
-v1 <- raster::extract( lai, old, fun=mean, na.rm=TRUE)
-nom <- sapply(old@polygons , slot, "ID")
-nom
-v1 <- data.frame(ID = nom, Value = v1)
-v1$Stand<-rep(c("C7","C8","C9"), each=4)
-
-old@data
-head(v1)
-ggplot(v1, aes(x=Stand, y=Value))+geom_point()+
-  ggtitle("LAI in C7, C8, C9")+theme_classic()
+chm.C1a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
+chm.C1b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4879000_CHM.tif"))
+chm.C1 <- raster::merge(chm.C1a,chm.C1b)
+chm.C2a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4881000_CHM.tif"))
+chm.C2b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
+chm.C2 <- raster::merge(chm.C2a,chm.C2b)
+chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
+chm.C4<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
+chm.C5<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4878000_CHM.tif"))
+chm.C6<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4878000_CHM.tif"))
+chm.C7<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif"))
+chm.C8 <- raster::merge(chm.C8a,chm.C8b)
+chm.C9<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
 
 
+
+
+raster_values <- intersection(chm.C1, stands[stands$stand=="C1",])
+
+mean_value <- mean(raster_values, na.rm = TRUE)
+sd_value <- sd(raster_values, na.rm = TRUE)
