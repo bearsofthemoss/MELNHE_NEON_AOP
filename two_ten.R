@@ -88,97 +88,32 @@ suppressWarnings(dt1$DBH2019 <- ifelse(!is.na(as.numeric("NA")) & (trimws(as.cha
 
 
 
-# first dataset above
-
-inUrl2  <- "https://pasta.lternet.edu/package/data/eml/knb-lter-hbr/183/1/732e21245d3390747e553abbc2392343" 
-infile2 <- tempfile()
-try(download.file(inUrl2,infile2,method="curl"))
-if (is.na(file.size(infile2))) download.file(inUrl2,infile2,method="auto")
-
-
-dt2 <-read.csv(infile2,header=F 
-               ,skip=1
-               ,sep=","  
-               ,quot='"' 
-               , col.names=c(
-                 "Stand",     
-                 "Plot",     
-                 "Treatment",     
-                 "Subplot",     
-                 "Species",     
-                 "Year",     
-                 "DBH",     
-                 "DeadOrFallen",     
-                 "Notes"    ), check.names=TRUE)
-
-unlink(infile2)
-
-# Fix any interval or ratio columns mistakenly read in as nominal and nominal columns read as numeric or dates read as strings
-
-if (class(dt2$Stand)!="factor") dt2$Stand<- as.factor(dt2$Stand)
-if (class(dt2$Plot)!="factor") dt2$Plot<- as.factor(dt2$Plot)
-if (class(dt2$Treatment)!="factor") dt2$Treatment<- as.factor(dt2$Treatment)
-if (class(dt2$Subplot)!="factor") dt2$Subplot<- as.factor(dt2$Subplot)
-if (class(dt2$Species)!="factor") dt2$Species<- as.factor(dt2$Species)
-if (class(dt2$DBH)=="factor") dt2$DBH <-as.numeric(levels(dt2$DBH))[as.integer(dt2$DBH) ]               
-if (class(dt2$DBH)=="character") dt2$DBH <-as.numeric(dt2$DBH)
-if (class(dt2$DeadOrFallen)!="factor") dt2$DeadOrFallen<- as.factor(dt2$DeadOrFallen)
-if (class(dt2$Notes)!="factor") dt2$Notes<- as.factor(dt2$Notes)
-
-# Convert Missing Values to NA for non-dates
-
-dt2$DBH <- ifelse((trimws(as.character(dt2$DBH))==trimws("NA")),NA,dt2$DBH)               
-suppressWarnings(dt2$DBH <- ifelse(!is.na(as.numeric("NA")) & (trimws(as.character(dt2$DBH))==as.character(as.numeric("NA"))),NA,dt2$DBH))
-
-
-# Here is the structure of the input data frame:
-str(dt2)                            
-
-###
-
-
-###  Work with the 10+ and 2-10
-
-
-##
-head(dt1)
-
-head(dt2)
-
 ## 
-ten <- dt1
-two <- dt2
+
+ten <- dt1 
+names(ten)
+tn <- ten[ , c("Stand","Plot","Treatment","Subplot","Species","CurrentTagNumber","DBH2019","dead2019")]
+
+getwd()
+write.csv(tn, file.path("data_folder","ten_plus_DBH_2019.csv"))
 
 
-names(two)
-table(two$Treatment, two$Year)
+# library(tidyr)
+# library(ggplot2)
+# tg <- gather(ten, "Year","DBH", 8:13)
+# 
+# plsp <- aggregate(tg$DBH, by=list(
+#   Year = tg$Year,
+#   dead = tg$dead2019,
+#   Species = tg$Species,
+#   Stand = tg$Stand,
+#   Treatment = tg$Treatment
+# ),
+# FUN="sum", na.rm=T)
+# 
+# head(plsp)
+# str(plsp)
+# 
+# ggplot(plsp, aes(x=Year, y=x, col=dead, fill=Species))+
+#   geom_bar(stat="identity", position="stack")+facet_wrap(~Stand)
 
-
-ggplot(two, aes(x=Year, y=DBH, col=Species))+geom_point()+
-  geom_smooth(method="lm")
-
-head(ten)
-
-tg <- gather(ten, "Year","DBH", 8:13)
-
-ggplot(tg, aes(x=Year, y=DBH, col=Species))+geom_point()+
-  geom_smooth(method="lm")
-
-ten_co <-aggregate( tg$DBH, by=list(Stand = tg$Stand,Plot=tg$Plot, Treatment = tg$Treatment, Species = tg$Species, Year = tg$Year), FUN="sum", na.rm=T)
-
-ggplot(ten_co, aes(x=Year, y=x, col=Species))+facet_grid(Treatment~Stand)+geom_col(position="stack")
-
-two_co <-aggregate( two$DBH, by=list(Stand = two$Stand,Plot=two$Plot, Treatment = two$Treatment, Species = two$Species, Year = two$Year), FUN="sum", na.rm=T)
-
-ggplot(two_co, aes(x=Year, y=x, col=Species))+facet_grid(Treatment~Stand)+geom_col(position="stack")
-
-
-
-## subest to stand levels ni Bart
-
-
-## Only use 2019 values.
-
-
-
-ten_co

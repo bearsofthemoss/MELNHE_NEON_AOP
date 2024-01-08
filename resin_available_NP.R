@@ -41,7 +41,7 @@ library(ggplot2)
 
 head(res)
 
-
+table(res$Year)
 library(tidyr)
 
 r17<-res[res$Year==2017,]
@@ -52,11 +52,17 @@ br17<-r17[r17$Stand==c("C7","C8","C9"),]
 
 r17[r17$Stand==c("C7","C8","C9"),10:13]
 
-ra<-aggregate(res[,10:13], by=list(Year=res$Year, Stand=res$Stand, Plot=res$Plot, trmt=res$Trt), FUN="mean", na.rm=T )
-ra2<-aggregate(res[,10:13], by=list( Stand=res$Stand, Plot=res$Plot, trmt=res$Trt), FUN="mean", na.rm=T )
+names(res)
+ra<-aggregate(res[,10:13], by=list(Year=res$Year, Stand=res$Stand, Plot=res$Plot, trmt=res$Treatment), FUN="mean", na.rm=T )
+ra2<-aggregate(res[,10:13], by=list( Stand=res$Stand, Plot=res$Plot, trmt=res$Treatment), FUN="mean", na.rm=T )
 dim(ra)
+
 write.csv(ra, file="avg.resin.csv")
 
+
+names(ra)
+
+ra$total_N <- ra$NH4.hyphen.N
 
 np.all<-ggplot(ra[ra$Year==2017,], aes(x=trmt, y=log(total_N), colour=trmt))+geom_point()+facet_wrap(~Stand)+theme_bw()+
   geom_smooth(, se=T)+ scale_colour_manual("legend", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ scale_y_log10()+
