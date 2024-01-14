@@ -5,7 +5,7 @@
 
 *.dbf
 *.pper
-.Rproj.user
+*.Rproj.user/
 
 
 *.h5

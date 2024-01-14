@@ -32,13 +32,11 @@ plots <- st_transform(stands, 32619)
 
 plots_UTM <-  as(plots, "Spatial")
 
+# C3 used for figure in text.
+C3 <- plots_UTM[plots_UTM$stand=="C3",]
 
 # Alex's tree tops
  trees <- readOGR("data_folder","bart_ttops")
-trees
-
-
-
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -47,7 +45,6 @@ centroids <-  st_coordinates(st_centroid(stands))
 east <- centroids[, 2]
 north <-centroids[, 1]
 
-centroids
 
 # Download the hypersepctral data
 # byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
@@ -84,7 +81,8 @@ norm_spec_df <- list() # brightness normalization
 shade_mask_spec_df <- list() # shade mask
 
 
-for (k in 1:length(ff)){
+# for (k in 1:length(ff)){
+for (k in 6){
    (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
@@ -204,6 +202,38 @@ for (k in 1:length(ff)){
   # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
   h5closeAll()
 
+
+  
+if( ff[k] == "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"){
+# mask the stack by the plot area of C3 (4 plots)
+    c3 <- mask(hsiStack, C3[5])
+    
+    # Extract values with grouping
+    c3_all_pixels <- lapply(1:length(C3), function(i) {
+      values <- raster::extract(c3, C3[i, , drop = FALSE], df = TRUE)
+      values$PolygonID <- i
+      return(values)
+    })
+    
+str(c3_all_pixels)    
+    
+    
+
+head(C3)    
+table(   c3_all_pixels$PolygonID )    
+
+# get reflectance values for 30x30 area  
+# c3_all_pixels <- as.data.frame(getValues(c3))
+
+
+# remove NA values (the 'outside of the plots' pixels)
+c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
+
+c3_all_pixels$pol
+
+ write.csv(c3_all_pixels, file="data_folder/all_C3_spec.csv")
+}
+## 
   
   ### Now that the tile is processed, we need to
   # Remove water absorption bands, index for good bands
@@ -256,14 +286,19 @@ for (k in 1:length(ff)){
   
   dsm_shade <- hillShade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
   
+  
+  
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.1
+  shade_mask <- dsm_shade >= 0.5
+  
+  hist(dsm_shade$layer)
   
   ###################
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
   
+  plot(shade_mask)
   
   ################################################################################################
   ################################################################################################
@@ -339,7 +374,11 @@ if(length(trees_in) >=1){
    plot(trees, add=T, pch=16, col=2)
   
   # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C7_no_shade", overwrite=T,format="raster")
+  writeRaster(mini_noshade, "C3_no_shade", overwrite=T,format="raster")
+  
+  plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red", main="cube no shade")
+  
+  
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.

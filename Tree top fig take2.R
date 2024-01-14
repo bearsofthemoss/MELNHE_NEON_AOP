@@ -4,8 +4,9 @@ library(sf)
 
 ## Tree top analysis
 
-
+  
 # Alex's tree tops
+   
 stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
 trees <- st_read(file.path("data_folder","bart_ttops.shp"))

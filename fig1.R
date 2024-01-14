@@ -157,137 +157,137 @@ plot(stand, col='transparent',
      border = c("black","blue","red","purple"),
      lwd=4,add=T)
 
-
-
-#############################
-
-#####
-tch3<-crop(chm.C3, m3ntops)
-pc3<-crop(pic.C3, m3ntops)
-##
-tch5<-crop(chm.C5, m5ntops)
-pc5<-crop(pic.C5, m5ntops)
-##
-tch9<-crop(chm.C9, m9ntops)
-pc9<-crop(pic.C9, m9ntops)
-
-
-########################################################
-
-# plot chm and rgb next to each other
-
-
-# Create polygon crown map
-C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
-C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
-C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
-
-
-# Plot CHM
-plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
-plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C3_ttops, add=T, pch=17, cex=1)
-plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
-plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C5_ttops, add=T, pch=17, cex=1)
-plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
-plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1)
-
-#33
-
-
-# PLot RGB
-plotRGB(pc3, axes=F )
-plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
-plotRGB(pc5, axes=F )
-plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
-plotRGB(pc9, axes=F )
-plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
-
-
-
-
-
-
-# Compute average crown diameter
-C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
-mean(C9n_crownsPoly$crownDiameter)
-
-
-
-
-
-################
-################
-
-
-chm.C2a<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-chm.C2b<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C4<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-
-
-pic.C2a<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4881000_image.tif")
-pic.C2b<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
-pic.C2 <- raster::merge(pic.C2a, pic.C2b)
-class(pic.C2)
-
-pic.C4<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
-
-
-plot(C2)
-plot(chm.C2, add=T)
-plot(C2, add=T)
-
-
-
-#####
-tch2<-crop(chm.C2, C2_ttops)
-pc2<-crop(pic.C2, C2_ttops)
-
-
-########################################################
-
-# plot chm and rgb next to each other
-
-
-# Create polygon crown map
-C2_crownsPoly <- mcws(treetops = C2_ttops, CHM = tch2, format = "polygons", minHeight = 1.5, verbose = FALSE)
-
-
-# Plot CHM
-plot(tch2, xaxt='n', yaxt = 'n', main="Young stand C3")
-
-plot(C2_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-  plot(C2_ttops, add=T, pch=17, cex=1)
-
-
-  
-# PLot RGB
-par(mfrow=c(2,2))
-  plotRGB(pc2, axes=F )
-plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
-
-plot(tch2, axes=F )
-plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
-
-
-
-plot(C2_ttops, add=T, pch=17, cex=1.4, col="yellow")
-
-
-
-
-# Compute average crown diameter
-C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
-mean(C9n_crownsPoly$crownDiameter)
-
-
-
-
-
-
+# 
+# 
+# #############################
+# 
+# #####
+# tch3<-crop(chm.C3, m3ntops)
+# pc3<-crop(pic.C3, m3ntops)
+# ##
+# tch5<-crop(chm.C5, m5ntops)
+# pc5<-crop(pic.C5, m5ntops)
+# ##
+# tch9<-crop(chm.C9, m9ntops)
+# pc9<-crop(pic.C9, m9ntops)
+# 
+# 
+# ########################################################
+# 
+# # plot chm and rgb next to each other
+# 
+# 
+# # Create polygon crown map
+# C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# 
+# 
+# # Plot CHM
+# plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
+# plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+# plot(C3_ttops, add=T, pch=17, cex=1)
+# plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
+# plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+# plot(C5_ttops, add=T, pch=17, cex=1)
+# plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
+# plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+# plot(C9_ttops, add=T, pch=17, cex=1)
+# 
+# #33
+# 
+# 
+# # PLot RGB
+# plotRGB(pc3, axes=F )
+# plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+# plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
+# plotRGB(pc5, axes=F )
+# plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+# plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
+# plotRGB(pc9, axes=F )
+# plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
+# plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
+# 
+# 
+# 
+# 
+# 
+# 
+# # Compute average crown diameter
+# C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
+# mean(C9n_crownsPoly$crownDiameter)
+# 
+# 
+# 
+# 
+# 
+# ################
+# ################
+# 
+# 
+# chm.C2a<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4881000_CHM.tif")
+# chm.C2b<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+# chm.C2 <- raster::merge(chm.C2a,chm.C2b)
+# chm.C4<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+# 
+# 
+# pic.C2a<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4881000_image.tif")
+# pic.C2b<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
+# pic.C2 <- raster::merge(pic.C2a, pic.C2b)
+# class(pic.C2)
+# 
+# pic.C4<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
+# 
+# 
+# plot(C2)
+# plot(chm.C2, add=T)
+# plot(C2, add=T)
+# 
+# 
+# 
+# #####
+# tch2<-crop(chm.C2, C2_ttops)
+# pc2<-crop(pic.C2, C2_ttops)
+# 
+# 
+# ########################################################
+# 
+# # plot chm and rgb next to each other
+# 
+# 
+# # Create polygon crown map
+# C2_crownsPoly <- mcws(treetops = C2_ttops, CHM = tch2, format = "polygons", minHeight = 1.5, verbose = FALSE)
+# 
+# 
+# # Plot CHM
+# plot(tch2, xaxt='n', yaxt = 'n', main="Young stand C3")
+# 
+# plot(C2_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
+#   plot(C2_ttops, add=T, pch=17, cex=1)
+# 
+# 
+#   
+# # PLot RGB
+# par(mfrow=c(2,2))
+#   plotRGB(pc2, axes=F )
+# plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
+# 
+# plot(tch2, axes=F )
+# plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
+# 
+# 
+# 
+# plot(C2_ttops, add=T, pch=17, cex=1.4, col="yellow")
+# 
+# 
+# 
+# 
+# # Compute average crown diameter
+# C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
+# mean(C9n_crownsPoly$crownDiameter)
+# 
+# 
+# 
+# 
+# 
+# 

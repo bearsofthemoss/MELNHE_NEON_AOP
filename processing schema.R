@@ -16,8 +16,13 @@ ndvi_mask_spec$type <- "NDVI mask"
 norm_spec <- read.csv("C:\\Users\\bears\\Documents\\GitHub\\MELNHE_NEON_AOP\\data_folder\\norm_spec_df.csv")
 norm_spec$type <- "Brightness normalize function"
 shade_mask_spec <- read.csv("C:\\Users\\bears\\Documents\\GitHub\\MELNHE_NEON_AOP\\data_folder\\shade_mask_spec_df.csv")
-shade_mask_spec$type <- "With Shade mask < 0.1"
+shade_mask_spec$type <- "With Shade mask > 0.1"
 
+plot_spec <- read.csv("C:\\Users\\bears\\Documents\\GitHub\\MELNHE_NEON_AOP\\data_folder\\all_C3_spec.csv")
+plot_spec$type <- "Plot-level"
+
+names(plot_spec)
+names(shade_mask_spec)
 
 library(dplyr)
 library(tidyr)
@@ -48,6 +53,12 @@ shade <- shade_mask_spec %>%
                names_to = "wvl", 
                values_to = "refl")
 
+plo  <- plot_spec %>%
+  pivot_longer(cols = starts_with("Band_"), 
+               names_to = "wvl", 
+               values_to = "refl")
+
+
 
 
 # Assuming your column is named 'your_column'
@@ -57,7 +68,9 @@ sc <- rbind(all, ndvi, norm, shade, ttops)
 # Assuming your column is named 'your_column'
 sc$wvl <- round(as.numeric(gsub("Band_", "", sc$wvl)))
 
-head(sc)
+
+plo$wvl <- round(as.numeric(gsub("Band_", "", plo$wvl)))
+plo$Stand <- "C3"
 
 dim(sc[sc$type=="All spectra",])
 dim(sc[sc$type=="NDVI mask",])
@@ -71,6 +84,16 @@ dim(sc)
 table(sc$Stand)
 table(sc$treeID)
 sc <- sc[sc$Stand=="C3",]
+
+gp <- ggplot(plo, aes(x=wvl, y=refl, group=wvl #color=Treatment, group = Treatment
+                      )) + 
+  #geom_point(shape=".") +
+  geom_boxplot()+
+  ggtitle( paste0( dim(plo)[1] , "rows"))
+#  scale_color_manual(values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))
+gp
+
+
 
 g1 <- ggplot(sc[sc$type==c("All spectra"),], aes(x=wvl, y=refl, color=Treatment, group = Treatment)) + 
   geom_point(shape=".") +ggtitle( paste0( length(unique(sc[sc$type=="All spectra", "treeID"]))," pixels displayed"))+
@@ -89,14 +112,14 @@ g3 <- ggplot(sc[sc$type==c("Brightness normalize function"),], aes(x=wvl, y=refl
   scale_color_manual(values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))
 
 
-g4 <- ggplot(sc[sc$type==c("With Shade mask < 0.1"),], aes(x=wvl, y=refl, color=Treatment, group = treeID)) + 
+g4 <- ggplot(sc[sc$type==c("With Shade mask > 0.1"),], aes(x=wvl, y=refl, color=Treatment, group = treeID)) + 
    geom_point(shape=".") +
   facet_wrap(~type, ncol=5, scales="free")+
   scale_color_manual(values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))
 
 library(ggpubr)
 ggarrange(g1, g2, g3, g4, nrow=4)
-
+4/
 
 
 
