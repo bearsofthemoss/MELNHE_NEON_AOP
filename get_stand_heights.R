@@ -80,11 +80,56 @@ chm.C8b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif")
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
 chm.C9<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
+plot(stands[6], add=T)
+plot(chm.C1)
+
+plot(chm.C9)
+
+rast <- merge(chm.C1, chm.C2, chm.C3,
+              chm.C4, chm.C5, chm.C6,
+              chm.C7, chm.C8, chm.C9)
 
 
 
+st_crs(chm.C9)
+st_crs(stands)
 
-raster_values <- intersection(chm.C1, stands[stands$stand=="C1",])
+# loo# loo# look through the 9
+stand_list <- c("C1","C2","C3","C4","C5","C6","C7","C8","C9")
 
-mean_value <- mean(raster_values, na.rm = TRUE)
-sd_value <- sd(raster_values, na.rm = TRUE)
+
+out <- list()
+
+for(i in 1:9){
+  choose_stand <- stand_list[i]
+
+  
+extracted_data <- extract(rast, stands[stands$stand== choose_stand, ], df=TRUE)
+
+merged_data <- merge(stands[stands$stand== choose_stand, ], extracted_data, by.x = "plot", by.y = "ID")
+
+mdf <- as.data.frame(merged_data[ ,1:8])
+
+#ggplot(merged_data, aes(x=plot, y=layer))+geom_boxplot()
+
+out <- rbind(out, mdf )
+
+}
+
+
+
+head(out)
+dim(out)
+table(out$stand, out$plot)
+
+out$Treatment<- factor(out$Treatment, levels=c("Control","N","P","NP"))
+
+ggplot(out, aes(x=stand, y=layer,group=unique_plo , fill=Treatment))+
+         geom_boxplot()+
+  scale_fill_manual(values=c("black","blue","red","purple"))
+
+names(out)
+stand_heights <- as.data.frame(out[ , 1:8])
+
+
+write.csv(stand_heights, file="R_output/stand_heights.csv")

@@ -23,7 +23,7 @@
 library(ggplot2)
 library(sf)
 library(raster)
-install.packages("rasterVis")
+library(rasterVis)
 library(here)
 library(neonUtilities)
 library(raster)
@@ -32,6 +32,11 @@ wd <- here::here()
 
 # read in shapefile of plot locations
 stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+
+
+trees <- readOGR("data_folder","bart_ttops")
+
+
 
 # Set the CRS to WGS 1984, Zone 19N
 stands <- st_transform(stands, 32619)
@@ -58,6 +63,9 @@ rm(stdf)
 
 #### 6 figures. 
 # first row RGB
+#  Then the DSM
+#  Then CHM with tree tops.  Bottom row is the spectra from each processing step. 
+
 C3<-stands[stands$stand=="C3",]
 # C5<-stands[stands$stand=="C5",]
 # C6<-stands[stands$stand=="C6",]
@@ -87,12 +95,15 @@ north <-centroids[, 2]
 # Read in chm
 lidar_path <- file.path(wd, "data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 
-
 chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
 #chm.C5<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4878000_CHM.tif"))
 #chm.C6<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4878000_CHM.tif"))
 #chm.C7<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
 
+
+## Source  DSM
+getwd()
+source("code/get_DSM_C3.R")
 
 # Read in rgb IMAGE
 pic_path <- file.path(wd, "data_folder","DP3.30010.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Camera","Mosaic")
@@ -110,7 +121,7 @@ stand <- C3
 
 
 ## Adjust the area of the bounding box
-extend <- 70
+extend <- 50
 yPlus <- extent(stand)[4] + extend
 xPlus <- extent(stand)[2] + extend
 yMinus <-extent(stand)[3] - extend
@@ -139,15 +150,25 @@ zoom.chm <- crop(chm, stand_box)
 
 ###########################################
 
-par(mfrow=c(1,2))
+par(mfrow=c(1,3))
 
 plotRGB(zoom.pic,
         r = 1, g = 2, b = 3,
-        scale = 800, stretch = "lin" , scales=F)
+        scale = 200, stretch = "lin" , scales=F)
 
 plot(stand, col = 'transparent',
      border = c("black","blue","red","purple"),
      lwd = 4, add = TRUE)
+
+
+#################
+
+
+# Now the DSM
+plot(zoom.dsm, axes=F)
+plot(stand, col='transparent',
+     border = c("black","blue","red","purple"),
+     lwd=4, add=TRUE)
 
 ## Now the CHM for the stand
 
@@ -157,137 +178,26 @@ plot(stand, col='transparent',
      border = c("black","blue","red","purple"),
      lwd=4,add=T)
 
-# 
-# 
-# #############################
-# 
-# #####
-# tch3<-crop(chm.C3, m3ntops)
-# pc3<-crop(pic.C3, m3ntops)
-# ##
-# tch5<-crop(chm.C5, m5ntops)
-# pc5<-crop(pic.C5, m5ntops)
-# ##
-# tch9<-crop(chm.C9, m9ntops)
-# pc9<-crop(pic.C9, m9ntops)
-# 
-# 
-# ########################################################
-# 
-# # plot chm and rgb next to each other
-# 
-# 
-# # Create polygon crown map
-# C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
-# C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
-# C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
-# 
-# 
-# # Plot CHM
-# plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
-# plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-# plot(C3_ttops, add=T, pch=17, cex=1)
-# plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
-# plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-# plot(C5_ttops, add=T, pch=17, cex=1)
-# plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
-# plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-# plot(C9_ttops, add=T, pch=17, cex=1)
-# 
-# #33
-# 
-# 
-# # PLot RGB
-# plotRGB(pc3, axes=F )
-# plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-# plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
-# plotRGB(pc5, axes=F )
-# plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-# plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
-# plotRGB(pc9, axes=F )
-# plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-# plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
-# 
-# 
-# 
-# 
-# 
-# 
-# # Compute average crown diameter
-# C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
-# mean(C9n_crownsPoly$crownDiameter)
-# 
-# 
-# 
-# 
-# 
-# ################
-# ################
-# 
-# 
-# chm.C2a<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-# chm.C2b<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-# chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-# chm.C4<-raster("data_folder/DP3.30015.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-# 
-# 
-# pic.C2a<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4881000_image.tif")
-# pic.C2b<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
-# pic.C2 <- raster::merge(pic.C2a, pic.C2b)
-# class(pic.C2)
-# 
-# pic.C4<-stack("data_folder/DP3.30010.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Camera/Mosaic/2019_BART_5_318000_4880000_image.tif")
-# 
-# 
-# plot(C2)
-# plot(chm.C2, add=T)
-# plot(C2, add=T)
-# 
-# 
-# 
-# #####
-# tch2<-crop(chm.C2, C2_ttops)
-# pc2<-crop(pic.C2, C2_ttops)
-# 
-# 
-# ########################################################
-# 
-# # plot chm and rgb next to each other
-# 
-# 
-# # Create polygon crown map
-# C2_crownsPoly <- mcws(treetops = C2_ttops, CHM = tch2, format = "polygons", minHeight = 1.5, verbose = FALSE)
-# 
-# 
-# # Plot CHM
-# plot(tch2, xaxt='n', yaxt = 'n', main="Young stand C3")
-# 
-# plot(C2_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-#   plot(C2_ttops, add=T, pch=17, cex=1)
-# 
-# 
-#   
-# # PLot RGB
-# par(mfrow=c(2,2))
-#   plotRGB(pc2, axes=F )
-# plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
-# 
-# plot(tch2, axes=F )
-# plot(C2, border = c("black","blue","red","purple"), lwd = 2, add = TRUE)
-# 
-# 
-# 
-# plot(C2_ttops, add=T, pch=17, cex=1.4, col="yellow")
-# 
-# 
-# 
-# 
-# # Compute average crown diameter
-# C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
-# mean(C9n_crownsPoly$crownDiameter)
-# 
-# 
-# 
-# 
-# 
-# 
+plot(trees, add=T)
+
+
+############################
+
+
+
+######### next set of figures is a zoom into a plot
+
+
+# Step one, zoom in with RGB and 1 plot, show tree top points.
+
+# step 2.  plot CHM and tree polys , show tree polygons and points
+### CHM
+
+
+# step 3.   Show DSM crop of the RGB image, \
+# Create polygon crown map
+C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
+
+
+
+

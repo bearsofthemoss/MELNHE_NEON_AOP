@@ -83,7 +83,16 @@ dim(sc)
 
 table(sc$Stand)
 table(sc$treeID)
-sc <- sc[sc$Stand=="C3",]
+sc <- sc[sc$Stand=="C3" & sc$Treatment=="Control",]
+
+
+## only really nees XX
+
+# All 900 spectra?
+# remove shade
+# Just tree tops
+# brightness noramlized
+
 
 gp <- ggplot(plo, aes(x=wvl, y=refl, group=wvl #color=Treatment, group = Treatment
                       )) + 
@@ -118,8 +127,7 @@ g4 <- ggplot(sc[sc$type==c("With Shade mask > 0.1"),], aes(x=wvl, y=refl, color=
   scale_color_manual(values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))
 
 library(ggpubr)
-ggarrange(g1, g2, g3, g4, nrow=4)
-4/
+ggarrange(gp, g1, g2, g3, g4, nrow=5)
 
 
 

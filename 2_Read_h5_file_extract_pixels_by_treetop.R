@@ -202,25 +202,28 @@ for (k in 6){
   # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
   h5closeAll()
 
-
+path_C3 <- "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"
   
-if( ff[k] == "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"){
+if( ff[k] == path_C3 ){
 # mask the stack by the plot area of C3 (4 plots)
-    c3 <- mask(hsiStack, C3[5])
+    c3_hsi <- mask(hsiStack, C3[5])
     
-    # Extract values with grouping
-    c3_all_pixels <- lapply(1:length(C3), function(i) {
-      values <- raster::extract(c3, C3[i, , drop = FALSE], df = TRUE)
-      values$PolygonID <- i
-      return(values)
-    })
-    
-str(c3_all_pixels)    
-    
-    
+      # # Extract values with grouping
+    # c3_pix <- lapply(1:length(C3), function(i) {
+    #   values <- raster::extract(c3, C3[i, , drop = FALSE], df = TRUE)
+    #   values$PolygonID <- i
+    #   return(values)
+    # })
+    # 
+    # 
+      extracted_data <- extract(c3, C3, by.y="unique_plo",  df=TRUE)
 
-head(C3)    
-table(   c3_all_pixels$PolygonID )    
+
+  #    C3$plot <- as.numeric(C3$plot)
+
+extracted_data$unique_plot <- C3$unique_plo[match(extracted_data$ID, C3$plot)]
+  
+c3_all_pixels <- as.data.frame(extracted_data)
 
 # get reflectance values for 30x30 area  
 # c3_all_pixels <- as.data.frame(getValues(c3))
@@ -229,8 +232,7 @@ table(   c3_all_pixels$PolygonID )
 # remove NA values (the 'outside of the plots' pixels)
 c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
 
-c3_all_pixels$pol
-
+dim(c3_all_pixels)
  write.csv(c3_all_pixels, file="data_folder/all_C3_spec.csv")
 }
 ## 
@@ -294,19 +296,17 @@ c3_all_pixels$pol
   
   hist(dsm_shade$layer)
   
+  hist(shade_mask$layer)
   ###################
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
   
-  plot(shade_mask)
-  
+
   ################################################################################################
   ################################################################################################
   # Extract data
   
-  crs(cube_no_shade)
-  crs(trees)
-  
+
   
   # Select trees within extent of tile
   inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
@@ -364,6 +364,7 @@ if(length(trees_in) >=1){
   plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
   plot(plots_UTM, add=T, border=2, lwd=5)
   # plot shade mask
+
   plot(mini_dsm)
   plot(plots_UTM, add=T, border=2, lwd=5)
   plot(trees, add=T,pch=16, col=2)
@@ -372,11 +373,6 @@ if(length(trees_in) >=1){
    plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
    plot(plots_UTM, add=T, border=2, lwd=5)
    plot(trees, add=T, pch=16, col=2)
-  
-  # If you want to write the shade mask for figure 1
-  writeRaster(mini_noshade, "C3_no_shade", overwrite=T,format="raster")
-  
-  plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red", main="cube no shade")
   
   
   

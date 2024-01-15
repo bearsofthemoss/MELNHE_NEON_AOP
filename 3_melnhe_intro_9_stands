@@ -1,0 +1,15 @@
+
+
+
+
+## Create
+
+
+# read in .csv files from R_output
+
+sh <- read.csv("R_output/stand_heights.csv")
+
+sh <- read.csv("R_output/ten_plot_DBH_2019.csv")
+
+
+
