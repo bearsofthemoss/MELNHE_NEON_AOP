@@ -202,39 +202,6 @@ for (k in 6){
   # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
   h5closeAll()
 
-path_C3 <- "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"
-  
-if( ff[k] == path_C3 ){
-# mask the stack by the plot area of C3 (4 plots)
-    c3_hsi <- mask(hsiStack, C3[5])
-    
-      # # Extract values with grouping
-    # c3_pix <- lapply(1:length(C3), function(i) {
-    #   values <- raster::extract(c3, C3[i, , drop = FALSE], df = TRUE)
-    #   values$PolygonID <- i
-    #   return(values)
-    # })
-    # 
-    # 
-      extracted_data <- extract(c3, C3, by.y="unique_plo",  df=TRUE)
-
-
-  #    C3$plot <- as.numeric(C3$plot)
-
-extracted_data$unique_plot <- C3$unique_plo[match(extracted_data$ID, C3$plot)]
-  
-c3_all_pixels <- as.data.frame(extracted_data)
-
-# get reflectance values for 30x30 area  
-# c3_all_pixels <- as.data.frame(getValues(c3))
-
-
-# remove NA values (the 'outside of the plots' pixels)
-c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
-
-dim(c3_all_pixels)
- write.csv(c3_all_pixels, file="data_folder/all_C3_spec.csv")
-}
 ## 
   
   ### Now that the tile is processed, we need to
@@ -250,10 +217,10 @@ dim(c3_all_pixels)
   ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
   # plot(ndvi_lim)
   # plot(plots_UTM, add=T)
-  
+
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
-  
+
   # brightness normalization
   cube_norm <- raster::calc(cube_masked, fun=bright_norm)
   names(cube_norm) <- names(cube_masked)
@@ -298,8 +265,12 @@ dim(c3_all_pixels)
   
   hist(shade_mask$layer)
   ###################
+  
+  
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+
+  
   
 
   ################################################################################################
@@ -312,44 +283,57 @@ dim(c3_all_pixels)
   inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
   trees_in <- trees[as.vector(inout),]
 
-  
-  # code below Alex added to 'write out' the spectral data for each processing step.
-  
-  # 1. 'the worst' = intersection even before removing water bands.
-  if(length(trees_in) >=1){
-    all_spec <- raster::extract(hsiStack,trees_in,df=T, sp=T)
-    all_spec_df <-rbind(all_spec_df, as.data.frame(all_spec@data))
-  }else{}
-  
-  # 2. Remove water bands, mask on NDVI limit (0.7)
-  if(length(trees_in) >=1){
-    ndvi_mask_spec <- raster::extract(cube_masked,trees_in,df=T, sp=T)
-    ndvi_mask_spec_df <-rbind(ndvi_mask_spec_df, as.data.frame(ndvi_mask_spec@data))
-  }else{}
+
 
   
-  # 3. Cube normalized
-  if(length(trees_in) >=1){
-    norm_spec <- raster::extract(cube_norm,trees_in,df=T, sp=T)
-    norm_spec_df  <-rbind(norm_spec_df, as.data.frame(norm_spec@data))
-  }else{}
+  path_C3 <- "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"
   
+  if( ff[k] == path_C3 ){
+    
+    C3_path <- file.path("R_output","pixel_processing")
+    
+    # mask the stack by the plot area of C3 (4 plots)
+    c3_hsi <- mask(hsiStack, C3[1,5])
+    
+    extracted_data <- extract(c3_hsi, C3[1,5], by.y="unique_plo",  df=TRUE)
+    c3_all_pixels <- as.data.frame(extracted_data)
+    
+    # remove NA values (the 'outside of the plots' pixels)
+    c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
+    write.csv(c3_all_pixels, file= file.path(C3_path, "all_C3_spec.csv"))
+    
+    ## removed due to being above 0.5 shade
+    
+    c3_no_shade <- raster::mask(cube_no_shade, shade_mask, maskvalue = 0)
+    
+    extracted_shade_removed <- extract(c3_no_shade, C3[1,5], by.y="unique_plo",  df=TRUE)
+    # remove NA values 
+    extracted_shade_removed <- extracted_shade_removed[!is.na(extracted_shade_removed$Band_468.9), ]
+    
+    dim(extracted_shade_removed)
+    write.csv(extracted_shade_removed, file=file.path(C3_path, "no_shade_C3_spec.csv"))
+    
+    # shady top spec
+    shady_spec <- raster::extract(cube_norm ,trees_in,df=T, sp=T)    
+    # remove NA values 
+    shady_spec <- shady_spec[!is.na(shady_spec$Band_468.9), ]
+    dim(shady_spec)
+    write.csv(shady_spec, file= file.path(C3_path, "shady_top_C3_spec.csv"))
+    
+    
+    ## Just the tree tops, brightness normalized
+    top_spec <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)    
+    dim(top_spec)
+    # remove NA values 
+    top_spec <- top_spec[!is.na(top_spec$Band_468.9), ]
+    write.csv(top_spec, file=file.path(C3_path, "top_C3_spec.csv"))   
   
-  # 4. Shade mask
-if(length(trees_in) >=1){
-  shade_mask_spec <- raster::extract(cube_norm,trees_in,df=T, sp=T)
-  shade_mask_spec_df  <-rbind(shade_mask_spec_df, as.data.frame(shade_mask_spec@data))
-}else{}
 
+  }
   
 
-  # code above Alex added to 'write out' the spectral data for each processing step.
-  
- #################################################################################################
-
-  # get the mini area of the control plot for each tile?
-  #mini <- extent(trees_in[trees_in$Treatment=="Control",])
-  # Plot a whole stand at a time
+#########################################################
+  # Stand-level view made with mini
   mini <- extent(trees_in[trees_in$Stand == unique(trees_in$Stand)[1],])
   
   mini_cube <- crop(hsiStack,mini)
@@ -373,7 +357,9 @@ if(length(trees_in) >=1){
    plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
    plot(plots_UTM, add=T, border=2, lwd=5)
    plot(trees, add=T, pch=16, col=2)
-  
+################################################
+   
+   
   
   
    #################################################################################################
