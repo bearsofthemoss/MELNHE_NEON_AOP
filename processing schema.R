@@ -80,8 +80,8 @@ sc <- rbind( all_plot[ ,c("type","wvl","refl")],
 sc$wvl <- round(as.numeric(gsub("Band_", "", sc$wvl)))
 
 
-plo$wvl <- round(as.numeric(gsub("Band_", "", plo$wvl)))
-plo$Stand <- "C3"
+# plo$wvl <- round(as.numeric(gsub("Band_", "", plo$wvl)))
+# plo$Stand <- "C3"
 
 
 head(sc)

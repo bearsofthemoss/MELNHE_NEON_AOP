@@ -6,6 +6,9 @@
 ###  example use C3
  nami <- "NEON_D01_BART_DP3_316000_4878000_reflectance.h5" 
 nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
+
+dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
+
 dsm <- raster(dd[grep(nam_d,dd)])
 
 dsm_slope <- terrain(dsm,opt="slope")

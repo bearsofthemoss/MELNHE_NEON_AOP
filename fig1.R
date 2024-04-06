@@ -34,7 +34,11 @@ wd <- here::here()
 stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
 
-trees <- readOGR("data_folder","bart_ttops")
+sh <- read.csv("R_output/stand_heights.csv")
+sh <- read.csv("R_output/ten_plot_DBH_2019.csv")
+
+
+trees <- st_read(file.path("data_folder","bart_ttops.shp"))
 
 
 
