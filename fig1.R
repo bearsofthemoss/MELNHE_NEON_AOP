@@ -34,8 +34,9 @@ wd <- here::here()
 stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
 
-sh <- read.csv("R_output/stand_heights.csv")
-sh <- read.csv("R_output/ten_plot_DBH_2019.csv")
+sh <- read.csv(file.path(here::here, "R_output/stand_heights.csv"))
+
+tinv <- read.csv(file.path(here::here, "R_output/ten_plus_DBH_2019.csv"))
 
 
 trees <- st_read(file.path("data_folder","bart_ttops.shp"))

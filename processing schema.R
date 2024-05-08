@@ -87,7 +87,7 @@ sc$wvl <- round(as.numeric(gsub("Band_", "", sc$wvl)))
 head(sc)
 
 num_entire_plot <- dim(sc[sc$type=="Entire plot",])[1] / 426
-num_after_shading <- dim(sc[sc$type=="Shade removed via DSM",])[1] / 426
+num_after_shading <- round(dim(sc[sc$type=="Shade removed via DSM",])[1] / 426, digits=0)
 num_tops <- dim(sc[sc$type=="Tree top",])[1] / 345
 num_shaded_tops <- dim(sc[sc$type=="Tree tops including shaded pixels",])[1] / 345
 
