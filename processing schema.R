@@ -19,20 +19,20 @@ C3_path <- file.path("R_output","pixel_processing")
 
 # read in 4 .csv files
 all_plot <- read.csv(file.path(C3_path, "all_C3_spec.csv"))
-all_plot$type <- "Entire plot"
+all_plot$type <- "All pixels in the plot"
 names(all_plot)
 
 no_shade <- read.csv(file.path(C3_path, "no_shade_C3_spec.csv"))
-no_shade$type <- "Shade removed via DSM"
+no_shade$type <- "Shaded pixels removed"
 
 tops <- read.csv(file.path(C3_path, "top_C3_spec.csv"))
-tops$type <- "Tree top"
+tops$type <- "Only non-shaded tree top pixels"
 
 dim(tops)
 names(tops)
 
 shtops <- read.csv(file.path(C3_path, "shady_top_C3_spec.csv"))
-shtops$type <- "Tree tops including shaded pixels"
+shtops$type <- "Tree tops including shaded tree tops"
 
 
 
@@ -86,30 +86,43 @@ sc$wvl <- round(as.numeric(gsub("Band_", "", sc$wvl)))
 
 head(sc)
 
-num_entire_plot <- dim(sc[sc$type=="Entire plot",])[1] / 426
-num_after_shading <- round(dim(sc[sc$type=="Shade removed via DSM",])[1] / 426, digits=0)
-num_tops <- dim(sc[sc$type=="Tree top",])[1] / 345
-num_shaded_tops <- dim(sc[sc$type=="Tree tops including shaded pixels",])[1] / 345
+"Shaded pixels removed"
+
+tops <- read.csv(file.path(C3_path, "top_C3_spec.csv"))
+tops$type <- "Only non-shaded tree top pixels"
+
+dim(tops)
+names(tops)
+
+shtops <- read.csv(file.path(C3_path, "shady_top_C3_spec.csv"))
+shtops$type <- "Tree tops including shaded tree tops"
+
+
+
+num_entire_plot <- dim(sc[sc$type=="All pixels in the plot",])[1] / 426
+num_after_shading <- round(dim(sc[sc$type=="Shaded pixels removed",])[1] / 426, digits=0)
+num_tops <- dim(sc[sc$type=="Only non-shaded tree top pixels",])[1] / 345
+num_shaded_tops <- dim(sc[sc$type=="Tree tops including shaded tree tops",])[1] / 345
 
 
 
 
-g1 <- ggplot(sc[sc$type==c("Entire plot"),], aes(x=wvl, y=refl, group=wvl )) + 
+g1 <- ggplot(sc[sc$type==c("All pixels in the plot"),], aes(x=wvl, y=refl, group=wvl )) + 
   geom_boxplot()+ xlim(380,2520)+
   ggtitle( paste0( num_entire_plot , " pixels, entire plot"))+
   xlab("")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-g2 <- ggplot(sc[sc$type==c("Shade removed via DSM"),], aes(x=wvl, y=refl, group=wvl )) + 
+g2 <- ggplot(sc[sc$type==c("Shaded pixels removed"),], aes(x=wvl, y=refl, group=wvl )) + 
   geom_boxplot()+ xlim(380,2520)+
   ggtitle( paste0( num_after_shading , " pixels, shaded pixels removed"))+
   xlab("")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-g3 <- ggplot(sc[sc$type==c("Tree tops including shaded pixels"),], aes(x=wvl, y=refl, group=wvl )) + 
+g3 <- ggplot(sc[sc$type==c("Tree tops including shaded tree tops"),], aes(x=wvl, y=refl, group=wvl )) + 
   geom_boxplot()+ xlim(380,2520)+
   ggtitle( paste0( num_shaded_tops , " pixels shown, tree tops with shade"))+
   xlab("")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-g4 <- ggplot(sc[sc$type==c("Tree top"),], aes(x=wvl, y=refl, group=wvl )) + 
+g4 <- ggplot(sc[sc$type==c("Only non-shaded tree top pixels"),], aes(x=wvl, y=refl, group=wvl )) + 
   geom_boxplot()+ xlim(380,2520)+
   ggtitle( paste0( num_tops , " pixels shown, non-shaded tree top pixels, brightness normalized"))+
   xlab("")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())

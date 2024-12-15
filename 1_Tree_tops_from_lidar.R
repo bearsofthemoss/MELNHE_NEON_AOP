@@ -158,6 +158,22 @@ lin.C7 <- function(x){x * 0.02}
 lin.C8 <- function(x){x * 0.02}
 lin.C9 <- function(x){x * 0.02}
 
+
+# set the window size using the function 0.02 m width for each pixel height value.
+
+# a 20 ft tall tree would have a X width for 0.1
+
+# 20 ft @ 0.02 = 0.4 m crown width
+# 20 ft @ 0.03 = 0.4 m crown width
+# 20 ft @ 0.1 = 2 m crown width
+#          .2 = 4 m
+# 20 ft @ 0.5 = 10 m wide tree
+
+# convert TPA from plots, then optimize crown search window.
+
+
+
+
 #############################################################################
 # start automating tree tops
 #############################################################################
@@ -312,29 +328,80 @@ C9_ttops$Stand<-"C9"
 bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
                   C4_ttops, C5_ttops, C6_ttops,
                   C7_ttops, C8_ttops, C9_ttops)
-par(mfrow=c(1,1))
-plot(bart_ttops)
-plot(chm.C1, add=T)
-plot(chm.C2, add=T)
-plot(chm.C3, add=T)
-plot(chm.C4, add=T)
-plot(chm.C5, add=T)
-plot(chm.C6, add=T)
-plot(chm.C7, add=T)
-plot(chm.C8, add=T)
-plot(chm.C9, add=T)
-plot(bart_ttops, add=T, axes=T)
+# par(mfrow=c(1,1))
+# plot(bart_ttops)
+# plot(chm.C1, add=T)
+# plot(chm.C2, add=T)
+# plot(chm.C3, add=T)
+# plot(chm.C4, add=T)
+# plot(chm.C5, add=T)
+# plot(chm.C6, add=T)
+# plot(chm.C7, add=T)
+# plot(chm.C8, add=T)
+# plot(chm.C9, add=T)
+# plot(bart_ttops, add=T, axes=T)
 
 ######################################################################################################
 
 
 table(bart_ttops$Stand, bart_ttops$Treatment)
 
-## this writing of the shapefile could be made to work in the new github framework we're working in.
-# write the shapefile
+lt <- as.data.frame(table(bart_ttops$Stand, bart_ttops$Treatment))
+lt$statr <- paste(lt$Var1, lt$Var2)
+
+###  Read in the 10+ cm trees and calculate TPA
+tree<-read.csv("R_input/10+cm.csv")
+tree<-tree[tree$Plot!="5",] # no calcium
+tree$staplo<-paste(tree$Stand, tree$Plot)
+head(tree)
+library(tidyr)
+bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
+bap$staplo<-paste(bap$Stand, bap$Plot)
+
+bap$Treatment<-sapply(bap$staplo,switch,
+                      "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
+                      "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
+                      "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
+                      "C4 1"="NP",  "C4 2"="N",   "C4 3"="Control", "C4 4"="P",
+                      "C5 1"="Control","C5 2"="NP",  "C5 3"="N",    "C5 4"="P",
+                      "C6 1"="NP",  "C6 2"="Control","C6 3"="N",    "C6 4"="P","C6 5"="Ca",
+                      "C7 1"="N",   "C7 2"="NP",  "C7 3"="P",    "C7 4"="Control",
+                      "C8 1"="P",   "C8 2"="Control","C8 3"="N",    "C8 4"="NP","C8 5"="Ca",
+                      "C9 1"="Control","C9 2"="P",   "C9 3"="NP",   "C9 4"="N")
 
 
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops", driver="ESRI Shapefile", overwrite=T)
+# count trees per plot
+tree_count <- as.data.frame(table(tree$staplo))
+head(tree_count)
+
+tree_count$tree_per_hectare <- tree_count$Freq / 900
+
+bap$TPA_ha <- tree_count$tree_per_hectare[match(bap$staplo, tree_count$Var1)]
+
+bap$count <- tree_count$Freq[match(bap$staplo, tree_count$Var1)]
+
+head(bap)
+
+ggplot(bap, aes(x=TPA_ha,y=x , shape=Age, col=Age))+
+  geom_point()
+
+# Now bring in the lidar detected tree tops
+ bap$statr<-paste(bap$Stand, bap$Treatment)
+
+bap$lidar_top_count <- lt$Freq[match(bap$statr, lt$statr)]
+
+
+zero.02 <- ggplot(bap, aes(x= count, y= lidar_top_count, col=Age))+geom_point()+
+  geom_abline()+ggtitle("paramater 0.02")
+
+zero.02
+
+# library(patchwork)
+# 
+# zero.2 / zero.05 / zero.01
+ 
+
+writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2024_12_07", driver="ESRI Shapefile", overwrite=T)
 
 
 
