@@ -53,11 +53,14 @@ br17<-r17[r17$Stand==c("C7","C8","C9"),]
 r17[r17$Stand==c("C7","C8","C9"),10:13]
 
 names(res)
+head(res)
 ra<-aggregate(res[,10:13], by=list(Year=res$Year, Stand=res$Stand, Plot=res$Plot, trmt=res$Treatment), FUN="mean", na.rm=T )
 ra2<-aggregate(res[,10:13], by=list( Stand=res$Stand, Plot=res$Plot, trmt=res$Treatment), FUN="mean", na.rm=T )
 dim(ra)
 
-write.csv(ra, file="avg.resin.csv")
+
+
+#write.csv(ra, file="avg.resin.csv")
 
 
 names(ra)
@@ -70,18 +73,21 @@ np.all<-ggplot(ra[ra$Year==2017,], aes(x=trmt, y=log(total_N), colour=trmt))+geo
 
 np.all
 
-res<-res[!res$Trt=="Ca" ,]
+# take out ca?
+  res<-res[!res$Treatment=="Ca" ,]
 head(res)
 
 
 str(res)
-
+res$
 
 res$Trt<-factor(res$Treatment, levels=c("Con","N","P","NP"))
 cc <- palette()  # labels the dataframe 'cc' as your palette
 palette(c(cc,"purple","brown")) #this adds purple, and brown...  just need purple though
 
-np<-ggplot(res[res$Site=="Bartlett",], aes(x=Year, y=log(total_N), colour=Trt))+geom_point()+facet_wrap(~Stand)+theme_bw()+
+
+
+np<-ggplot(res[res$Site=="Bartlett",], aes(x=Year, y=log(NH4.hyphen.N), colour=Trt))+geom_point()+facet_wrap(~Stand)+theme_bw()+
   geom_smooth(, se=T)+ scale_colour_manual("legend", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ scale_y_log10()+
   ggtitle("Resin available Nitrate and Ammonium")+ylab("Resin Available N")
 
@@ -89,10 +95,10 @@ np
 
 br<-res[res$Site=="Bartlett",]
 
-ggplot(br, aes(x=log(PO4.hyphen.P), y=log(NH4.plus.NO3), colour=Trt, size=2))+geom_point()+theme_classic()+
-  scale_color_manual("", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ scale_y_log10()+ scale_x_log10() + 
-  theme(text=element_text(size=24)) +guides(size=F)+ggtitle("2017 resin available soil N and P") +
-facet_wrap(~ Stand)  
+ggplot(br, aes(x=log(PO4.hyphen.P), y=log(NH4.plus.NO3), colour=Trt, size=.5))+geom_point()+theme_classic()+
+  scale_color_manual("", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ 
+  scale_y_log10()+ scale_x_log10() + 
+  theme(text=element_text(size=14)) +guides(size=F)+ggtitle("2017 resin available soil N and P") 
 
 
 
@@ -102,7 +108,7 @@ facet_wrap(~ Stand)
 
 
 
-nr<-ggplot(br7a, aes(x=Stand, y= log(total_N), fill=Trt ))+geom_bar(stat="identity", position=position_dodge())+
+ggplot(br, aes(x=Stand, y= log(total_N), fill=Trt ))+geom_bar(stat="identity", position=position_dodge())+
   scale_fill_manual("legend", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ scale_y_log10()+
   ggtitle("Resin available nitrate and ammonium")+ylab("Resin Available N")+theme_classic()
 
