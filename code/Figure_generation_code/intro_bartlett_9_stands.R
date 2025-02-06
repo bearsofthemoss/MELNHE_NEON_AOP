@@ -250,5 +250,5 @@ g3
 
 library(ggpubr)
 
-ggarrange(g1, g2, g3, nrow=3)
+ggarrange(g1, g2,  nrow=2)
 

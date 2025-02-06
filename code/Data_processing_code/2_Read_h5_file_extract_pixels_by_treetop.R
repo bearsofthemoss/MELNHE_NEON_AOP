@@ -2,16 +2,16 @@
 ### Alex Young 9-22-2020
 
 library(sf)
-library(rgdal)
+
 library(stringr) # this is for data management
 library(tidyr)
 library(ggplot2)
 library(raster)
 library(rhdf5)
 library(neonUtilities)
-library(rgdal)
-library(rgeos)
-source("./band2raster.R")
+#library(rgdal)
+#library(rgeos)
+source(here::here("code","Data_processing_code","band2raster.R"))
 
 
 # if (!require("BiocManager", quietly = TRUE))

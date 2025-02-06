@@ -67,7 +67,8 @@ co.var <- function(x)(    100*sd(x)/mean(x))
 ldada$Treatment<-factor(ldada$Treatment, levels=c("Control","N","P","NP"))
 ldada.cv <-aggregate(ldada$refl, by=list( wvl=ldada$wvl,group=paste(ldada$group, ldada$Treatment) , Treatment=ldada$Treatment), co.var)
 ggplot(ldada.cv, aes(x=wvl, y=x, col=Treatment, group=group))+geom_line(lwd=.8)+theme_classic()+
-  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("Coefficient of Variation")+ggtitle("c)  CV for all wavelengths by Treatment")+
+  theme(text=element_text(size=14))+xlab("wavelength (nm)")+ylab("Coefficient of Variation")+
+  ggtitle("CV for all wavelengths by Treatment")+
   scale_color_manual(values=c("black","blue","red","purple"))
 
 
@@ -82,13 +83,13 @@ head(abs)
 
 f2<-ggplot(abs, aes(x=wvl, y=value, col=type, group=group))+geom_line(lwd=.8)+theme_classic()+
   theme(text=element_text(size=17))+xlab("wavelength (nm)")+ylab("abs(loading)")+ggtitle("b)  Important wavelengths for classification")+
- theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))+
+  theme(legend.position = c(.95, .95),legend.justification = c("right", "top"), legend.box.just = "right",legend.margin = margin(2, 2, 2, 2))+
   scale_color_manual(values=c("green","black"))+ theme(legend.title = element_blank())+
   geom_text(x=720, y=.235, size=5,label="710-735", col="black")+
   geom_text(x=940, y=.207, size=5, label="935-945", col="black")+
   geom_text(x=1122, y=.28, size=5, label="1120-1135", col="black")+ylim(0,.3)+
   geom_text(x=1550, y=.19, size=5, label="1545-1555", col="black")
- 
+
 f2
 
 
@@ -128,15 +129,15 @@ library(tidyr)
 bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand, Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
 bap$staplo<-paste(bap$Stand, bap$Plot)
 bap$Treatment<-sapply(bap$staplo,switch,
-                       "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
-                       "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
-                       "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
-                       "C4 1"="NP",  "C4 2"="N",   "C4 3"="Control", "C4 4"="P",
-                       "C5 1"="Control","C5 2"="NP",  "C5 3"="N",    "C5 4"="P",
-                       "C6 1"="NP",  "C6 2"="Control","C6 3"="N",    "C6 4"="P","C6 5"="Ca",
-                       "C7 1"="N",   "C7 2"="NP",  "C7 3"="P",    "C7 4"="Control",
-                       "C8 1"="P",   "C8 2"="Control","C8 3"="N",    "C8 4"="NP","C8 5"="Ca",
-                       "C9 1"="Control","C9 2"="P",   "C9 3"="NP",   "C9 4"="N")
+                      "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
+                      "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
+                      "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
+                      "C4 1"="NP",  "C4 2"="N",   "C4 3"="Control", "C4 4"="P",
+                      "C5 1"="Control","C5 2"="NP",  "C5 3"="N",    "C5 4"="P",
+                      "C6 1"="NP",  "C6 2"="Control","C6 3"="N",    "C6 4"="P","C6 5"="Ca",
+                      "C7 1"="N",   "C7 2"="NP",  "C7 3"="P",    "C7 4"="Control",
+                      "C8 1"="P",   "C8 2"="Control","C8 3"="N",    "C8 4"="NP","C8 5"="Ca",
+                      "C9 1"="Control","C9 2"="P",   "C9 3"="NP",   "C9 4"="N")
 bap$staplo<-paste(bap$Stand, bap$Treatment)
 ldada$BA<-bap$x[match(ldada$staplo, bap$staplo)]
 
@@ -155,8 +156,8 @@ avg.vis<-aggregate(list(refl=red$refl), by=list(Stand=red$Stand,BA=red$BA, tree=
 
 #33 graph to show treatment effect in red edge
 ggplot(red.wav, aes(x=wvl, y=refl, col=Treatment))+geom_point()+
-facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
-xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
+  facet_wrap(~Stand, nrow=3)+scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
+  xlab("Wavelength")+ylab("Normalized reflectance")+ theme(text=element_text(size=22))+
   ggtitle("Visible wavelengths of light")+theme(legend.position="bottom")
 
 ################
@@ -171,7 +172,7 @@ g1
 
 
 g2<-ggplot(rd, aes(x=BA, y=refl, shape=Age,size=3, group=Treatment, col=Treatment))+geom_point(size=2)+
-scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
+  scale_color_manual(values=c("black","blue","red","purple"))+theme_classic()+
   xlab("Basal area"~(m^2)*"")+ylab("Average VIS reflectance")+ theme(text=element_text(size=20))+
   ggtitle("a)")+theme(legend.position="bottom")+geom_smooth(method="lm", se=F, size=2)
 g2

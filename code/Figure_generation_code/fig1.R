@@ -34,9 +34,9 @@ wd <- here::here()
 stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
 
-sh <- read.csv(file.path(here::here, "R_output/stand_heights.csv"))
+sh <- read.csv(here::here("R_output","stand_heights.csv"))
 
-tinv <- read.csv(file.path(here::here, "R_output/ten_plus_DBH_2019.csv"))
+tinv <- read.csv(here::here("R_output","ten_plus_DBH_2019.csv"))
 
 
 trees <- st_read(file.path("data_folder","bart_ttops.shp"))
@@ -108,7 +108,7 @@ chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
 
 ## Source  DSM
 getwd()
-source("code/get_DSM_C3.R")
+source("code/misc_code_ay_cleanup/get_DSM_C3.R")
 
 # Read in rgb IMAGE
 pic_path <- file.path(wd, "data_folder","DP3.30010.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Camera","Mosaic")
@@ -126,7 +126,7 @@ stand <- C3
 
 
 ## Adjust the area of the bounding box
-extend <- 50
+extend <- 30
 yPlus <- extent(stand)[4] + extend
 xPlus <- extent(stand)[2] + extend
 yMinus <-extent(stand)[3] - extend
@@ -159,7 +159,7 @@ par(mfrow=c(1,3))
 
 plotRGB(zoom.pic,
         r = 1, g = 2, b = 3,
-        scale = 200, stretch = "lin" , scales=F)
+        scale = 150, stretch = "lin" , scales=F)
 
 plot(stand, col = 'transparent',
      border = c("black","blue","red","purple"),

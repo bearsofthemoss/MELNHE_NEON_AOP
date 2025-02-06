@@ -4,8 +4,8 @@
 library(neonUtilities)
 library(ForestTools)
 library(raster)
-library(rgdal)
-library(rgeos)
+#library(rgdal)
+#library(rgeos)
 library(sf)
 library(stringr) # this is for data management
 library(tidyr)
@@ -90,7 +90,6 @@ rast <- merge(chm.C1, chm.C2, chm.C3,
               chm.C7, chm.C8, chm.C9)
 
 
-
 st_crs(chm.C9)
 st_crs(stands)
 
@@ -128,8 +127,21 @@ ggplot(out, aes(x=stand, y=layer,group=unique_plo , fill=Treatment))+
          geom_boxplot()+
   scale_fill_manual(values=c("black","blue","red","purple"))
 
-names(out)
-stand_heights <- as.data.frame(out[ , 1:8])
+
+gout <- aggregate(out$layer, by=list(stand = out$stand,  Treatment = out$Treatment),
+          FUN="mean", na.rm=T)
+
+###################
 
 
-write.csv(stand_heights, file="R_output/stand_heights.csv")
+
+
+ggplot(gout, aes(x=stand, y=x , fill=Treatment))+
+  geom_point()+
+  scale_fill_manual(values=c("black","blue","red","purple"))
+
+
+# names(out)
+ stand_heights <- as.data.frame(out[ , 1:8])
+
+ write.csv(stand_heights, file="R_output/stand_heights.csv")
