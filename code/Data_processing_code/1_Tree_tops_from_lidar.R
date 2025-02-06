@@ -5,35 +5,34 @@ library(ForestTools)
 library(raster)
 library(rgdal)
 library(rgeos)
-library(sp)
+library(sf)
 library(stringr) # this is for data management
 library(tidyr)
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
 
+library(here)
+wd <- here::here()
+
 # This code relies heavily on the ForestTools package- helpful information here
-### https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
+# https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
 
 # read in shapefile of plot locations
-plots<-readOGR("data_folder","Bartlett_intensive_sites_30x30")
-plot(plots)
-# transform to UTM coordinates
-crss <- make_EPSG()
+stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
-UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
-  dplyr::filter(grepl("19N", note))
 
-stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+# Set the CRS to WGS 1984, Zone 19N
+stands <- st_transform(stands, 32619)
+
 
 # centroids are the 'plot centers'. code for Lidar tiles works with point data
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+centroids <-  st_coordinates(st_centroid(stands))
 
 
 stdf<-as.data.frame(stands)
-stdf$staplo<-paste(stdf$stand, stdf$plot)
-stdf
-stands$Treatment<-sapply(stdf[ ,7],switch,
+stdf$staplo <-paste(stdf$stand, stdf$plot)
+ stands$Treatment<-sapply(stdf[ ,"staplo"],switch,
                          "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
                          "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
                          "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
@@ -47,7 +46,7 @@ stands$Treatment<-sapply(stdf[ ,7],switch,
                          "HBO 1"="P",  "HBO 2"="N",  "HBO 3"="NP",  "HBO 4"="Control", "HBO 7"="Control",
                          "JBM 1"="NP", "JBM 2"="N",  "JBM 3"="Control","JBM 4"="P",
                          "JBO 1"="NP", "JBO 2"="P",  "JBO 3"="N",   "JBO 4"="Control")
-
+rm(stdf)
 #################################   Each stand as a shapefile
 C1<-stands[stands$stand=="C1",]
 C2<-stands[stands$stand=="C2",]
@@ -64,112 +63,91 @@ C9<-stands[stands$stand=="C9",]
 east <- centroids[, 1]
 north <-centroids[, 2]
 
-east
-
 
 # this downloads the data and saves it to your specified directory.
 # this will ask you if you want to download the files to your computer
-#  commented outif you don't need to download it. 
+#  commented out if you don't need to download it. 
 
-byTileAOP(dpID="DP3.30015.001", site="BART", 
-          year="2017", easting=east,
-          northing=north,
-          buffer=200, savepath="data_folder")
+# the lidar chm
+# byTileAOP(dpID="DP3.30015.001", site="BART", 
+#           year="2019", easting=east,
+#           northing=north,
+#           buffer=500, savepath="data_folder")
 
-byTileAOP("DP3.30015.001", site="BART", year="2019", check.size = T,buffer = 200, 
-          easting=east, northing=north, 
-          savepath="data_folder")
 
 # this downloads 15 cm Rgb data for the whole site.  # It will be used later
-byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200, 
-          easting=east, northing=north, 
-          savepath="data_folder")
+# byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200, 
+#           easting=east, northing=north, 
+#           savepath="data_folder")
 
+lidar_path <- file.path(wd, "data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 
-# once you download them, you'll need to set wd and read each file.  Here they are.
-# setwd()    # enter your wd.
-
-getwd()
-chm.C1a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_313000_4879000_CHM.tif")
-chm.C1b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4879000_CHM.tif")
+chm.C1a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
+chm.C1b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4879000_CHM.tif"))
 chm.C1 <- raster::merge(chm.C1a,chm.C1b)
-chm.C2a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4881000_CHM.tif")
-chm.C2b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
+chm.C2a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4881000_CHM.tif"))
+chm.C2b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
 chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C3<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4878000_CHM.tif")
-chm.C4<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_318000_4880000_CHM.tif")
-chm.C5<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_314000_4878000_CHM.tif")
-chm.C6<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4878000_CHM.tif")
-chm.C7<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8a<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_315000_4880000_CHM.tif")
-chm.C8b<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_316000_4880000_CHM.tif")
+chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
+chm.C4<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
+chm.C5<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4878000_CHM.tif"))
+chm.C6<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4878000_CHM.tif"))
+chm.C7<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif"))
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
-chm.C9<-raster("data_folder\\DP3.30015.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\DiscreteLidar\\CanopyHeightModelGtif\\NEON_D01_BART_DP3_317000_4879000_CHM.tif")
-
-
+chm.C9<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
 
 ## this makes a canopy height per plot
 ############################################
-plot(chm.C1)
-head(C1)
-m1c<-crop(chm.C1, C1[C1$treat=="Control",])
-m1n<-crop(chm.C1, C1[C1$treat=="N",])
-m1p<-crop(chm.C1, C1[C1$treat=="P",])
-m1np<-crop(chm.C1, C1[C1$treat=="NP",])
+m1c<-crop(chm.C1, C1[C1$Treatment=="Control",])
+m1n<-crop(chm.C1, C1[C1$Treatment=="N",])
+m1p<-crop(chm.C1, C1[C1$Treatment=="P",])
+m1np<-crop(chm.C1, C1[C1$Treatment=="NP",])
 ############################################
-m2c<-crop(chm.C2, C2[C2$treat=="Control",])
-m2n<-crop(chm.C2, C2[C2$treat=="N",])
-m2p<-crop(chm.C2, C2[C2$treat=="P",])
-m2np<-crop(chm.C2, C2[C2$treat=="NP",])
+m2c<-crop(chm.C2, C2[C2$Treatment=="Control",])
+m2n<-crop(chm.C2, C2[C2$Treatment=="N",])
+m2p<-crop(chm.C2, C2[C2$Treatment=="P",])
+m2np<-crop(chm.C2, C2[C2$Treatment=="NP",])
 ############################################
-m3c<-crop(chm.C3, C3[C3$treat=="Control",])
-m3n<-crop(chm.C3, C3[C3$treat=="N",])
-m3p<-crop(chm.C3, C3[C3$treat=="P",])
-m3np<-crop(chm.C3, C3[C3$treat=="NP",])
+m3c<-crop(chm.C3, C3[C3$Treatment=="Control",])
+m3n<-crop(chm.C3, C3[C3$Treatment=="N",])
+m3p<-crop(chm.C3, C3[C3$Treatment=="P",])
+m3np<-crop(chm.C3, C3[C3$Treatment=="NP",])
 ############################################
-m4c<-crop(chm.C4, C4[C4$treat=="Control",])
-m4n<-crop(chm.C4, C4[C4$treat=="N",])
-m4p<-crop(chm.C4, C4[C4$treat=="P",])
-m4np<-crop(chm.C4, C4[C4$treat=="NP",])
+m4c<-crop(chm.C4, C4[C4$Treatment=="Control",])
+m4n<-crop(chm.C4, C4[C4$Treatment=="N",])
+m4p<-crop(chm.C4, C4[C4$Treatment=="P",])
+m4np<-crop(chm.C4, C4[C4$Treatment=="NP",])
 ############################################
-m5c<-crop(chm.C5, C5[C5$treat=="Control",])
-m5n<-crop(chm.C5, C5[C5$treat=="N",])
-m5p<-crop(chm.C5, C5[C5$treat=="P",])
-m5np<-crop(chm.C5, C5[C5$treat=="NP",])
+m5c<-crop(chm.C5, C5[C5$Treatment=="Control",])
+m5n<-crop(chm.C5, C5[C5$Treatment=="N",])
+m5p<-crop(chm.C5, C5[C5$Treatment=="P",])
+m5np<-crop(chm.C5, C5[C5$Treatment=="NP",])
 ############################################
-m6c<-crop(chm.C6, C6[C6$treat=="Control",])
-m6n<-crop(chm.C6, C6[C6$treat=="N",])
-m6p<-crop(chm.C6, C6[C6$treat=="P",])
-m6np<-crop(chm.C6, C6[C6$treat=="NP",])
+m6c<-crop(chm.C6, C6[C6$Treatment=="Control",])
+m6n<-crop(chm.C6, C6[C6$Treatment=="N",])
+m6p<-crop(chm.C6, C6[C6$Treatment=="P",])
+m6np<-crop(chm.C6, C6[C6$Treatment=="NP",])
 ############################################
-m7c<-crop(chm.C7, C7[C7$treat=="Control",])
-m7n<-crop(chm.C7, C7[C7$treat=="N",])
-m7p<-crop(chm.C7, C7[C7$treat=="P",])
-m7np<-crop(chm.C7, C7[C7$treat=="NP",])
+m7c<-crop(chm.C7, C7[C7$Treatment=="Control",])
+m7n<-crop(chm.C7, C7[C7$Treatment=="N",])
+m7p<-crop(chm.C7, C7[C7$Treatment=="P",])
+m7np<-crop(chm.C7, C7[C7$Treatment=="NP",])
 ############################################
-m8c<-crop(chm.C8, C8[C8$treat=="Control",])
-m8n<-crop(chm.C8, C8[C8$treat=="N",])
-m8p<-crop(chm.C8, C8[C8$treat=="P",])
-m8np<-crop(chm.C8, C8[C8$treat=="NP",])
+m8c<-crop(chm.C8, C8[C8$Treatment=="Control",])
+m8n<-crop(chm.C8, C8[C8$Treatment=="N",])
+m8p<-crop(chm.C8, C8[C8$Treatment=="P",])
+m8np<-crop(chm.C8, C8[C8$Treatment=="NP",])
 ###########################################
-m9c<-crop(chm.C9, C9[C9$treat=="Control",])
-m9n<-crop(chm.C9, C9[C9$treat=="N",])
-m9p<-crop(chm.C9, C9[C9$treat=="P",])
-m9np<-crop(chm.C9, C9[C9$treat=="NP",])
+m9c<-crop(chm.C9, C9[C9$Treatment=="Control",])
+m9n<-crop(chm.C9, C9[C9$Treatment=="N",])
+m9p<-crop(chm.C9, C9[C9$Treatment=="P",])
+m9np<-crop(chm.C9, C9[C9$Treatment=="NP",])
 #####################################
 
-
-
-
-plot(chm.C4)
-plot(C4, add=T)
-plot(C2, add=T)
-### define variable window function
-#0.05, and 0.6 are defaults
-
-### this is important!  I adjusted trees here, based on 
-
+##
 lin.C <- function(x){x * 0.02}
 lin.C2 <- function(x){x * 0.02}
 lin.C3 <- function(x){x * 0.02}
@@ -180,16 +158,25 @@ lin.C7 <- function(x){x * 0.02}
 lin.C8 <- function(x){x * 0.02}
 lin.C9 <- function(x){x * 0.02}
 
+
+# set the window size using the function 0.02 m width for each pixel height value.
+
+# a 20 ft tall tree would have a X width for 0.1
+
+# 20 ft @ 0.02 = 0.4 m crown width
+# 20 ft @ 0.03 = 0.4 m crown width
+# 20 ft @ 0.1 = 2 m crown width
+#          .2 = 4 m
+# 20 ft @ 0.5 = 10 m wide tree
+
+# convert TPA from plots, then optimize crown search window.
+
+
+
+
 #############################################################################
 # start automating tree tops
 #############################################################################
-plot(C1)
-plot(chm.C1, add=T)
-
-plot(C1,add=T)
-
-plot(C1_ttops, add=T)
-
 
 m1c <- mask(crop(chm.C1, extent(C1[C1$Treatment=="Control",])), C1[C1$Treatment=="Control",])
 m1n <- mask(crop(chm.C1, extent(C1[C1$Treatment=="N",])),C1[C1$Treatment=="N",] )
@@ -198,14 +185,6 @@ m1np <- mask(crop(chm.C1, extent(C1[C1$Treatment=="NP",])),C1[C1$Treatment=="NP"
 
 
 library(ForestTools)
-# library(uavRst)
-# 
-# tpos<-treepos_FT(chm = m1c,
-#   winFun = lin.C,
-#   minTreeAlt = 4,
-#   maxCrownArea = maxCrownArea,
-#   verbose = TRUE)
-
 
 m1ctops <- vwf(CHM = m1c, winFun = lin.C, minHeight = 12)
 m1ctops$Treatment<-"Control"
@@ -224,9 +203,7 @@ m2ctops <- vwf(CHM = m2c, winFun = lin.C2, minHeight = 3)
 m2ctops$Treatment<-"Control"
 m2ntops <- vwf(CHM = m2n, winFun = lin.C2, minHeight = 3)
 m2ntops$Treatment<-"N"
-m2n
-
-m2ntops
+##
 m2ptops <- vwf(CHM = m2p, winFun = lin.C2, minHeight = 3)
 m2ptops$Treatment<-"P"
 m2nptops <- vwf(CHM = m2np, winFun = lin.C2, minHeight = 3)
@@ -351,161 +328,82 @@ C9_ttops$Stand<-"C9"
 bart_ttops<-rbind(C1_ttops, C2_ttops, C3_ttops,
                   C4_ttops, C5_ttops, C6_ttops,
                   C7_ttops, C8_ttops, C9_ttops)
-par(mfrow=c(1,1))
-plot(bart_ttops)
-plot(chm.C1, add=T)
-plot(chm.C2, add=T)
-plot(chm.C3, add=T)
-plot(chm.C4, add=T)
-plot(chm.C5, add=T)
-plot(chm.C6, add=T)
-plot(chm.C7, add=T)
-plot(chm.C8, add=T)
-plot(chm.C9, add=T)
-plot(bart_ttops, add=T, axes=T)
+# par(mfrow=c(1,1))
+# plot(bart_ttops)
+# plot(chm.C1, add=T)
+# plot(chm.C2, add=T)
+# plot(chm.C3, add=T)
+# plot(chm.C4, add=T)
+# plot(chm.C5, add=T)
+# plot(chm.C6, add=T)
+# plot(chm.C7, add=T)
+# plot(chm.C8, add=T)
+# plot(chm.C9, add=T)
+# plot(bart_ttops, add=T, axes=T)
 
 ######################################################################################################
 
 
 table(bart_ttops$Stand, bart_ttops$Treatment)
 
-## this writing of the shapefile could be made to work in the new github framework we're working in.
-# write the shapefile
+lt <- as.data.frame(table(bart_ttops$Stand, bart_ttops$Treatment))
+lt$statr <- paste(lt$Var1, lt$Var2)
 
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_3_13_2022_0.02", driver="ESRI Shapefile")
+###  Read in the 10+ cm trees and calculate TPA
+tree<-read.csv("R_input/10+cm.csv")
+tree<-tree[tree$Plot!="5",] # no calcium
+tree$staplo<-paste(tree$Stand, tree$Plot)
+head(tree)
+library(tidyr)
+bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
+bap$staplo<-paste(bap$Stand, bap$Plot)
+
+bap$Treatment<-sapply(bap$staplo,switch,
+                      "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
+                      "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
+                      "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
+                      "C4 1"="NP",  "C4 2"="N",   "C4 3"="Control", "C4 4"="P",
+                      "C5 1"="Control","C5 2"="NP",  "C5 3"="N",    "C5 4"="P",
+                      "C6 1"="NP",  "C6 2"="Control","C6 3"="N",    "C6 4"="P","C6 5"="Ca",
+                      "C7 1"="N",   "C7 2"="NP",  "C7 3"="P",    "C7 4"="Control",
+                      "C8 1"="P",   "C8 2"="Control","C8 3"="N",    "C8 4"="NP","C8 5"="Ca",
+                      "C9 1"="Control","C9 2"="P",   "C9 3"="NP",   "C9 4"="N")
+
+
+# count trees per plot
+tree_count <- as.data.frame(table(tree$staplo))
+head(tree_count)
+
+tree_count$tree_per_hectare <- tree_count$Freq / 900
+
+bap$TPA_ha <- tree_count$tree_per_hectare[match(bap$staplo, tree_count$Var1)]
+
+bap$count <- tree_count$Freq[match(bap$staplo, tree_count$Var1)]
+
+head(bap)
+
+ggplot(bap, aes(x=TPA_ha,y=x , shape=Age, col=Age))+
+  geom_point()
+
+# Now bring in the lidar detected tree tops
+ bap$statr<-paste(bap$Stand, bap$Treatment)
+
+bap$lidar_top_count <- lt$Freq[match(bap$statr, lt$statr)]
+
+
+zero.02 <- ggplot(bap, aes(x= count, y= lidar_top_count, col=Age))+geom_point()+
+  geom_abline()+ggtitle("paramater 0.02")
+
+zero.02
+
+# library(patchwork)
+# 
+# zero.2 / zero.05 / zero.01
+ 
+
+writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2024_12_07", driver="ESRI Shapefile", overwrite=T)
 
 
 
 ######################################################################
 
-
-#Compare to actual top numbers
-
-
-## # read in actual trees per 30 m to compare
-tally<-read.csv("R_input\\Tally_of_10_plus_cm_stems.csv")
-
-head(tally)
-
-
-# Format lidar ttops
-bart_ttops$staplo<-paste(bart_ttops$Stand, bart_ttops$Treatment)
-btt<-data.frame(tapply(bart_ttops$treeID , list(bart_ttops$staplo), length))
-btt$staplo<-rownames(btt)
-names(btt)[1]<-"lidar"
-
-tally$Treatment<-btt$Treatment[match(tally$staplo,btt$staplo)]
-tally$lidar<-btt$lidar[match(tally$staplo,btt$staplo)]
-
-
-names(tally)
-# add in stand ages
-tally$Age[tally$Stand=="C1"]<-"~30 years old"
-tally$Age[tally$Stand=="C2"]<-"~30 years old"
-tally$Age[tally$Stand=="C3"]<-"~30 years old"
-tally$Age[tally$Stand=="C4"]<-"~60 years old"
-tally$Age[tally$Stand=="C5"]<-"~60 years old"
-tally$Age[tally$Stand=="C6"]<-"~60 years old" 
-tally$Age[tally$Stand=="C7"]<-"~100 years old"
-tally$Age[tally$Stand=="C8"]<-"~100 years old"
-tally$Age[tally$Stand=="C9"]<-"~100 years old"
-
-tally$Age<-factor(tally$Age, levels=c("~30 years old","~60 years old","~100 years old"))
-
-library(ggrepel)
-f.1<-ggplot(tally ,aes(x=actual, y=lidar, col=Age, label=Stand))+geom_point() +xlab("Number of 10+ cm trees")+geom_text_repel() + 
-  ylab("Lidar tree tops")+ylim(0,75)+xlim(0,150)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
-
-f.1
-
-spec<-as.data.frame(table(ldada$Treatment, ldada$Stand)/345  )
-spec$staplo<-paste(spec$Var2, spec$Var1)
-
-tally$spec<-spec$Freq[match(tally$staplo, spec$staplo)]
-
-f.2<-ggplot(tally ,aes(x=lidar, y=spec, col=Age, label=Stand))+geom_point() +xlab("lidar tree tops")+geom_text_repel() + 
-  ylab("Shade mask tree tops")+ylim(0,75)+xlim(0,75)+theme_classic()+geom_abline()+theme(text=element_text(size=20))
-f.2
-head(tally)
-
-library(ggpubr)
-ggarrange(f.1, f.2, common.legend = 2, nrow=1, legend="bottom")
-
-
-
-####################################################################################
-
-##############################################################################
-par(mfrow=c(3,3))
-
-
-####
-
-pic.C3<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_316000_4878000_image.tif")
-pic.C5<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_314000_4878000_image.tif")
-pic.C9<-stack("R_input\\DP3.30010.001\\2017\\FullSite\\D01\\2017_BART_3\\L3\\Camera\\Mosaic\\2017_BART_3_317000_4879000_image.tif")
-
-getwd()
-pic.C2<- stack("data_folder\DP3.30010.001\neon-aop-products\2019\FullSite\D01\2019_BART_5\L3\Camera\Mosaic")
-
-
-
-#####
-tch3<-crop(chm.C3, m3ntops)
-pc3<-crop(pic.C3, m3ntops)
-##
-tch5<-crop(chm.C5, m5ntops)
-pc5<-crop(pic.C5, m5ntops)
-##
-tch9<-crop(chm.C9, m9ntops)
-pc9<-crop(pic.C9, m9ntops)
-
-
-########################################################
-
-# plot chm and rgb next to each other
-
-
-# Create polygon crown map
-C3n_crownsPoly <- mcws(treetops = m3ntops, CHM = tch3, format = "polygons", minHeight = 1.5, verbose = FALSE)
-C5n_crownsPoly <- mcws(treetops = m5ntops, CHM = tch5, format = "polygons", minHeight = 1.5, verbose = FALSE)
-C9n_crownsPoly <- mcws(treetops = m9ntops, CHM = tch9, format = "polygons", minHeight = 1.5, verbose = FALSE)
-
-
-# Plot CHM
-plot(tch3, xaxt='n', yaxt = 'n', main="Young stand C3")
-plot(C3n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C3_ttops, add=T, pch=17, cex=1)
-plot(tch5, xaxt='n', yaxt = 'n', main="Mid-aged stand C5")
-plot(C5n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C5_ttops, add=T, pch=17, cex=1)
-plot(tch9, xaxt='n', yaxt = 'n', main="Old stand C9")
-plot(C9n_crownsPoly, border = "blue", lwd = 0.5, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1)
-
-#33
-
-
-# PLot RGB
-plotRGB(pc3, axes=F )
-plot(C3n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C3_ttops, add=T, pch=17, cex=1.4, col="yellow")
-plotRGB(pc5, axes=F )
-plot(C5n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C5_ttops, add=T, pch=17, cex=1.4, col="yellow")
-plotRGB(pc9, axes=F )
-plot(C9n_crownsPoly, border = "red", lwd = 2, add = TRUE)
-plot(C9_ttops, add=T, pch=17, cex=1.4, col="yellow")
-
-
-
-
-
-
-# Compute average crown diameter
-C9n_crownsPoly[["crownDiameter"]] <- sqrt(C9n_crownsPoly[["crownArea"]]/ pi) * 2
-mean(C9n_crownsPoly$crownDiameter)
-
-
-
-##################

@@ -11,26 +11,38 @@ library(rgdal)
 library(rgeos)
 
 
-### read in the plots
-plots<-readOGR("data_folder","Bartlett_intensive_sites_30x30")
-plot(plots)
-# transform to UTM coordinates
-crss <- make_EPSG()
+####  Alex Young  12-28-2023
+library(neonUtilities)
+library(ForestTools)
+library(raster)
+library(rgdal)
+library(rgeos)
+library(sf)
+library(stringr) # this is for data management
+library(tidyr)
+# Set global option to NOT convert all character variables to factors
+options(stringsAsFactors=F)
 
-UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
-  dplyr::filter(grepl("19N", note))
 
-stands <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
+library(here)
+wd <- here::here()
+
+# This code relies heavily on the ForestTools package- helpful information here
+# https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
+
+# read in shapefile of plot locations
+stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+
+# Set the CRS to WGS 1984, Zone 19N
+stands <- st_transform(stands, 32619)
 
 # centroids are the 'plot centers'. code for Lidar tiles works with point data
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(stands))
+centroids <-  st_coordinates(st_centroid(stands))
 
 
 stdf<-as.data.frame(stands)
-stdf$staplo<-paste(stdf$stand, stdf$plot)
-
-stdf
-stands$Treatment<-sapply(stdf[ ,7],switch,
+stdf$staplo <-paste(stdf$stand, stdf$plot)
+stands$Treatment<-sapply(stdf[ ,"staplo"],switch,
                          "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
                          "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
                          "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
@@ -44,28 +56,14 @@ stands$Treatment<-sapply(stdf[ ,7],switch,
                          "HBO 1"="P",  "HBO 2"="N",  "HBO 3"="NP",  "HBO 4"="Control", "HBO 7"="Control",
                          "JBM 1"="NP", "JBM 2"="N",  "JBM 3"="Control","JBM 4"="P",
                          "JBO 1"="NP", "JBO 2"="P",  "JBO 3"="N",   "JBO 4"="Control")
-# transform to UTM coordinates
-crss <- make_EPSG()
 
-UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
-  dplyr::filter(grepl("19N", note))
+## Read in chm data,  start fig 1
 
-# plots_UTM <- sp::spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
-plots_UTM <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
 
-C7<-plots_UTM[plots_UTM$stand=="C7",]
-C8<-plots_UTM[plots_UTM$stand=="C8",]
-C9<-plots_UTM[plots_UTM$stand=="C9",]
 
-old<-rbind(C7,C8, C9)
+ east <- centroids[, 1]
+ north <-centroids[, 2]
 
-# centroids are the 'plot centers'. This script works with point data.
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(old))
-centroids
-
-# these are the easting and northings for the stand locations
-east <- centroids[, 1]
-north <-centroids[, 2]
 # 
  byTileAOP(dpID="DP3.30012.001",site="BART",
             year="2017", easting= east,

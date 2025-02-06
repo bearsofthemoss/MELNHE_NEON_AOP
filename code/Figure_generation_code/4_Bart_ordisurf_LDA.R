@@ -10,7 +10,7 @@ library(agricolae)
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-read.csv("R_input/actual_tops_7_29_2022.csv")
+dada<-read.csv("data_folder/actual_tops.csv")
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages

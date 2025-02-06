@@ -8,7 +8,7 @@ library(corrplot)
 library(agricolae)
 library(tidyverse)
 
-dat <- read.csv("./R_input/actual_tops_4_10.csv", row.names = 1)
+dat <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
 
 dat <- dat[complete.cases(dat),] ### remove NAs
 
@@ -140,8 +140,10 @@ probis <- list()
 confus <- list()
 
 ### Predictions Model Validation
-for (nsim in seq(nsims)){
-  print(nsim)
+
+#for (nsim in seq(nsims)){
+
+    print(nsim)
   flush.console()
   set.seed(nsim)
   # inTrain <- rndid[[nsim]]<= nsims
@@ -160,7 +162,7 @@ for (nsim in seq(nsims)){
   probs <- cbind(testclass, probs)
   probis[[nsim]] <- probs 
 }
-
+probis
 
 ### Model stats ##
 ### Accuracy Calibration (model fit) ... but we are more interested in predictive accuracy (validation)

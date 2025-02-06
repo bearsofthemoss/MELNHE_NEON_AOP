@@ -1,17 +1,22 @@
 ### Anna K. Schweiger 9-22-2020
 ### Alex Young 9-22-2020
 
-library(sp)
-library(rgdal)
+library(sf)
+
 library(stringr) # this is for data management
 library(tidyr)
 library(ggplot2)
 library(raster)
 library(rhdf5)
 library(neonUtilities)
-library(rgdal)
-library(rgeos)
-source("./band2raster.R")
+#library(rgdal)
+#library(rgeos)
+source(here::here("code","Data_processing_code","band2raster.R"))
+
+
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# BiocManager::install("rhdf5")
 
 
 # brightness normalization function
@@ -19,65 +24,47 @@ bright_norm <- function(x){
   x_norm <- x/sqrt(sum(x^2))
   return(x_norm)}
 
-# Alex's plots
-plots <- readOGR("data_folder","Bartlett_intensive_sites_30x30")
+# read in shapefile of plot locations
+stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+
+# Set the CRS to WGS 1984, Zone 19N
+plots <- st_transform(stands, 32619)
+
+plots_UTM <-  as(plots, "Spatial")
+
+# C3 used for figure in text.
+C3 <- plots_UTM[plots_UTM$stand=="C3",]
 
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops_3_13_2022_0.02")
-trees
- 
-table(trees$Stand, trees$Treatment)
+ trees <- readOGR("data_folder","bart_ttops")
 
- par(mfrow=c(1,1))
- 
- plot(plots)
-plot(trees) 
-
-
-
- 
- # transform to UTM coordinate
-crss <- make_EPSG()
-
-UTM <- crss %>% dplyr::filter(grepl("WGS 84", note))%>% 
-  dplyr::filter(grepl("19N", note))
-
-# plots_UTM <- sp::spTransform(plots, CRS(SRS_string=paste0("EPSG:",UTM$code)))
-plots_UTM <- sp::spTransform(plots, CRS(paste0("+init=epsg:",UTM$code)))
-
-# centroids are the 'plot centers'. This script works with point data.
-centroids <- as.data.frame(getSpPPolygonsLabptSlots(plots_UTM))
-
-
-
+centroids <-  st_coordinates(st_centroid(stands))
 
 
 # these are the easting and northings for the stand locations
 east <- centroids[, 2]
 north <-centroids[, 1]
 
-centroids
 
-byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
-          northing = north,
-          year="2019",buffer = 200, savepath = "./data_folder/Bart_tiles/",check.size = T)
+# Download the hypersepctral data
+# byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
+#           northing = north,
+#           year="2019",buffer = 200, savepath = "./data_folder/Bart_tiles/",check.size = T)
 
 
 # Download DSMs
-byTileAOP(dpID="DP3.30024.001",site="BART",
-          year="2019", easting= east,
-          northing = north,
-          buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
+# byTileAOP(dpID="DP3.30024.001",site="BART",
+#           year="2019", easting= east,
+#           northing = north,
+#           buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 #PC- Alex's wd
- ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
-ff
- 
+ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
 
-length(ff) 
 dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
-dd
+
+
 #dd<- dd[c(c(2,4,12,13,6,12,3,8,5,7))] 
  # Anna's
 #ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
@@ -88,11 +75,14 @@ dd
 # Extract image information
 spectra_df <- list()
 
-length(ff)
+all_spec_df <- list() # no processing
+ndvi_mask_spec_df <- list() # NDVI mask
+norm_spec_df <- list() # brightness normalization
+shade_mask_spec_df <- list() # shade mask
 
 
-
-for (k in 1:length(ff)){
+# for (k in 1:length(ff)){
+for (k in 6){
    (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
@@ -148,11 +138,17 @@ for (k in 1:length(ff)){
                       xMin = xMin, yMax = yMax,
                       res=reso, crs = myCRS, ncols =  reflInfo$Dimensions[2],
                       nrows =  reflInfo$Dimensions[1])
+  
   hsiStack <- stack(cube_rast)
   
   # make list of band names 
   bandNames <- paste("Band_", round (wvl,digits = 2),sep="")
   names(hsiStack) <- bandNames ### Raster does not safe band names
+  
+  crs(hsiStack)
+  # Set the CRS to UTM Zone 19N (EPSG:32619)
+  crs <- CRS("+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs")
+  projection(hsiStack) <- crs
   
   #########################################################
   
@@ -160,8 +156,10 @@ for (k in 1:length(ff)){
   
   #########################################################
   ## index hyperspectral .h5 file 'f', call it nami. Use the 11th slot to match the .h5 tile to the chm .tif file 
-  nami<-sapply(strsplit(f,"/"),"[",13)  
+  nami<-sapply(strsplit(f,"/"),"[",12)  
   nami
+  
+
   
   ### plot
    plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
@@ -169,6 +167,7 @@ for (k in 1:length(ff)){
    text(coordinates(plots_UTM), labels=plots_UTM$stand, cex=0.8)
 
   
+    
   # For Anna's wd: save if needed
   # writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), overwrite=T,
   #             format="raster")
@@ -192,8 +191,8 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  plot(ndvi_calc, add=T)
-  plot(plots_UTM, col=2)
+  plot(ndvi_calc)
+  plot(plots_UTM, col=2., add=T)
   
   #For Anna's wd: save if needed
   # writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), 
@@ -203,6 +202,7 @@ for (k in 1:length(ff)){
   # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
   h5closeAll()
 
+## 
   
   ### Now that the tile is processed, we need to
   # Remove water absorption bands, index for good bands
@@ -217,10 +217,10 @@ for (k in 1:length(ff)){
   ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
   # plot(ndvi_lim)
   # plot(plots_UTM, add=T)
-  
+
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
-  
+
   # brightness normalization
   cube_norm <- raster::calc(cube_masked, fun=bright_norm)
   names(cube_norm) <- names(cube_masked)
@@ -255,39 +255,100 @@ for (k in 1:length(ff)){
   
   dsm_shade <- hillShade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
   
+  
+  
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.1
+  shade_mask <- dsm_shade >= 0.5
   
+  hist(dsm_shade$layer)
+  
+  hist(shade_mask$layer)
   ###################
+  
+  
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+
   
   
+
   ################################################################################################
   ################################################################################################
   # Extract data
   
+
+  
   # Select trees within extent of tile
   inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
   trees_in <- trees[as.vector(inout),]
- 
- #################################################################################################
 
-  # get the mini area of the control plot for each tile?
-  mini <- extent(trees_in[trees_in$Treatment=="Control",])
+
+
+  
+  path_C3 <- "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"
+  
+  if( ff[k] == path_C3 ){
+    
+    C3_path <- file.path("R_output","pixel_processing")
+    
+    # mask the stack by the plot area of C3 (4 plots)
+    c3_hsi <- mask(hsiStack, C3[1,5])
+    
+    extracted_data <- extract(c3_hsi, C3[1,5], by.y="unique_plo",  df=TRUE)
+    c3_all_pixels <- as.data.frame(extracted_data)
+    
+    # remove NA values (the 'outside of the plots' pixels)
+    c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
+    write.csv(c3_all_pixels, file= file.path(C3_path, "all_C3_spec.csv"))
+    
+    ## removed due to being above 0.5 shade
+    
+    c3_no_shade <- raster::mask(cube_no_shade, shade_mask, maskvalue = 0)
+    
+    extracted_shade_removed <- extract(c3_no_shade, C3[1,5], by.y="unique_plo",  df=TRUE)
+    # remove NA values 
+    extracted_shade_removed <- extracted_shade_removed[!is.na(extracted_shade_removed$Band_468.9), ]
+    
+    dim(extracted_shade_removed)
+    write.csv(extracted_shade_removed, file=file.path(C3_path, "no_shade_C3_spec.csv"))
+    
+    # shady top spec
+    shady_spec <- raster::extract(cube_norm ,trees_in,df=T, sp=T)    
+    # remove NA values 
+    shady_spec <- shady_spec[!is.na(shady_spec$Band_468.9), ]
+    dim(shady_spec)
+    write.csv(shady_spec, file= file.path(C3_path, "shady_top_C3_spec.csv"))
+    
+    
+    ## Just the tree tops, brightness normalized
+    top_spec <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)    
+    dim(top_spec)
+    # remove NA values 
+    top_spec <- top_spec[!is.na(top_spec$Band_468.9), ]
+    write.csv(top_spec, file=file.path(C3_path, "top_C3_spec.csv"))   
+  
+
+  }
+  
+
+#########################################################
+  # Stand-level view made with mini
+  mini <- extent(trees_in[trees_in$Stand == unique(trees_in$Stand)[1],])
+  
   mini_cube <- crop(hsiStack,mini)
   mini_dsm <- crop(dsm_shade,mini)
  
   # Make plot
   par(mfrow=c(2,2))
   # large tile
-  plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
+  plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red", main="cube no shade")
   plot(plots_UTM, col="yellow", add=T)
   # control plot
   plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
   plot(plots_UTM, add=T, border=2, lwd=5)
   # plot shade mask
+
   plot(mini_dsm)
   plot(plots_UTM, add=T, border=2, lwd=5)
   plot(trees, add=T,pch=16, col=2)
@@ -296,9 +357,10 @@ for (k in 1:length(ff)){
    plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
    plot(plots_UTM, add=T, border=2, lwd=5)
    plot(trees, add=T, pch=16, col=2)
+################################################
+   
+   
   
-  # If you want to write the shade mask for figure 1
-  #writeRaster(mini_noshade, "C7_no_shade", overwrite=T,format="raster")
   
    #################################################################################################
  #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
@@ -308,6 +370,8 @@ for (k in 1:length(ff)){
   }else{
     spectra_df[[k]] <- NULL
   }
+   
+print(paste("Code has gone through k= ",k ,"iterations"))
 }
 
 
@@ -334,10 +398,25 @@ table(ldada$wvl)
 # look at number of obs per plot
 table(ldada$Treatment, ldada$Stand)/345  
 table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
+table(ldada$refl>=0, ldada$Treatment) # half?
 
 
 
-
-
-write.csv(spectra_all, file="R_input/actual_tops_7_29_2022.csv")
+# 
+# write.csv(spectra_all, file="data_folder/actual_tops.csv")
+# 
+# # Also write out the df of spectral data
+# shade_mask_spec_df
+# 
+# head(all_spec_df)
+# write.csv(all_spec_df, file="data_folder/all_spec_df.csv")
+# 
+# head(ndvi_mask_spec_df)
+# write.csv(ndvi_mask_spec_df, file="data_folder/ndvi_mask_spec_df.csv")
+# 
+# head(norm_spec_df)
+# write.csv(norm_spec_df, file="data_folder/norm_spec_df.csv")
+# 
+# head(shade_mask_spec_df)
+# write.csv(shade_mask_spec_df, file="data_folder/shade_mask_spec_df.csv")
 
