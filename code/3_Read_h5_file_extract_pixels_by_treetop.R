@@ -11,7 +11,7 @@ library(rhdf5)
 library(neonUtilities)
 #library(rgdal)
 #library(rgeos)
-source(here::here("code","Data_processing_code","band2raster.R"))
+source(here::here("code","band2raster.R"))
 
 
 # if (!require("BiocManager", quietly = TRUE))
@@ -25,7 +25,7 @@ bright_norm <- function(x){
   return(x_norm)}
 
 # read in shapefile of plot locations
-stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
 
 # Set the CRS to WGS 1984, Zone 19N
 plots <- st_transform(stands, 32619)
@@ -35,8 +35,8 @@ plots_UTM <-  as(plots, "Spatial")
 # C3 used for figure in text.
 C3 <- plots_UTM[plots_UTM$stand=="C3",]
 
-# Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops")
+# Lidar tree tops
+ trees <- st_read(here::here("data_folder","private_melnhe_locations","Bart_ttops_2025_03_09.shp"))
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -403,8 +403,10 @@ table(ldada$refl>=0, ldada$Treatment) # half?
 
 
 # 
-# write.csv(spectra_all, file="data_folder/actual_tops.csv")
-# 
+ write.csv(spectra_all, file=here::here("data_folder","R_output","actual_tops_2025_03_09.csv"))
+
+ 
+  
 # # Also write out the df of spectral data
 # shade_mask_spec_df
 # 

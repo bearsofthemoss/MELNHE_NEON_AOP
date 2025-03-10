@@ -3,8 +3,6 @@
 library(neonUtilities)
 library(ForestTools)
 library(raster)
-library(rgdal)
-library(rgeos)
 library(sf)
 library(stringr) # this is for data management
 library(tidyr)
@@ -350,13 +348,26 @@ lt <- as.data.frame(table(bart_ttops$Stand, bart_ttops$Treatment))
 lt$statr <- paste(lt$Var1, lt$Var2)
 
 ###  Read in the 10+ cm trees and calculate TPA
-tree<-read.csv("R_input/10+cm.csv")
+tree<-read.csv(here::here("data_folder","melnhe_input_files","ten_plus_DBH_2019.csv"))
 tree<-tree[tree$Plot!="5",] # no calcium
 tree$staplo<-paste(tree$Stand, tree$Plot)
 head(tree)
+
+# convert cm to basal area, m2 per hectare
+tree$basal_area_m2 <- tree$DBH2019^2 * 0.00007854 
+
+
+summary(tree$basal_area_m2)
 library(tidyr)
-bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
+bap<-aggregate(list( BA_m2 =tree$basal_area_m2), 
+               list(Stand=tree$Stand,
+                    Plot=tree$Plot,
+                    Age = tree$Age), 
+               FUN="sum", simplify=T, na.rm=T)
 bap$staplo<-paste(bap$Stand, bap$Plot)
+
+bap$ba_m2_ha <- bap$BA_m2 * 11.11111 # conversion factor for 900m2 plot area
+
 
 bap$Treatment<-sapply(bap$staplo,switch,
                       "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
@@ -372,7 +383,6 @@ bap$Treatment<-sapply(bap$staplo,switch,
 
 # count trees per plot
 tree_count <- as.data.frame(table(tree$staplo))
-head(tree_count)
 
 tree_count$tree_per_hectare <- tree_count$Freq / 900
 
@@ -380,9 +390,8 @@ bap$TPA_ha <- tree_count$tree_per_hectare[match(bap$staplo, tree_count$Var1)]
 
 bap$count <- tree_count$Freq[match(bap$staplo, tree_count$Var1)]
 
-head(bap)
 
-ggplot(bap, aes(x=TPA_ha,y=x , shape=Age, col=Age))+
+ggplot(bap, aes(x=TPA_ha,y=ba_m2_ha, col=Age ))+
   geom_point()
 
 # Now bring in the lidar detected tree tops
@@ -391,19 +400,19 @@ ggplot(bap, aes(x=TPA_ha,y=x , shape=Age, col=Age))+
 bap$lidar_top_count <- lt$Freq[match(bap$statr, lt$statr)]
 
 
-zero.02 <- ggplot(bap, aes(x= count, y= lidar_top_count, col=Age))+geom_point()+
-  geom_abline()+ggtitle("paramater 0.02")
+f_tpa <-  ggplot(bap, aes(x= count, y= lidar_top_count, col=Age))+geom_point()+
+  geom_abline()+ggtitle("Trees per acre correlated with number of lidar tops")
 
-zero.02
-
-# library(patchwork)
-# 
-# zero.2 / zero.05 / zero.01
+f_bam2_ha <- ggplot(bap, aes(x= BA_m2     , y= lidar_top_count, col=Age))+geom_point()+
+   geom_abline()+ggtitle("Basal area negatively correlated with number of lidar tops")
  
-
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2024_12_07", driver="ESRI Shapefile", overwrite=T)
-
-
-
-######################################################################
+ 
+ library(patchwork)
+# 
+f_tpa / f_bam2_ha
+ 
+st_write(obj = bart_ttops, 
+         dsn = here::here("data_folder","private_melnhe_locations"),  # Specify your output directory
+         layer = "bart_ttops_2025_03_09",          
+         driver = "ESRI Shapefile")
 

@@ -61,24 +61,12 @@ res <- res[res$Site=="Bartlett",]
 res<-res[res$Year=="2017" ,]
 
 
-names(ra)
-
-ra$total_N <- ra$NH4.hyphen.N
-
-ggplot(ra, aes(x=Stand, y=log(total_N), colour=trmt))+geom_point()+
-  #facet_wrap(~Stand)+theme_bw()+
-  geom_smooth(, se=T)+ 
-  scale_colour_manual("", 
-                      values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+
-  scale_y_log10()+
-  ggtitle("Resin available Nitrate and Ammonium")+ylab("Resin Available N")
 
 
 
 
 
-
-ggplot(res, aes(x=log(PO4.hyphen.P), y=log(NH4.plus.NO3), colour=Trt, size=.5))+geom_point()+theme_classic()+
+ggplot(res, aes(x=log(PO4.hyphen.P), y=log(NH4.plus.NO3), colour=Treatment, size=.5))+geom_point()+theme_classic()+
   scale_color_manual("", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ 
   scale_y_log10()+ scale_x_log10() + 
   theme(text=element_text(size=14)) +guides(size=F)+ggtitle("2017 resin available soil N and P") 
@@ -103,6 +91,20 @@ ra<-aggregate(res[,10:13],
                       Plot=res$Plot, 
                       trmt=res$Treatment),
               FUN="mean", na.rm=T )
+
+names(ra)
+
+
+
+ggplot(ra, aes(x=Stand, y=log(NH4.hyphen.N), colour=trmt))+geom_point()+
+  #facet_wrap(~Stand)+theme_bw()+
+  geom_smooth(, se=T)+ 
+  scale_colour_manual("", 
+                      values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+
+  scale_y_log10()+
+  ggtitle("Resin available Nitrate and Ammonium")+ylab("Resin Available N")
+
+
 dim(ra)
 head(ra)
 
@@ -204,6 +206,19 @@ ten <- dt1
 names(ten)
 tn <- ten[ , c("Stand","Plot","Treatment","Subplot","Species","CurrentTagNumber","DBH2019","dead2019")]
 
+tn$Age[tn$Stand=="C1"]<-"~30 years old"
+tn$Age[tn$Stand=="C2"]<-"~30 years old"
+tn$Age[tn$Stand=="C3"]<-"~30 years old"
+tn$Age[tn$Stand=="C4"]<-"~60 years old"
+tn$Age[tn$Stand=="C5"]<-"~60 years old"
+tn$Age[tn$Stand=="C6"]<-"~60 years old" 
+tn$Age[tn$Stand=="C7"]<-"~100 years old"
+tn$Age[tn$Stand=="C8"]<-"~100 years old"
+tn$Age[tn$Stand=="C9"]<-"~100 years old"
+
+tn <- tn[!is.na(tn$Age),]
+
+tn <- tn[tn$Treatment!="Ca",]
 
 ### Write tree dbh data 2-10  ####
 write.csv(tn, file=here::here("data_folder","melnhe_input_files","ten_plus_DBH_2019.csv"))
@@ -292,9 +307,9 @@ chm.C8b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif")
 chm.C8 <- raster::merge(chm.C8a,chm.C8b)
 chm.C9<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
-plot(stands[6], add=T)
-plot(chm.C1)
 
+plot(chm.C1)
+plot(stands, add=T)
 plot(chm.C9)
 
 rast <- merge(chm.C1, chm.C2, chm.C3,
@@ -305,24 +320,27 @@ rast <- merge(chm.C1, chm.C2, chm.C3,
 st_crs(chm.C9)
 st_crs(stands)
 
-# loo# loo# look through the 9
-stand_list <- c("C1","C2","C3","C4","C5","C6","C7","C8","C9")
+# loop through each plot 
+plot_list <- unique(stands$unique_plo)
 
 
 out <- list()
 
-for(i in 1:9){
-  choose_stand <- stand_list[i]
+
+for(i in 1:36){
+
+  choose_plot <- plot_list[i]
   
+  extracted_data <- terra::extract(rast, stands[stands$unique_plo== choose_plot, ], df=TRUE)
   
-  extracted_data <- extract(rast, stands[stands$stand== choose_stand, ], df=TRUE)
+  extracted_data$unique_plo <- plot_list[i]
   
-  merged_data <- merge(stands[stands$stand== choose_stand, ], extracted_data, by.x = "plot", by.y = "ID")
+  merged_data <- merge(stands[stands$unique_plo== choose_plot, ], extracted_data,
+                       by.x = "unique_plo", by.y = "unique_plo")
+
+  mdf <- as.data.frame(merged_data[ ,1:10])
   
-  mdf <- as.data.frame(merged_data[ ,1:8])
-  
-  #ggplot(merged_data, aes(x=plot, y=layer))+geom_boxplot()
-  
+
   out <- rbind(out, mdf )
   
 }
@@ -330,30 +348,25 @@ for(i in 1:9){
 
 
 head(out)
-dim(out)
-table(out$stand, out$plot)
 
-out$Treatment<- factor(out$Treatment, levels=c("Control","N","P","NP"))
+avg_plot_heights <- aggregate(list(height = out$layer),
+          by=list(Stand = out$stand,
+                  Plot = out$plot,
+                  staplo = out$unique_plo,
+                  Treatment = out$Treatment),
+          FUN="mean", na.rm=T)
 
-ggplot(out, aes(x=stand, y=layer,group=unique_plo , fill=Treatment))+
-  geom_boxplot()+
+
+avg_plot_heights$Treatment<- factor(avg_plot_heights$Treatment, levels=c("Control","N","P","NP"))
+
+ggplot(avg_plot_heights, aes(x=Stand, y=height , fill=Treatment))+
+  geom_col(position=position_dodge())+
   scale_fill_manual(values=c("black","blue","red","purple"))
 
 
-gout <- aggregate(out$layer, by=list(stand = out$stand,  Treatment = out$Treatment),
-                  FUN="mean", na.rm=T)
-
-
-ggplot(gout, aes(x=stand, y=x , fill=Treatment))+
-  geom_point()+
-  scale_fill_manual(values=c("black","blue","red","purple"))
-
-
-# names(out)
-stand_heights <- as.data.frame(out[ , 1:8])
 
 ### Write stand height data####
-write.csv(stand_heights,  file=here::here("data_folder","melnhe_input_files","stand_heights.csv"))
+write.csv(avg_plot_heights,  file=here::here("data_folder","melnhe_input_files","stand_heights.csv"))
 
 
 

@@ -6,11 +6,12 @@ library(MASS)
 library(plotly)
 library(vegan)
 library(agricolae)
+library(here)
 
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-read.csv("data_folder/actual_tops.csv")
+dada<-read.csv(here::here("data_folder","R_output","actual_tops.csv"))
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages

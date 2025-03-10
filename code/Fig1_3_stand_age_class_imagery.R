@@ -1,23 +1,4 @@
 
-# library(ggplot2)
-# theme_set(theme_classic())
-# library(sf)
-# library(maps)
-# library(rnaturalearth)
-# library(rnaturalearthdata)
-# library(maps)
-# library(ggspatial)
-# library(ggmap)
-# library(gridExtra)
-# library(ggpubr) # for showing 2 ggplots in 1 pane.
-# 
-# 
-
-# library(ForestTools)
-# library(raster)
-# library(rgdal)
-# library(rgeos)
-
 
 ############
 library(ggplot2)
@@ -31,17 +12,31 @@ library(raster)
 wd <- here::here()
 
 # read in shapefile of plot locations
-stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
+tops <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_03_09.shp"))
 
 
-sh <- read.csv(here::here("R_output","stand_heights.csv"))
+sh <- read.csv(here::here("data_folder","melnhe_input_files","stand_heights.csv"))
+res <- read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
 
-tinv <- read.csv(here::here("R_output","ten_plus_DBH_2019.csv"))
+res$staplo <- paste(res$Stand, res$Plot)
+
+res$Treatment<-sapply(res$staplo,switch,
+                      "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
+                      "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",
+                      "C3 1"="NP",  "C3 2"="P",   "C3 3"="N",    "C3 4"="Control",
+                      "C4 1"="NP",  "C4 2"="N",   "C4 3"="Control", "C4 4"="P",
+                      "C5 1"="Control","C5 2"="NP",  "C5 3"="N",    "C5 4"="P",
+                      "C6 1"="NP",  "C6 2"="Control","C6 3"="N",    "C6 4"="P","C6 5"="Ca",
+                      "C7 1"="N",   "C7 2"="NP",  "C7 3"="P",    "C7 4"="Control",
+                      "C8 1"="P",   "C8 2"="Control","C8 3"="N",    "C8 4"="NP","C8 5"="Ca",
+                      "C9 1"="Control","C9 2"="P",   "C9 3"="NP",   "C9 4"="N")
 
 
-trees <- st_read(file.path("data_folder","bart_ttops.shp"))
 
 
+
+#tinv <- read.csv(here::here("data_folder","ten_plus_DBH_2019.csv"))
 
 # Set the CRS to WGS 1984, Zone 19N
 stands <- st_transform(stands, 32619)
@@ -108,7 +103,8 @@ chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
 
 ## Source  DSM
 getwd()
-source("code/misc_code_ay_cleanup/get_DSM_C3.R")
+
+#source("code/misc_code_ay_cleanup/get_DSM_C3.R")
 
 # Read in rgb IMAGE
 pic_path <- file.path(wd, "data_folder","DP3.30010.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Camera","Mosaic")
