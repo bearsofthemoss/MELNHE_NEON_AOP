@@ -269,7 +269,7 @@ for (k in 6){
   
   # Apply to processed images
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
-
+plot(cube_no_shade)
   
   
 
@@ -277,10 +277,30 @@ for (k in 6){
   ################################################################################################
   # Extract data
   
+library(terra)
+library(sf)
 
+# Convert raster and trees to terra format
+r <- rast(cube_no_shade)
+tree_points <- vect(trees)
+
+# Extract values from all layers
+tree_values <- terra::extract(r, tree_points)
+
+# The first column is ID, remaining columns are values for each layer
+# Join values back to original data (excluding the ID column)
+trees_with_values <- cbind(trees, tree_values[, -1])  
+
+# Filter out trees with NA values in any band if needed
+na_rows <- apply(as.data.frame(trees_with_values)[, (ncol(trees) + 1):ncol(trees_with_values)], 1, function(x) any(is.na(x)))
+trees_valid <- trees_with_values[!na_rows, ]
   
   # Select trees within extent of tile
-  inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
+#  inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
+  cube_extent <- terra::as.polygons(ext(cube_no_shade))
+  
+  
+  
   trees_in <- trees[as.vector(inout),]
 
 
