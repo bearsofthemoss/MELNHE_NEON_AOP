@@ -369,6 +369,7 @@ bap$staplo<-paste(bap$Stand, bap$Plot)
 bap$ba_m2_ha <- bap$BA_m2 * 11.11111 # conversion factor for 900m2 plot area
 
 
+
 bap$Treatment<-sapply(bap$staplo,switch,
                       "C1 1"="P",   "C1 2"="N",   "C1 3"="Control", "C1 4"="NP",
                       "C2 1"="NP",  "C2 2"="Control","C2 3"="P",    "C2 4"="N",

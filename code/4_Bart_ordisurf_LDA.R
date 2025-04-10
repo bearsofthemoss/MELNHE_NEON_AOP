@@ -11,7 +11,7 @@ library(here)
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-read.csv(here::here("data_folder","R_output","actual_tops.csv"))
+dada<- read.csv(here::here("data_folder","melnhe_input_files","actual_tops_10_26_greater_0.1.csv"))
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
@@ -27,15 +27,16 @@ dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
 
 ## chem contains the resin available N and P from 2017 measurements
-chem <- read.csv("R_output/resin_available_N_P_melnhe.csv")
-chem$treat_stand<-paste(chem$Stand, chem$Trt)
+chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
+chem[chem$trmt=="Con", "trmt"] <- "Control"
+chem$treat_stand<-paste(chem$Stand, chem$trmt)
 
 head(chem)
 
 library(tidyr)
 # gather spectra for averaging
 names(dada)
-spectra_gather<-gather(dada, "wvl","refl",6:350)
+spectra_gather<-gather(dada, "wvl","refl",7:351)
 table(spectra_gather$height)
 
 names(spectra_gather)
@@ -61,23 +62,30 @@ dim(dadam)
 library(tidyr)
 head(dadam)
 pre_lda<-spread(spectra_gather, wvl,refl) ### means
-
+names(pre_lda)
 head(pre_lda[1:10])
 dim(pre_lda)
 names(pre_lda)
-dat_lda<-pre_lda[,c(4,8:352)]
-dim(dat_lda)
+
+#######################
+dat_lda<-pre_lda[,c(5,9:353)]
+
+# proportion explained by treatment
+lda_res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
+(prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100) ### variability explained
+out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
+
+# examine variation by stand
+stand_lda<-pre_lda[,c(6,9:353)]
+stand_lda_res <- lda(as.factor(Stand) ~ . , data = stand_lda, CV=F) ### try resampling spectra to coarser resolution
+(prop.lda <- stand_lda_res$svd^2/sum(stand_lda_res$svd^2)*100) ### variability explained
+#out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
+
+age_lda<-pre_lda[,c(7,9:353)]
+age_lda_res <- lda(as.factor(Age) ~ . , data = age_lda, CV=F) ### try resampling spectra to coarser resolution
+(prop.lda <- age_lda_res$svd^2/sum(age_lda_res$svd^2)*100) ### variability explained
 
 
-
-
-
-table(dat_lda$Treatment)
-dim(dat_lda)
-res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
-
-(prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
-out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(res$scaling))
 
 ## Add back in plot level information
 out$Stand<-pre_lda$Stand
@@ -100,7 +108,7 @@ t.lda<-dada[,c(4,6:350)]
 names(t.lda)
 
 
-res <- lda(as.factor(Treatment) ~., data = t.lda, CV=F) ### try resampling spectra to coarser resolution
+lres <- lda(as.factor(Treatment) ~., data = t.lda, CV=F) ### try resampling spectra to coarser resolution
 (prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
 out <-  as.data.frame(as.matrix(t.lda[,-1]) %*% as.matrix(res$scaling))
 
@@ -219,12 +227,12 @@ legend("topleft", legend = unique(out$Treatment), pch=23,col=c("black","blue","r
 ## Add back in plot level information
 dada$staplo<-paste(dada$Stand, dada$Treatment)
 dada$total_N<-chem$total_N[match(dada$staplo, chem$treat_stand )]
-dada$total_P<-chem$P[match(dada$staplo, chem$treat_stand )]
+dada$total_P<-chem$PO4.hyphen.P[match(dada$staplo, chem$treat_stand )]
 dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
 
 
 names(dada)
-spec.matrix<-dada[,6:350]
+spec.matrix<-dada[,7:351]
 adonis2(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
 
 spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
