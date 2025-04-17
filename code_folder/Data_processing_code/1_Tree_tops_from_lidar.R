@@ -3,11 +3,10 @@
 library(neonUtilities)
 library(ForestTools)
 library(raster)
-library(rgdal)
-library(rgeos)
 library(sf)
 library(stringr) # this is for data management
 library(tidyr)
+library(ggplot2)
 # Set global option to NOT convert all character variables to factors
 options(stringsAsFactors=F)
 
@@ -19,7 +18,7 @@ wd <- here::here()
 # https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
 
 # read in shapefile of plot locations
-stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+stands<-st_read(here::here("data_folder","Bartlett_intensive_sites_30x30.shp"))
 
 
 # Set the CRS to WGS 1984, Zone 19N
@@ -68,19 +67,19 @@ north <-centroids[, 2]
 # this will ask you if you want to download the files to your computer
 #  commented out if you don't need to download it. 
 
-# the lidar chm
-# byTileAOP(dpID="DP3.30015.001", site="BART", 
+# # the lidar chm
+# byTileAOP(dpID="DP3.30015.001", site="BART",
 #           year="2019", easting=east,
 #           northing=north,
 #           buffer=500, savepath="data_folder")
-
-
-# this downloads 15 cm Rgb data for the whole site.  # It will be used later
-# byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200, 
-#           easting=east, northing=north, 
+# 
+# 
+# #this downloads 15 cm Rgb data for the whole site.  # It will be used later
+# byTileAOP("DP3.30010.001", site="BART", year="2019", check.size = F,buffer = 200,
+#           easting=east, northing=north,
 #           savepath="data_folder")
 
-lidar_path <- file.path(wd, "data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
+lidar_path <- here::here("data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 
 chm.C1a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
 chm.C1b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4879000_CHM.tif"))
@@ -400,10 +399,10 @@ zero.02
 # 
 # zero.2 / zero.05 / zero.01
  
+# write shape file.
+#writeOGR(obj=,dsn="data_folder"  ,layer="bart_ttops_2025_04_10", driver="ESRI Shapefile", overwrite=T)
 
-writeOGR(obj=bart_ttops,dsn="data_folder"  ,layer="bart_ttops_2024_12_07", driver="ESRI Shapefile", overwrite=T)
-
-
+st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_04_10.shp"))
 
 ######################################################################
 

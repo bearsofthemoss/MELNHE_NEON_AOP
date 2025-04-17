@@ -9,9 +9,7 @@ library(ggplot2)
 library(raster)
 library(rhdf5)
 library(neonUtilities)
-#library(rgdal)
-#library(rgeos)
-source(here::here("code","Data_processing_code","band2raster.R"))
+source(here::here("code_folder","Data_processing_code","band2raster.R"))
 
 
 # if (!require("BiocManager", quietly = TRUE))
@@ -25,18 +23,15 @@ bright_norm <- function(x){
   return(x_norm)}
 
 # read in shapefile of plot locations
-stands<-st_read(file.path("data_folder","Bartlett_intensive_sites_30x30.shp"))
+stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
 
 # Set the CRS to WGS 1984, Zone 19N
 plots <- st_transform(stands, 32619)
 
 plots_UTM <-  as(plots, "Spatial")
 
-# C3 used for figure in text.
-C3 <- plots_UTM[plots_UTM$stand=="C3",]
-
 # Alex's tree tops
- trees <- readOGR("data_folder","bart_ttops")
+trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_04_10.shp"))
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -46,10 +41,10 @@ east <- centroids[, 2]
 north <-centroids[, 1]
 
 
-# Download the hypersepctral data
+# # Download the hypersepctral data
 # byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
 #           northing = north,
-#           year="2019",buffer = 200, savepath = "./data_folder/Bart_tiles/",check.size = T)
+#           year="2019",buffer = 200, savepath = "data_folder/Bart_tiles/",check.size = T)
 
 
 # Download DSMs
@@ -75,14 +70,12 @@ dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pa
 # Extract image information
 spectra_df <- list()
 
-all_spec_df <- list() # no processing
-ndvi_mask_spec_df <- list() # NDVI mask
-norm_spec_df <- list() # brightness normalization
-shade_mask_spec_df <- list() # shade mask
 
+# Start for loop ####
 
-# for (k in 1:length(ff)){
-for (k in 6){
+for (k in 1:length(ff)){
+#for (k in 6){
+
    (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
@@ -277,60 +270,16 @@ for (k in 6){
   ################################################################################################
   # Extract data
   
+   crs(cube_no_shade)
 
+trees_proj <-   sf::st_transform(trees, crs=crs(cube_no_shade))
   
-  # Select trees within extent of tile
-  inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
-  trees_in <- trees[as.vector(inout),]
+# this will be a matrix
+extracted_values <- raster::extract(cube_no_shade, trees_proj)
+
+trees_in <- na.omit(extracted_values)
 
 
-
-  
-  path_C3 <- "data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/FullSite/D01/2019_BART_5/L3/Spectrometer/Reflectance/NEON_D01_BART_DP3_316000_4878000_reflectance.h5"
-  
-  if( ff[k] == path_C3 ){
-    
-    C3_path <- file.path("R_output","pixel_processing")
-    
-    # mask the stack by the plot area of C3 (4 plots)
-    c3_hsi <- mask(hsiStack, C3[1,5])
-    
-    extracted_data <- extract(c3_hsi, C3[1,5], by.y="unique_plo",  df=TRUE)
-    c3_all_pixels <- as.data.frame(extracted_data)
-    
-    # remove NA values (the 'outside of the plots' pixels)
-    c3_all_pixels <- c3_all_pixels[!is.na(c3_all_pixels$Band_468.9), ]
-    write.csv(c3_all_pixels, file= file.path(C3_path, "all_C3_spec.csv"))
-    
-    ## removed due to being above 0.5 shade
-    
-    c3_no_shade <- raster::mask(cube_no_shade, shade_mask, maskvalue = 0)
-    
-    extracted_shade_removed <- extract(c3_no_shade, C3[1,5], by.y="unique_plo",  df=TRUE)
-    # remove NA values 
-    extracted_shade_removed <- extracted_shade_removed[!is.na(extracted_shade_removed$Band_468.9), ]
-    
-    dim(extracted_shade_removed)
-    write.csv(extracted_shade_removed, file=file.path(C3_path, "no_shade_C3_spec.csv"))
-    
-    # shady top spec
-    shady_spec <- raster::extract(cube_norm ,trees_in,df=T, sp=T)    
-    # remove NA values 
-    shady_spec <- shady_spec[!is.na(shady_spec$Band_468.9), ]
-    dim(shady_spec)
-    write.csv(shady_spec, file= file.path(C3_path, "shady_top_C3_spec.csv"))
-    
-    
-    ## Just the tree tops, brightness normalized
-    top_spec <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)    
-    dim(top_spec)
-    # remove NA values 
-    top_spec <- top_spec[!is.na(top_spec$Band_468.9), ]
-    write.csv(top_spec, file=file.path(C3_path, "top_C3_spec.csv"))   
-  
-
-  }
-  
 
 #########################################################
   # Stand-level view made with mini
@@ -384,6 +333,7 @@ head(spectra_all[ ,1:10])
 
 dim(spectra_all)
 
+names(spectra_all)
 ## make a 'long' dada
 ldada<-gather(spectra_all, "wvl","refl",6:350)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
