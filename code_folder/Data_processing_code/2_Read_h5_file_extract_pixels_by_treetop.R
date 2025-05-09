@@ -277,8 +277,6 @@ trees_proj <-   sf::st_transform(trees, crs=crs(cube_no_shade))
 # this will be a matrix
 extracted_values <- raster::extract(cube_no_shade, trees_proj)
 
-trees_in <- na.omit(extracted_values)
-
 
 
 #########################################################
@@ -353,7 +351,7 @@ table(ldada$refl>=0, ldada$Treatment) # half?
 
 
 # 
-# write.csv(spectra_all, file="data_folder/actual_tops.csv")
+ write.csv(spectra_all, file=here::here("data_folder","actual_tops_2025_04_16.csv"))
 # 
 # # Also write out the df of spectral data
 # shade_mask_spec_df

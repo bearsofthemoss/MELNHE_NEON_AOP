@@ -18,7 +18,7 @@ wd <- here::here()
 # https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
 
 # read in shapefile of plot locations
-stands<-st_read(here::here("data_folder","Bartlett_intensive_sites_30x30.shp"))
+stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
 
 
 # Set the CRS to WGS 1984, Zone 19N
