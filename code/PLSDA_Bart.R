@@ -10,27 +10,24 @@ library(tidyverse)
 
 dat <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
 
-dat <- dat[complete.cases(dat),] ### remove NAs
+dati <- dat[complete.cases(dat),] ### remove NAs
 
-age <- read.csv("./R_input/age_classes.csv")
-age
-names(dat)
-  dati <- dat %>% left_join(age, by="Stand") %>%
-  mutate(treat_age=paste(Stand, Treatment, sep = "_")) %>%
-  select(1:5,6:352) 
+dati$Age[dati$Stand=="C1"]<-"~30 years old"
+dati$Age[dati$Stand=="C2"]<-"~30 years old"
+dati$Age[dati$Stand=="C3"]<-"~30 years old"
+dati$Age[dati$Stand=="C4"]<-"~60 years old"
+dati$Age[dati$Stand=="C5"]<-"~60 years old"
+dati$Age[dati$Stand=="C6"]<-"~60 years old" 
+dati$Age[dati$Stand=="C7"]<-"~100 years old"
+dati$Age[dati$Stand=="C8"]<-"~100 years old"
+dati$Age[dati$Stand=="C9"]<-"~100 years old"
 
 
-# see minimum. Alex changed this from 77 to 11.25
-min(table(dati$treat_age))/100*75
-
+dati$
 
 ### Prepare data
-wv <- colnames(dati)[6:ncol(dati)] ### define wvl range for spectral matrix, check your column names
-wvl <- substr(wv,6,nchar(wv))
-head(wvl)
-  head(dati)
 
-spec <- dati[,6:ncol(dati)] ### make spectral matrix
+spec <- dati[,6:250] ### make spectral matrix
 
 #### PLSDA differentiating AGE CLASSES #######
 classi <- as.factor(dati$Age) ### define classes 
@@ -38,7 +35,7 @@ classi <- as.factor(dati$Age) ### define classes
 rndid <- list() ### list of random ID's for partitioning data into cal and val
 set.seed(1840)
 for (i in 1:100){ 
-  rndid[[i]] <- with(dati, ave(1:nrow(dati), treat_age, FUN=function(x) {sample.int(length(x))}))
+  rndid[[i]] <- with(dati, ave(1:nrow(dati), Age, FUN=function(x) {sample.int(length(x))}))
 }
 
 nsims <- 100 ### number of iterations, try 50, or 100?
@@ -52,7 +49,7 @@ for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shoul
   print(nsim)
   flush.console()
   set.seed(nsim)
-  inTrain <- rndid[[nsim]]<= round((min(table(dati$treat_age))/100)*75,
+  inTrain <- rndid[[nsim]]<= round((min(table(dati$Age))/100)*75,
                                    digits = 0) ### Select number of samples per class for training, e.g. 75% of smallest class
   # inTrain <- createDataPartition(y = classi, p = .75, list = FALSE) ## Classes of equal size: 75% for training
   traini <- spec[inTrain,] 
@@ -69,10 +66,10 @@ for (nsim in seq(nsims)){ ### not sure how to avoid the row names warning, shoul
  
 ### Sample overview
 obs_cal <- dati[inTrain,] 
-table(obs_cal$treat_age)
+table(obs_cal$Age)
 
 obs_val <- dati[!inTrain,] 
-table(obs_val$treat_age)
+table(obs_val$Age)
 
 
 ### Select number of components 

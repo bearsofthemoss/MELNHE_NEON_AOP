@@ -1,8 +1,11 @@
 
+# This code relies heavily on the ForestTools package- helpful information here
+# https://cran.r-project.org/web/packages/ForestTools/vignettes/treetopAnalysis.html
+
 ####  Alex Young  9-7-2020
 library(neonUtilities)
 library(ForestTools)
-library(raster)
+
 library(sf)
 library(stringr) # this is for data management
 library(tidyr)
@@ -19,6 +22,11 @@ wd <- here::here()
 
 # read in shapefile of plot locations
 stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
+
+
+# Set the CRS to WGS 1984, Zone 19N
+stands <- st_transform(stands, 32619)
+
 
 
 # Set the CRS to WGS 1984, Zone 19N
@@ -349,10 +357,13 @@ lt <- as.data.frame(table(bart_ttops$Stand, bart_ttops$Treatment))
 lt$statr <- paste(lt$Var1, lt$Var2)
 
 ###  Read in the 10+ cm trees and calculate TPA
-tree<-read.csv("R_input/10+cm.csv")
+
+tree<-read.csv(here::here("data_folder","melnhe_input_files","ten_plus_DBH_2019.csv"))
+
 tree<-tree[tree$Plot!="5",] # no calcium
 tree$staplo<-paste(tree$Stand, tree$Plot)
 head(tree)
+
 library(tidyr)
 bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
 bap$staplo<-paste(bap$Stand, bap$Plot)
@@ -402,7 +413,7 @@ zero.02
 # write shape file.
 #writeOGR(obj=,dsn="data_folder"  ,layer="bart_ttops_2025_04_10", driver="ESRI Shapefile", overwrite=T)
 
-st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_04_10.shp"))
+st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
 
 ######################################################################
 

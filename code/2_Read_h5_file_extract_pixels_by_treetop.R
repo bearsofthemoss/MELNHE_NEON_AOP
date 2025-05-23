@@ -1,7 +1,7 @@
 ### Anna K. Schweiger 9-22-2020
 ### Alex Young 9-22-2020
 
-
+library(sf)
 
 library(stringr) # this is for data management
 library(tidyr)
@@ -9,8 +9,6 @@ library(ggplot2)
 library(raster)
 library(rhdf5)
 library(neonUtilities)
-#library(rgdal)
-#library(rgeos)
 source(here::here("code","band2raster.R"))
 
 
@@ -32,11 +30,8 @@ plots <- st_transform(stands, 32619)
 
 plots_UTM <-  as(plots, "Spatial")
 
-# C3 used for figure in text.
-C3 <- plots_UTM[plots_UTM$stand=="C3",]
-
-# Lidar tree tops
- trees <- st_read(here::here("data_folder","private_melnhe_locations","Bart_ttops_2025_03_09.shp"))
+# Alex's tree tops
+trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -46,10 +41,10 @@ east <- centroids[, 2]
 north <-centroids[, 1]
 
 
-# Download the hypersepctral data
+# # Download the hypersepctral data
 # byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
 #           northing = north,
-#           year="2019",buffer = 200, savepath = "./data_folder/Bart_tiles/",check.size = T)
+#           year="2019",buffer = 200, savepath = "data_folder/Bart_tiles/",check.size = T)
 
 
 # Download DSMs
@@ -75,14 +70,12 @@ dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pa
 # Extract image information
 spectra_df <- list()
 
-all_spec_df <- list() # no processing
-ndvi_mask_spec_df <- list() # NDVI mask
-norm_spec_df <- list() # brightness normalization
-shade_mask_spec_df <- list() # shade mask
 
+# Start for loop ####
 
-# for (k in 1:length(ff)){
-for (k in 6){
+for (k in 1:length(ff)){
+#for (k in 6){
+
    (f <- ff[k])
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
@@ -271,59 +264,22 @@ for (k in 6){
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
 
   
+  
 
   ################################################################################################
   ################################################################################################
   # Extract data
-
-tree_values <- extract(cube_no_shade, trees)
-
-
-
-# The first column is ID, remaining columns are values for each layer
-# Join values back to original data (excluding the ID column)
-trees_with_values <- cbind(trees, tree_values[, -1])  
-
-# Filter out trees with NA values in any band if needed
-na_rows <- apply(as.data.frame(trees_with_values)[, (ncol(trees) + 1):ncol(trees_with_values)], 1, function(x) any(is.na(x)))
-trees_in <- trees_with_values[!na_rows, ]
   
-  # Select trees within extent of tile
-#  inout <- gIntersects(as(extent(cube_no_shade), 'SpatialPolygons'), trees, byid = T)
+   crs(cube_no_shade)
 
+trees_proj <-   sf::st_transform(trees, crs=crs(cube_no_shade))
   
-  
-  trees_in <- trees[as.vector(inout),]
+st_crs(trees_proj) == crs(cube_no_shade)
+# this will be a matrix
+extracted_values <- raster::extract(cube_no_shade, trees_proj)
+extracted_values
 
 
-
-#########################################################
-  # Stand-level view made with mini
-  # mini <- extent(trees_in[trees_in$Stand == unique(trees_in$Stand)[1],])
-  # 
-  # mini_cube <- crop(hsiStack,mini)
-  # mini_dsm <- crop(dsm_shade,mini)
-  # 
-  # # Make plot
-  # par(mfrow=c(2,2))
-  # # large tile
-  # plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red", main="cube no shade")
-  # plot(plots_UTM, col="yellow", add=T)
-  # # control plot
-  # plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
-  # plot(plots_UTM, add=T, border=2, lwd=5)
-  # # plot shade mask
-  # 
-  # plot(mini_dsm)
-  # plot(plots_UTM, add=T, border=2, lwd=5)
-  # plot(trees, add=T,pch=16, col=2)
-  #   # plot control plot after shade mask
-  #  mini_noshade <- crop(cube_no_shade,mini)
-  #  plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin')
-  #  plot(plots_UTM, add=T, border=2, lwd=5)
-  #  plot(trees, add=T, pch=16, col=2)
-################################################
-   
    
   
   
@@ -349,6 +305,7 @@ head(spectra_all[ ,1:10])
 
 dim(spectra_all)
 
+names(spectra_all)
 ## make a 'long' dada
 ldada<-gather(spectra_all, "wvl","refl",6:350)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
@@ -368,10 +325,8 @@ table(ldada$refl>=0, ldada$Treatment) # half?
 
 
 # 
- write.csv(spectra_all, file=here::here("data_folder","R_output","actual_tops_2025_03_09.csv"))
-
- 
-  
+ write.csv(spectra_all, file=here::here("data_folder","actual_tops_2025_05_23.csv"))
+# 
 # # Also write out the df of spectral data
 # shade_mask_spec_df
 # 

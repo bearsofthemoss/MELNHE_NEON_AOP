@@ -199,13 +199,14 @@ dt1$DBH2019 <- ifelse((trimws(as.character(dt1$DBH2019))==trimws("NA")),NA,dt1$D
 suppressWarnings(dt1$DBH2019 <- ifelse(!is.na(as.numeric("NA")) & (trimws(as.character(dt1$DBH2019))==as.character(as.numeric("NA"))),NA,dt1$DBH2019))
 
 
-
+str(dt1)
 ## 
 
 ten <- dt1 
 names(ten)
 tn <- ten[ , c("Stand","Plot","Treatment","Subplot","Species","CurrentTagNumber","DBH2019","dead2019")]
 
+tn$DBH2019 <- as.numeric(tn$DBH2019)
 tn$Age[tn$Stand=="C1"]<-"~30 years old"
 tn$Age[tn$Stand=="C2"]<-"~30 years old"
 tn$Age[tn$Stand=="C3"]<-"~30 years old"
@@ -219,6 +220,11 @@ tn$Age[tn$Stand=="C9"]<-"~100 years old"
 tn <- tn[!is.na(tn$Age),]
 
 tn <- tn[tn$Treatment!="Ca",]
+
+tn$BA <- (tn$DBH2019/2)^2 * 3.14159 / 10000
+
+head(tn)
+tn[tn$DBH2019==20.00,]
 
 ### Write tree dbh data 2-10  ####
 write.csv(tn, file=here::here("data_folder","melnhe_input_files","ten_plus_DBH_2019.csv"))

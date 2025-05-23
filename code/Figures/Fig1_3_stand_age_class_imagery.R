@@ -1,5 +1,131 @@
 
 
+## 2 x 2 pattern.
+
+### top left:  WREF boundary
+### top right, 4 plot RGB with outline plot and 30x30
+### bottom left: select plot with CHM showing tree crowns
+### bottom right: select plot with shade / non-shade and pixel ID (i.e. in / out)
+
+
+library(tidycensus)
+library(ggplot2)
+
+library(sf)
+library(units)
+library(here)
+library(tidyr)
+
+
+### Bartlett shapefile
+
+bart <- sf::read_sf("D:/Users/bears/Downloads/S_USA.Experimental_Area_Boundaries/S_USA.Experimental_Area_Boundaries.shp") 
+bart <- bart[bart$NAME=="Bartlett Experimental Forest",]
+ba <- st_union(bart)
+
+ba <- st_transform(ba, crs=4326)
+
+
+## stakes
+stands <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites.shp"))
+stands <- stands[stands$Site=="C9",]
+
+subp <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites_subplots.shp"))
+subp <- subp[subp$Site=="C9",]
+subp <- st_transform(subp, crs=4326)
+plot(subp)
+
+
+stands <- st_transform(stands, crs=4326)
+stands[stands$Plot=="1","Treatment"] <- "Control"
+stands[stands$Plot=="2","Treatment"] <- "P"
+stands[stands$Plot=="3","Treatment"] <- "N+P"
+stands[stands$Plot=="4","Treatment"] <- "N"
+stands$Treatment <- factor(stands$Treatment, levels=c("Control","N","P","N+P"))
+
+
+
+lit_stands <- data.frame(long = c(-71.2881, -71.318,-71.266, -71.296,-71.273), 
+                         lat  = c(44.0646, 44.044, 44.06, 44.057, 44.038),
+                         Stand = c("","C1","C2","C7","C9"),
+                         name = c("Ameriflux tower","Young stands","Young stands","Mature stands","Mature stands")) %>% 
+  st_as_sf(coords = c("long", "lat"), crs = 4326) 
+
+library(remotes)
+#install_github("cran/ggsn")
+library(ggsn)
+library(ggrepel)
+
+g1 <- ggplot() + 
+  geom_sf(data=ba, fill="lightgreen")+
+  geom_sf(data = lit_stands, aes(fill=name, shape=name), size = 4) +
+  
+  theme_minimal()+
+  theme(panel.grid.major = element_blank())+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )+
+  labs(fill="", shape="", x="", y="")+
+  #   scalebar(lit_stands, dist = 1, dist_unit = "km",
+  #          transform = TRUE, model = "WGS84",
+  #          location="topright",
+  #          st.dist=.1,height=.1,
+  #          anchor = c(x = -71.254, y = 44.022))+
+  # north(lit_stands, scale=.4, symbol=3,
+  #       location="topright",
+  #       anchor = c(x = -71.25, y = 44.078)) +
+  scale_fill_manual(values=c("Ameriflux tower"="orange", "Young stands"="black","Mature stands"="black"))+
+  scale_shape_manual(values=c("Ameriflux tower"= 21, "Young stands" =23, "Mature stands"=24))+
+  ggtitle("A. Bartlett Experimental Forest")+
+  geom_sf_text(data=lit_stands, aes( label=Stand), nudge_x = 0.004, nudge_y = 0.0015)+
+  theme(plot.title = element_text(size=22))
+
+g1
+
+g2 <- ggplot()+
+  geom_sf(data=stands,aes( fill=Treatment), col="black")+
+  geom_sf(data=subp, col="white", fill=NA)+
+  scale_fill_manual(values=c("Control"="black", "N"="blue","P"="red","N+P"="purple"))+
+  theme_minimal()+
+  labs(fill="", shape="", x="", y="")+
+  ggtitle("B. Example plot layout")+
+  theme(axis.text.x=element_blank(), #remove x axis labels
+        axis.ticks.x=element_blank(), #remove x axis ticks
+        axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()  #remove y axis ticks
+  )+theme(panel.grid.major = element_blank())+
+  # scalebar(stands, dist = 25, dist_unit = "m",
+  #          transform = TRUE, model = "WGS84",
+  #          st.dist=.05,height=.04,
+  #          location="topright",
+  #          anchor = c(x = -71.2780, y = 44.0429))+
+  theme(plot.title = element_text(size=22))
+
+
+g2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ############
 library(ggplot2)
 library(sf)
