@@ -89,6 +89,7 @@ spectra_df <- list()
 ff
 
 # 
+#for (k in 1:length(ff)){
 for (k in 1:length(ff)){
   (f <- ff[k])
   
@@ -359,4 +360,5 @@ table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
 table(ldada$refl>=0, ldada$Treatment) # half?
 
 
-write.csv(spectra_all, file="./actual_tops_10_04_greater_0.1.csv")
+write.csv(spectra_all, file="./actual_tops_05)26
+          .csv")

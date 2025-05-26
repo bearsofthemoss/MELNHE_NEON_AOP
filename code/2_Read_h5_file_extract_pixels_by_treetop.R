@@ -74,7 +74,6 @@ spectra_df <- list()
 # Start for loop ####
 
 for (k in 1:length(ff)){
-#for (k in 6){
 
    (f <- ff[k])
   

@@ -104,17 +104,19 @@ heights$Age <-factor(heights$Age, levels=c("Mature","Mid-aged","Young"))
 
 heights$se <- SE_heights$se[match(heights$staplo, SE_heights$staplo)]
 
-
-g1 <- ggplot(heights, aes(x= ba_m2_ha , y= avg_height_m,
-                    color=Age,fill=Treatment,
+heights$Age <- factor(heights$Age, levels=c("Young","Mid-aged","Mature"))
+g1 <- ggplot(heights, aes(x= Stand , y= ba_m2_ha,fill=Treatment,
                     label=Stand))+
   scale_fill_manual(values=c("black","blue","red","purple"))+
-  scale_color_manual(values=c("#E6AB02","#666666","#D95F02"))+  
+#  scale_color_manual(values=c("#E6AB02","#666666","#D95F02"))+  
  # scale_shape_manual(values=c(22, 24, 23))+
-  geom_text_repel()+
-  geom_point(  shape=21, size=3,stroke=3 )+
+#  geom_text_repel()+
+  geom_col(position=position_dodge(), col="black")+
+#  geom_point(  shape=21, size=3,stroke=3 )+
   theme_bw()+theme(panel.grid.major=element_blank(), panel.grid.minor = element_blank())+
-  labs(x="Basal area (square meters per hectare) ", y="Average canopy height (meters)")
+  labs(x="Stand", 
+       y="Basal area")+
+  facet_wrap(~Age, nrow=1, scales="free_x")
 
 g1
 
@@ -180,68 +182,6 @@ g2 <- ggplot(points, aes(x=MDS1, y=MDS2))+
   guides(linewidth=F)+xlim(-1.5, 1.5)+ylim(-1.2, 1.2)
 
 g2
-
-###########
-
-
-
-# Now compare the tree records in lidar vs the basal area.  Or count of trees?
-
-
-
-#actual<- read.csv(file.path("data_folder","actual_tops.csv"))
-
-
-
-#lid_trees <- as.data.frame(table(actual$Var1, actual$Var2))
-
-trees <- st_read(file.path("data_folder","bart_ttops.shp"))
-lid_trees<- as.data.frame(table(trees$Stand, trees$Treatment))
-
-
-lid_trees$Stand <- lid_trees$Var1
-lid_trees$Treatment <- lid_trees$Var2
-
-# Format lidar ttops
-lid_trees$staplo<-paste(lid_trees$Stand, lid_trees$Treatment)
-
-# add age
-lid_trees$Age <- com$Age[match(lid_trees$Stand, com$Stand)]
-
-
-lid_trees$lid_density <- lid_trees$Freq / 0.09 
-
-
-tally <-as.data.frame( table(dbh$Stand, dbh$Treatment))
-tally <- tally[!tally$Var2=="Ca",]
-
-## Calculate the density
-tally$density_hectare <-tally$Freq / 0.09  # / 900 * 10000
-tally$staplo <- paste(tally$Var1, tally$Var2)
-
-tally$lid_density <-lid_trees$lid_density[match(tally$staplo,lid_trees$staplo)]
-lid_trees$density_10cm <- tally$density_hectare[match(lid_trees$staplo, tally$staplo)]
-
-
-# library(tidyr)
-# tu <- gather(lid_trees, "Type","density", c("density_10cm","lid_density"))
-# g3 <- ggplot(tu, aes(x=Stand, y=density, fill=Type)) + geom_bar(stat="identity", position="dodge") + 
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=.3)) +
-#   labs(x="Stand and treatment plot", y="Number of trees per hectare") +
-#   ggtitle("Comparison of actual tree tops and lidar tree tops") + 
-#   scale_fill_manual(values=c("darkgreen","darkblue")) + theme(legend.position="bottom")
-# 
-# 
-
-g3<-ggplot(lid_trees ,aes(x=density_10cm, y=lid_density, col=Age, label=Stand))+
-  geom_text(size=5) +
-  xlab("Number of 10+ cm trees per hectare")+
-  ylab("Number of tree top detections per hectare")+
-  scale_color_manual(values=c("#E6AB02","#666666","#D95F02"))+ 
-  theme_classic()+geom_abline()+
-  xlim(0,1800)+ylim(0,1800)
-
-g3
 
 
 library(ggpubr)

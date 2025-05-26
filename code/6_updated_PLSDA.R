@@ -22,7 +22,7 @@ dati$Age[dati$Stand=="C9"]<-"~100 years old"
 
 names(dati)
 
-dati <- dati[dati$Age=="~30 years old",]
+dati <- dati[dati$Age=="~60 years old",]
 
 #spec <- dati[dati$Age=="~60 years old",]
 spec <- dati[ , -ncol(dati)]
@@ -149,7 +149,7 @@ conf_prop <- prop.table(conf_table, 2)  # Proportions by reference
 
 col <- colorRampPalette(c("black","black","brown","gold","forestgreen")) 
 corrplot::corrplot(conf_prop, 
-                   p.mat = tabs_perc, 
+                   p.mat = conf_prop, 
                    insig = "p-value", sig.level = -1, addCoef.col = 1,
                    tl.srt = 70,col = col(20),cl.lim = c(0, 1),tl.col = 1, tl.offset =1.5, 
                    cl.ratio = 0.2, cl.align.text = "l", cl.cex = 0.9, 
@@ -161,7 +161,7 @@ mtext("Reference",at = 2, line = 0, cex=1.3)
 if(!exists(here::here("R_output","PLSDA_output"))){ 
   dir.create(here::here("R_output","PLSDA_output"))}
 
-write.csv(conf_prop, here::here("R_output","PLSDA_output","young_stands_treatment_plsda.csv"))
+write.csv(conf_prop, here::here("R_output","PLSDA_output","mid_stands_treatment_plsda.csv"))
 
 
 # 
