@@ -26,12 +26,13 @@ bright_norm <- function(x){
 stands<-st_read(here::here("data_folder","private_melnhe_locations","Bartlett_intensive_sites_30x30.shp"))
 
 # Set the CRS to WGS 1984, Zone 19N
-plots <- st_transform(stands, 32619)
 
-plots_UTM <-  as(plots, "Spatial")
+plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
+
 
 # Alex's tree tops
 trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
+trees <- sf::st_transform(stands, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -56,7 +57,6 @@ north <-centroids[, 1]
 
 #PC- Alex's wd
 ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
-
 dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
 
 
@@ -64,6 +64,7 @@ dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pa
  # Anna's
 #ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
 #dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
+
 
 ############################################################################################
 #### Begin hyperspectral data management
@@ -73,7 +74,8 @@ spectra_df <- list()
 
 # Start for loop ####
 
-for (k in 1:length(ff)){
+ for (k in 1:3){
+
 
    (f <- ff[k])
   
@@ -152,21 +154,6 @@ for (k in 1:length(ff)){
   nami
   
 
-  
-  ### plot
-   plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
-   plot(plots_UTM, add=T, col=2)
-   text(coordinates(plots_UTM), labels=plots_UTM$stand, cex=0.8)
-
-  
-    
-  # For Anna's wd: save if needed
-  # writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), overwrite=T,
-  #             format="raster")
-
-  ## read again
-  # hsiStack <- stack(paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"))
-  
   ### Make NDVI raster layer
   # NEON uses bands close to 648.2, 858.6
   # ideal bands: https://data.neonscience.org/documents/10179/11204/NEON.DOC.002391vA/0b2a4472-95eb-42a7-a3cb-db6647de7ba9
@@ -183,8 +170,7 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  plot(ndvi_calc)
-  plot(plots_UTM, col=2., add=T)
+
   
   #For Anna's wd: save if needed
   # writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), 
@@ -207,8 +193,8 @@ for (k in 1:length(ff)){
   
   ### NDVI mask
   ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
-  # plot(ndvi_lim)
-  # plot(plots_UTM, add=T)
+   plot(ndvi_lim)
+   plot(plots_UTM, add=T)
 
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
@@ -263,65 +249,83 @@ for (k in 1:length(ff)){
   cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
 
   
-  
-
   ################################################################################################
   ################################################################################################
   # Extract data
   
-   crs(cube_no_shade)
+  trees_proj <- sf::st_transform(trees, crs = crs(cube_norm))
 
-trees_proj <-   sf::st_transform(trees, crs=crs(cube_no_shade))
-  
-st_crs(trees_proj) == crs(cube_no_shade)
-# this will be a matrix
-extracted_values <- raster::extract(cube_no_shade, trees_proj)
-extracted_values
+  # Check CRS compatibility (convert both to strings for comparison)
+  raster_crs <- as.character(crs(cube_norm))
+  trees_crs <- as.character(st_crs(trees_proj)$wkt)
 
-
-   
-  
-  
-   #################################################################################################
- #here you extract the hyperspectral data from the cube by the spatial points of the tree. Hopefully.
-  if(length(trees_in) >=1){
-    spectra <- raster::extract(cube_no_shade,trees_in,df=T, sp=T)
+  # Extract spectral values for tree points
+  if(length(trees_proj) >= 1) {
+    spectra <- raster::extract(cube_no_shade, trees_proj, df = TRUE, sp = TRUE)
+    
+    # Convert to data frame and store
     spectra_df[[k]] <- as.data.frame(spectra@data)
-  }else{
+    
+    # Add file identifier to track which H5 file the data came from
+    file_id <- gsub("_reflectance.h5", "", basename(f))
+    spectra_df[[k]]$file_id <- file_id
+    
+    cat("  Successfully extracted spectra for", nrow(spectra_df[[k]]), "trees\n")
+    
+  } else {
+    cat("  No tree points found in this tile\n")
     spectra_df[[k]] <- NULL
   }
-   
-print(paste("Code has gone through k= ",k ,"iterations"))
+  
+  
+
+cat("Completed iteration k =", k, "\n\n")
 }
 
+# ============================================================================
+# COMBINE AND SAVE RESULTS
+# ============================================================================
 
+summary(as.data.frame(spectra_df))
 
- ### combine and save
-spectra_all <- do.call(rbind, spectra_df)
+cat("Combining results from all files...\n")
 
-head(spectra_all[ ,1:10])
+# Remove NULL entries
+spectra_df <- spectra_df[!sapply(spectra_df, is.null)]
 
+if (length(spectra_df) > 0) {
+  # Combine all spectral data
+  combined_spectra <- do.call(rbind, spectra_df)
+  
+  # Remove rows with all NA spectral values
+  spectral_cols <- grep("^Band_", names(combined_spectra), value = TRUE)
+  valid_rows <- rowSums(!is.na(combined_spectra[spectral_cols])) > 0
+  combined_spectra <- combined_spectra[valid_rows, ]
+  
+  # Write to CSV
+  output_file <- "tree_spectra_processed.csv"
+  write.csv(combined_spectra, output_file, row.names = FALSE)
+  
+  cat("=== PROCESSING COMPLETE ===\n")
+  cat("Results saved to:", output_file, "\n")
+  cat("Total trees processed:", nrow(combined_spectra), "\n")
+  cat("Number of spectral bands:", length(spectral_cols), "\n")
+  cat("Wavelength range: ~", 
+      min(as.numeric(gsub("Band_", "", spectral_cols))), "-", 
+      max(as.numeric(gsub("Band_", "", spectral_cols))), "nm\n")
+  cat("Files successfully processed:", length(spectra_df), "of", length(h5_files), "\n")
+  
+  # Show sample of the data
+  cat("\nFirst few rows and columns:\n")
+  print(combined_spectra[1:min(5, nrow(combined_spectra)), 1:min(8, ncol(combined_spectra))])
+  
+} else {
+  cat("No valid spectral data was extracted from any files.\n")
+}
 
-dim(spectra_all)
-
-names(spectra_all)
-## make a 'long' dada
-ldada<-gather(spectra_all, "wvl","refl",6:350)
-ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
-ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
-ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
-
-
-head(ldada)
-
-table(ldada$wvl)
-
-# look at number of obs per plot
-table(ldada$Treatment, ldada$Stand)/345  
-table(is.na(ldada$refl), ldada$Treatment) # but alot are NA
-table(ldada$refl>=0, ldada$Treatment) # half?
-
-
+  
+   ###########
+  
 
 # 
  write.csv(spectra_all, file=here::here("data_folder","actual_tops_2025_05_23.csv"))

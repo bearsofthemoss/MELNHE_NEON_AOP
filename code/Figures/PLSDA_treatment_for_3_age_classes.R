@@ -40,12 +40,12 @@ conf_data <- rbind(o_long, m_long, y_long)
 conf_data$Age <- factor(conf_data$Age, levels=c("Young","Mid","Old"))
 
 conf_data$Reference <- factor(conf_data$Reference, levels=c("Control","N","P","NP"))
-conf_data$Prediction <- factor(conf_data$Prediction, levels=c("Control","N","P","NP"))
+conf_data$Prediction <- factor(conf_data$Prediction, levels=c("NP","P","N","Control"))
 
 # fan the plot be facet_wrapped by the 3 age classes?
 
 # Create custom color palette
-col <- colorRampPalette(c("black","brown","gold","forestgreen"))
+col <- colorRampPalette(c("black","black","brown","gold","forestgreen"))
 
 
 # Create ggplot confusion matrix heatmap
