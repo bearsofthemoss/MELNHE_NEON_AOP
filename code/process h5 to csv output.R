@@ -58,7 +58,7 @@ north <-centroids[, 2]
 ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
 dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
 
-ff <- ff[1]
+
 
 
 ############################################################################################
@@ -66,8 +66,11 @@ ff <- ff[1]
 # Extract image information
 spectra_df <- list()
 
-for (k in 1:length(ff)){
+#for (k in 1:length(ff)){
+
+k <- 13
   f <- ff[k]
+  d <- dd[k]
   
   x <- h5ls(f)[grep("Wavelength", h5ls(f)[,2]),]
   xx <- paste(x[1],x[2],sep="/")
@@ -92,7 +95,9 @@ for (k in 1:length(ff)){
   xx <- paste(x[1],x[2],sep="/")
   mapInfo <- h5read(f,xx)
   (mapInfo <- unlist(strsplit(mapInfo, ",")))
-  myCRS <- CRS(paste0("+init=epsg:",spInfo$`EPSG Code`))
+      # Set proper CRS (using terra for CRS handling)
+  myCRS <- "+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs"
+  
   
   reso <- as.numeric(mapInfo[2]) ### resolution
   
@@ -133,11 +138,6 @@ for (k in 1:length(ff)){
   ### plot
   plotRGB(hsiStack,r = 52, g = 28, b = 10, stretch = 'lin',colNA=1)
   plot(plots_UTM, add=T, col=2)
-  # text(coordinates(plots_UTM), labels=plots_UTM$Site, cex=0.8)
-  
-  # plot(plots_UTM[plots_UTM$Site=="C1",])
-  
-  writeRaster(hsiStack, paste0("./R_output/Bart_tiles_processed/", nami, "_.grd"), format="raster")
   
   
   ### Make NDVI raster layer
@@ -156,7 +156,6 @@ for (k in 1:length(ff)){
   # calculate NDVI
   NDVI <- function(x){(x[,2]-x[,1])/(x[,2]+x[,1])}
   ndvi_calc <- calc(ndvi_stack,NDVI)
-  writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), format="GTiff")
   
   h5closeAll()
   ##################################################################################
@@ -174,7 +173,7 @@ for (k in 1:length(ff)){
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.9 # set NDVI threshold, could be 0.6
+  ndvi_lim <- ndvi_calc >= 0.75 # set NDVI threshold, could be 0.6
   
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
@@ -186,14 +185,14 @@ for (k in 1:length(ff)){
   plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
   
   ### Shade mask
-  nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
-  dsm <- raster(dd[grep(nam_d,dd)])
+#  nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
+  dsm <- terra::rast(d)
   
-  dsm_slope <- terrain(dsm,opt="slope")
-  dsm_aspect <- terrain(dsm,opt="aspect")
+  dsm_slope <- terra::terrain(dsm,v="slope")
+  dsm_aspect <- terra::terrain(dsm,v="aspect")
   
   
-  i_h5 <- f[grep(nam_d,f)][1]
+  i_h5 <- f
   ii <- h5ls(file = i_h5)
   
   d_nam <- paste(ii[grep("Solar_Zenith",ii$name),]$group, ii[grep("Solar_Zenith",ii$name),]$name, sep="/")
@@ -212,31 +211,34 @@ for (k in 1:length(ff)){
   }
   azimuth <- mean(unlist(azimuth))
   
-  dsm_shade <- hillShade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
-  
+
+# find a terra compatible method for this  
+  dsm_shade <- terra:: shade(dsm_slope, dsm_aspect, angle = zenith , direction = azimuth)
   ############################
   # Find ideal threshold
   shade_mask <- dsm_shade >= 0.1 
   
-  # Mask RGB for testing
-  cube_no_shade <- raster::mask(hsiStack, shade_mask, maskvalue = 0)
+
+# here alex converts rasterstack hsistack
+  # Convert RasterStack to SpatRaster
+  hsiStack_terra <- terra::rast(hsiStack)
+  
+  # Create the shade mask
+  shade_mask <- dsm_shade >= 0.1 
+  
+  # Now mask using terra
+  cube_no_shade <- mask(hsiStack_terra, shade_mask, maskvalue = 0)
+  
   
   # Select subset to examine threshold
   # better: clip to extent of stand (centroid plus 200 m buffer)
-  plotRGB(hsiStack, r = 56, g = 28, b = 14, stretch = 'lin')
-  
-  mini <- drawExtent()
-  
-  mini_cube <- crop(hsiStack,mini)
-  mini_noshade <- crop(cube_no_shade,mini)
-  
-  # plot
-  plotRGB(mini_cube,r = 56, g = 28, b = 14, stretch = 'lin')
-  plotRGB(mini_noshade,r = 56, g = 28, b = 14, stretch = 'lin')
+  # plotRGB(hsiStack, r = 56, g = 28, b = 14, stretch = 'lin')
+  # 
+ 
   
   ###################
   # Apply to processed images
-  cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+  cube_no_shade <- raster::mask(rast(cube_norm), shade_mask, maskvalue = 0)
   plotRGB(cube_no_shade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")
   
   plotRGB(mini_noshade, r = 56, g = 28, b = 14, stretch = 'lin', colNA="red")

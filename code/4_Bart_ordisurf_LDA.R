@@ -7,11 +7,12 @@ library(plotly)
 library(vegan)
 library(agricolae)
 library(here)
+library(caret)
 
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<- read.csv(here::here("data_folder","melnhe_input_files","actual_tops_10_26_greater_0.1.csv"))
+dada<- read.csv(here::here("data_folder","actual_tops.csv"))
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
@@ -36,7 +37,7 @@ head(chem)
 library(tidyr)
 # gather spectra for averaging
 names(dada)
-spectra_gather<-gather(dada, "wvl","refl",7:351)
+spectra_gather<-gather(dada, "wvl","refl",6:350)
 table(spectra_gather$height)
 
 names(spectra_gather)
@@ -68,7 +69,7 @@ dim(pre_lda)
 names(pre_lda)
 
 #######################
-dat_lda<-pre_lda[,c(5,9:353)]
+dat_lda<-pre_lda[,c(4,9:352)]
 
 # proportion explained by treatment
 lda_res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
@@ -76,12 +77,12 @@ lda_res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampli
 out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
 
 # examine variation by stand
-stand_lda<-pre_lda[,c(6,9:353)]
+stand_lda<-pre_lda[,c(5,9:352)]
 stand_lda_res <- lda(as.factor(Stand) ~ . , data = stand_lda, CV=F) ### try resampling spectra to coarser resolution
 (prop.lda <- stand_lda_res$svd^2/sum(stand_lda_res$svd^2)*100) ### variability explained
 #out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
 
-age_lda<-pre_lda[,c(7,9:353)]
+age_lda<-pre_lda[,c(6,9:352)]
 age_lda_res <- lda(as.factor(Age) ~ . , data = age_lda, CV=F) ### try resampling spectra to coarser resolution
 (prop.lda <- age_lda_res$svd^2/sum(age_lda_res$svd^2)*100) ### variability explained
 
@@ -109,8 +110,8 @@ names(t.lda)
 
 
 lres <- lda(as.factor(Treatment) ~., data = t.lda, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- res$svd^2/sum(res$svd^2)*100) ### variability explained
-out <-  as.data.frame(as.matrix(t.lda[,-1]) %*% as.matrix(res$scaling))
+(prop.lda <- lres$svd^2/sum(lres$svd^2)*100) ### variability explained
+out <-  as.data.frame(as.matrix(t.lda[,-1]) %*% as.matrix(lres$scaling))
 
 ## Add back in plot level information
 out$Stand<-dada$Stand

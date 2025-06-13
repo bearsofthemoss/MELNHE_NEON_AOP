@@ -124,7 +124,7 @@ g1
 
 
 #  Community ordination
-names(dbh)
+names(bap)
 
 tree$staplo <- paste(tree$Stand, tree$Plot)
 
@@ -172,14 +172,14 @@ points$Treatment<- factor(points$Treatment, levels=c("Control","N","P","NP"))
 
 library(ggforce)
 g2 <- ggplot(points, aes(x=MDS1, y=MDS2))+
-#  geom_mark_ellipse(aes( group=Stand, label = Stand)) +
-  geom_mark_ellipse(aes( group=Age, fill = Age, label=Age, linewidth=3)) +
+  geom_mark_ellipse(aes( group=Stand)) +
+  geom_mark_ellipse(aes( group=Age, fill = Age, label=Age), linewidth=3) +
   geom_text(aes(label=Stand, col=Treatment), size=4)+
   labs(x="NMDS 1", y="NMDS 2")+
   scale_fill_manual(values=c("#E6AB02","#666666","#D95F02"))+ 
   scale_color_manual(values=c("black","blue","red","purple"))+
   theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  guides(linewidth=F)+xlim(-1.5, 1.5)+ylim(-1.2, 1.2)
+  xlim(-1.5, 1.5)+ylim(-1.2, 1.2)
 
 g2
 

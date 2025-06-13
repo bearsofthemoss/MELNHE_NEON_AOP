@@ -141,8 +141,9 @@ pixel_chem <- merge(pixel_plot_data, cwm, by = "plot_id", all.x = TRUE)
 
 pixel_chem$Stand <- dada$Stand[match(pixel_chem$plot_id, dada$plot_id)]
 
+
 # Join the chemistry data to ensure matching order
-chem_data_ordered <- merge(order_match, pixel_chem, by = c("pixel_id", "plot_id"))
+chem_data_ordered <- merge(pixel_plot_data, pixel_chem, by = c("pixel_id", "plot_id"))
 chem_data_ordered <- chem_data_ordered[, 3:9, drop = FALSE]
 
 # Standardize if needed

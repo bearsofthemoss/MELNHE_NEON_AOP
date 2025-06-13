@@ -2,15 +2,15 @@
 ### Alex Young 9-22-2020
 
 library(sf)
-
 library(stringr) # this is for data management
 library(tidyr)
 library(ggplot2)
-library(raster)
+library(terra)
 library(rhdf5)
 library(neonUtilities)
-source(here::here("code","band2raster.R"))
 
+
+source(here::here("code","band2raster.R"))
 
 # if (!require("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
@@ -55,15 +55,10 @@ north <-centroids[, 1]
 #           buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
-#PC- Alex's wd
+# Folder working directories
 ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
 dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
 
-
-#dd<- dd[c(c(2,4,12,13,6,12,3,8,5,7))] 
- # Anna's
-#ff <- list.files("//Volumes/Backup Plus/BARTcubes_Alex/",pattern = ".h5", recursive = T, full.names = T)
-#dd <- list.files("//Volumes/Backup Plus/BARTdsm_Alex/",pattern = "DSM.tif", recursive = T, full.names = T)
 
 
 ############################################################################################
@@ -74,8 +69,9 @@ spectra_df <- list()
 
 # Start for loop ####
 
- for (k in 1:3){
+# for (k in 1:3){
 
+k <- 13 # For C7
 
    (f <- ff[k])
   
@@ -102,7 +98,7 @@ spectra_df <- list()
   xx <- paste(x[1],x[2],sep="/")
   mapInfo <- h5read(f,xx)
   (mapInfo <- unlist(strsplit(mapInfo, ",")))
-  myCRS <- CRS(paste0("+init=epsg:",spInfo$`EPSG Code`))
+  myCRS <- st_crs(paste0("EPSG:", spInfo$`EPSG Code`))
   
   reso <- as.numeric(mapInfo[2]) ### resolution
   
@@ -115,10 +111,11 @@ spectra_df <- list()
   reflInfo$Dimension_Labels
   reflInfo$Dimensions
   
-  xMax <- (xMin + reflInfo$Dimensions[2]*reso) ### xMax = left edge + (no of cols*x pixel)
-  yMin <- (yMax -  reflInfo$Dimensions[1]*reso) ### yMin + top edge - (no of rows*y pixel)
+  xMax <- (xMin + reflInfo$Dimensions[2]*reso)
+  yMin <- (yMax - reflInfo$Dimensions[1]*reso)
   
-  rasExt <- extent(xMin,xMax,yMin,yMax) ### define the extent (left, right, top, bottom)
+  # Instead of extent() from raster, use ext() from terra
+  rasExt <- ext(xMin, xMax, yMin, yMax)
   
   # Read all bands and create raster stack 
   a <- 1:length(wvl) ### list of bands to be stacked
@@ -126,6 +123,8 @@ spectra_df <- list()
   for(i in 1:length(wvl)){
     all_wvls[[i]] <- a[i]
   }
+  
+  source(here::here("code","band2raster.R"))
   
   # this takes a minute
   cube_rast <- lapply(all_wvls,band2raster, path_h5 = f,NoDataValue = myNoDataValue,
@@ -207,10 +206,10 @@ spectra_df <- list()
   
   ### Shade mask
   nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
-  dsm <- raster(dd[grep(nam_d,dd)])
+  dsm <- rast(dd[grep(nam_d,dd)])
 
-  dsm_slope <- terrain(dsm,opt="slope")
-  dsm_aspect <- terrain(dsm,opt="aspect")
+  dsm_slope <- terrain(dsm,v="slope")
+  dsm_aspect <- terrain(dsm,v="aspect")
   
   i_h5 <- f[grep(nam_d,f)][1]
   ii <- h5ls(file = i_h5)
@@ -231,10 +230,9 @@ spectra_df <- list()
   }
   azimuth <- mean(unlist(azimuth))
   
-  dsm_shade <- hillShade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
+  dsm_shade <- shade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
   
-  
-  
+    
   ############################
   # Find ideal threshold
   shade_mask <- dsm_shade >= 0.5
