@@ -189,6 +189,7 @@ print(anova_terms)
 par(mfrow = c(1, 1))
 plot(spec_rda, scaling = 2)  # scaling=2 emphasizes relationships among variables
 
+
 # More detailed plot with better labeling
 plot(spec_rda, scaling = 2, type = "none", main = "RDA of Spectral Data ~ Foliar Chemistry")
 points(spec_rda, display = "sites", pch = 21, col = "black", bg = "lightblue", cex = 1.2)
@@ -216,7 +217,7 @@ text(scores(spec_rda, choices = 1, display = "bp")[,1] * 0.95,
 #-=-=-=-=-=-=-=-=-=-=-=-=-
 
 # List of all foliar chemistry elements to analyze
-elements <- c("Ncwm", "Pcwm", "Cacwm", "Kcwm", "Mgcwm", "Mncwm", "Scwm","Stand")
+elements <- c("Ncwm", "Pcwm", "Cacwm", "Kcwm", "Mgcwm", "Mncwm", "Scwm")
 
 # Create a data frame to store the results
 element_results <- data.frame(
@@ -273,41 +274,41 @@ cat("Element explaining most variance:", best_element,
 # 
 # # This shows which combination of elements is most parsimonious
 # # Start with null model
-# null_model <- dbrda(sp_dist ~ 1, data = chem_data)
-# 
-# # Full model with all elements
-# all_elements_formula <- paste("sp_dist ~", paste(elements, collapse = " + "))
-# full_model <- dbrda(formula(all_elements_formula), data = chem_data)
-# 
-# # Perform forward selection
-# fwd_model <- ordistep(null_model, scope = formula(full_model), direction = "forward")
-# 
-# # Get the final adjusted R²
-# final_adj_r2 <- RsquareAdj(fwd_model)$adj.r.squared
-# cat("Optimal model explains", round(final_adj_r2, 3), "of variance\n")
-# 
-# # Show the selected variables
-# cat("Selected elements (in order):", paste(attr(terms(fwd_model), "term.labels"), collapse = ", "), "\n")
-# 
-# #-=-=-=-=-=-=-=-=-=-=-=-=-
-# # Variance Partitioning Between Best Elements
-# #-=-=-=-=-=-=-=-=-=-=-=-=-
-# 
-# # If forward selection identified 2+ elements, we can partition variance between them
-# if (length(attr(terms(fwd_model), "term.labels")) >= 2) {
-#   top_elements <- attr(terms(fwd_model), "term.labels")[1:min(2, length(attr(terms(fwd_model), "term.labels")))]
-# 
-#   # Create separate matrices for top elements
-#   X1 <- chem_data[, top_elements[1], drop=FALSE]
-#   X2 <- chem_data[, top_elements[2], drop=FALSE]
-# 
-#   # Perform variance partitioning between top 2 elements
-#   var_part_top <- varpart(sp_dist, X1, X2)
-# 
-#   # Display results
-#   var_part_top
-# 
-#   # Plot the Venn diagram
-#   plot(var_part_top, bg = 1:4, digits = 2, cutoff = 0.0001,
-#        Xnames = top_elements)
-# }
+null_model <- dbrda(sp_dist ~ 1, data = chem_data)
+
+# Full model with all elements
+all_elements_formula <- paste("sp_dist ~", paste(elements, collapse = " + "))
+full_model <- dbrda(formula(all_elements_formula), data = chem_data)
+
+# Perform forward selection
+fwd_model <- ordistep(null_model, scope = formula(full_model), direction = "forward")
+
+# Get the final adjusted R²
+final_adj_r2 <- RsquareAdj(fwd_model)$adj.r.squared
+cat("Optimal model explains", round(final_adj_r2, 3), "of variance\n")
+
+# Show the selected variables
+cat("Selected elements (in order):", paste(attr(terms(fwd_model), "term.labels"), collapse = ", "), "\n")
+
+#-=-=-=-=-=-=-=-=-=-=-=-=-
+# Variance Partitioning Between Best Elements
+#-=-=-=-=-=-=-=-=-=-=-=-=-
+
+# If forward selection identified 2+ elements, we can partition variance between them
+if (length(attr(terms(fwd_model), "term.labels")) >= 2) {
+  top_elements <- attr(terms(fwd_model), "term.labels")[1:min(2, length(attr(terms(fwd_model), "term.labels")))]
+
+  # Create separate matrices for top elements
+  X1 <- chem_data[, top_elements[1], drop=FALSE]
+  X2 <- chem_data[, top_elements[2], drop=FALSE]
+
+  # Perform variance partitioning between top 2 elements
+  var_part_top <- varpart(sp_dist, X1, X2)
+
+  # Display results
+  var_part_top
+
+  # Plot the Venn diagram
+  plot(var_part_top, bg = 1:4, digits = 2, cutoff = 0.0001,
+       Xnames = top_elements)
+}
