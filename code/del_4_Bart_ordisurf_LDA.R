@@ -69,7 +69,7 @@ dim(pre_lda)
 names(pre_lda)
 
 #######################
-dat_lda<-pre_lda[,c(4,9:352)]
+dat_lda<-pre_lda[,c(4,10:353)]
 
 # proportion explained by treatment
 lda_res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
@@ -82,7 +82,7 @@ stand_lda_res <- lda(as.factor(Stand) ~ . , data = stand_lda, CV=F) ### try resa
 (prop.lda <- stand_lda_res$svd^2/sum(stand_lda_res$svd^2)*100) ### variability explained
 #out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
 
-age_lda<-pre_lda[,c(6,9:352)]
+age_lda<-pre_lda[,c(8,10:353)]
 age_lda_res <- lda(as.factor(Age) ~ . , data = age_lda, CV=F) ### try resampling spectra to coarser resolution
 (prop.lda <- age_lda_res$svd^2/sum(age_lda_res$svd^2)*100) ### variability explained
 

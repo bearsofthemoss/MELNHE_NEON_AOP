@@ -162,6 +162,8 @@ if(!exists(here::here("R_output","PLSDA_output"))){
   dir.create(here::here("R_output","PLSDA_output"))}
 
 write.csv(conf_prop, here::here("R_output","PLSDA_output","mid_stands_treatment_plsda.csv"))
+write.csv(conf_table, here::here("R_output","PLSDA_output","test_count_stands_treatment_plsda.csv"))
+
 
 
 # 

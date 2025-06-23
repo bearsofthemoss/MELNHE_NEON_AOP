@@ -9,7 +9,7 @@ library(tidyr)
 library(data.table)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada<-read.csv("R_input/actual_tops_10_26_greater_0.1.csv")
+dada<- read.csv(here::here("data_folder","actual_tops.csv"))
 dada<-dada[,-1]
 
 # stand ages
@@ -23,6 +23,7 @@ dada$Age[dada$Stand=="C7"]<-"~100 years old"
 dada$Age[dada$Stand=="C8"]<-"~100 years old"
 dada$Age[dada$Stand=="C9"]<-"~100 years old"
 
+names(dada)
 # make a 'long' version of dada
 ldada<-gather(dada, "wvl","refl",7:351)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))

@@ -6,6 +6,7 @@ library(stringr) # this is for data management
 library(tidyr)
 library(ggplot2)
 library(terra)
+library(raster)
 library(rhdf5)
 library(neonUtilities)
 
@@ -32,7 +33,7 @@ plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
 
 # Alex's tree tops
 trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
-trees <- sf::st_transform(stands, crs = "EPSG:32619")
+trees <- sf::st_transform(trees, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
 
@@ -69,9 +70,8 @@ spectra_df <- list()
 
 # Start for loop ####
 
-# for (k in 1:3){
+ for (k in 1:length(ff)){
 
-k <- 13 # For C7
 
    (f <- ff[k])
   
@@ -237,29 +237,43 @@ k <- 13 # For C7
   # Find ideal threshold
   shade_mask <- dsm_shade >= 0.5
   
-  hist(dsm_shade$layer)
-  
-  hist(shade_mask$layer)
   ###################
   
   
-  # Apply to processed images
-  cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
-
+  # # Apply to processed images
+  # cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+  # 
   
   ################################################################################################
   ################################################################################################
   # Extract data
   
   trees_proj <- sf::st_transform(trees, crs = crs(cube_norm))
+dim(trees_proj)
 
+  # Convert coordinates to matrix for terra extract
+  coords_matrix <- st_coordinates(trees_proj$geometry)
+  coords_matrix[ ,1:2]
+  
+  # Extract values using coordinate matrix
+  tree_shade_values <- terra::extract(dsm_shade, coords_matrix[ ,1:2])
+  
+  # Add to tree tops data
+  trees_proj$shade_intensity <- tree_shade_values$hillshade  # Continuous shade values
+
+  trees_proj <- trees_proj[trees_proj$shade_intensity >= 0.1 &
+                              !is.na(trees_proj$shade_intensity), ]
+  dim(trees_proj)
+# only use the trees that are not masked
+
+  
   # Check CRS compatibility (convert both to strings for comparison)
   raster_crs <- as.character(crs(cube_norm))
   trees_crs <- as.character(st_crs(trees_proj)$wkt)
 
   # Extract spectral values for tree points
-  if(length(trees_proj) >= 1) {
-    spectra <- raster::extract(cube_no_shade, trees_proj, df = TRUE, sp = TRUE)
+  if(dim(trees_proj)[1] >= 1) {
+    spectra <- terra::extract(cube_norm, trees_proj, df = TRUE, sp = TRUE)
     
     # Convert to data frame and store
     spectra_df[[k]] <- as.data.frame(spectra@data)
@@ -284,7 +298,7 @@ cat("Completed iteration k =", k, "\n\n")
 # COMBINE AND SAVE RESULTS
 # ============================================================================
 
-summary(as.data.frame(spectra_df))
+
 
 cat("Combining results from all files...\n")
 
@@ -311,7 +325,7 @@ if (length(spectra_df) > 0) {
   cat("Wavelength range: ~", 
       min(as.numeric(gsub("Band_", "", spectral_cols))), "-", 
       max(as.numeric(gsub("Band_", "", spectral_cols))), "nm\n")
-  cat("Files successfully processed:", length(spectra_df), "of", length(h5_files), "\n")
+  cat("Files successfully processed:", length(spectra_df), "of", length(ff), "\n")
   
   # Show sample of the data
   cat("\nFirst few rows and columns:\n")
@@ -325,21 +339,5 @@ if (length(spectra_df) > 0) {
    ###########
   
 
-# 
- write.csv(spectra_all, file=here::here("data_folder","actual_tops_2025_05_23.csv"))
-# 
-# # Also write out the df of spectral data
-# shade_mask_spec_df
-# 
-# head(all_spec_df)
-# write.csv(all_spec_df, file="data_folder/all_spec_df.csv")
-# 
-# head(ndvi_mask_spec_df)
-# write.csv(ndvi_mask_spec_df, file="data_folder/ndvi_mask_spec_df.csv")
-# 
-# head(norm_spec_df)
-# write.csv(norm_spec_df, file="data_folder/norm_spec_df.csv")
-# 
-# head(shade_mask_spec_df)
-# write.csv(shade_mask_spec_df, file="data_folder/shade_mask_spec_df.csv")
 
+ write.csv(combined_spectra, file=here::here("data_folder","actual_tops.csv"))
