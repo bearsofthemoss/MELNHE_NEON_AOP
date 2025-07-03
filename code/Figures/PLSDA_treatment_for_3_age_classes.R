@@ -4,9 +4,10 @@ library(reshape2)
 library(dplyr)
 
 # Read the confusion matrix data from CSV
-o_data <- read.csv(here::here("R_output","PLSDA_output","old_stands_treatment_plsda.csv"))
-m_data <- read.csv(here::here("R_output","PLSDA_output","mid_stands_treatment_plsda.csv"))
-y_data <- read.csv(here::here("R_output","PLSDA_output","young_stands_treatment_plsda.csv"))
+
+o_data <- read.csv(here::here("R_output","PLSDA_output","Mature forest","prop_treatment_plsda.csv"))
+m_data <- read.csv(here::here("R_output","PLSDA_output","Mid-aged forest","prop_treatment_plsda.csv"))
+y_data <- read.csv(here::here("R_output","PLSDA_output","Young forest","prop_treatment_plsda.csv"))
 
 
 # Convert to long format for ggplot
@@ -30,14 +31,14 @@ y_long <- y_data[ ,2:5] %>%
 
 
 
-o_long$Age <- "Old"
-m_long$Age <- "Mid"
-y_long$Age <- "Young"
+o_long$Age <- "Mature forest"
+m_long$Age <- "Mid-aged forest"
+y_long$Age <- "Young forest"
 
 
 conf_data <- rbind(o_long, m_long, y_long)
 
-conf_data$Age <- factor(conf_data$Age, levels=c("Young","Mid","Old"))
+conf_data$Age <- factor(conf_data$Age, levels=c("Young forest","Mid-aged forest","Mature forest"))
 
 conf_data$Reference <- factor(conf_data$Reference, levels=c("Control","N","P","NP"))
 conf_data$Prediction <- factor(conf_data$Prediction, levels=c("NP","P","N","Control"))
@@ -54,12 +55,12 @@ ggplot(conf_data, aes(x = Reference, y = Prediction, fill = Proportion)) +
   geom_text(aes(label = round(Proportion, 2)), 
             color = "white", size = 4, fontface = "bold") +
   scale_fill_gradientn(colors = col(20),
-                       name = "Proportion",
+                       name = "Proportion\nof classes",
                        limits = c(0, 1)) +
   labs(title = "PLSDA Confusion Matrix",
        subtitle = "Nutrient Treatment Classification",
-       x = "Reference (True Class)",
-       y = "Prediction (Predicted Class)") +
+       x = "Reference class",
+       y = "Predicted class") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
         axis.text.y = element_text(size = 12),

@@ -6,23 +6,26 @@ library(MLmetrics)
 # if (!requireNamespace("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
 # ## install mixOmics
-# BiocManager::install('mixOmics')
+#   BiocManager::install('mixOmics')
 
 dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
 
-dati$Age[dati$Stand=="C1"]<-"~30 years old"
-dati$Age[dati$Stand=="C2"]<-"~30 years old"
-dati$Age[dati$Stand=="C3"]<-"~30 years old"
-dati$Age[dati$Stand=="C4"]<-"~60 years old"
-dati$Age[dati$Stand=="C5"]<-"~60 years old"
-dati$Age[dati$Stand=="C6"]<-"~60 years old" 
-dati$Age[dati$Stand=="C7"]<-"~100 years old"
-dati$Age[dati$Stand=="C8"]<-"~100 years old"
-dati$Age[dati$Stand=="C9"]<-"~100 years old"
+dati$Age[dati$Stand=="C1"]<-"Young forest"
+dati$Age[dati$Stand=="C2"]<-"Young forest"
+dati$Age[dati$Stand=="C3"]<-"Young forest"
+dati$Age[dati$Stand=="C4"]<-"Mid-aged forest"
+dati$Age[dati$Stand=="C5"]<-"Mid-aged forest"
+dati$Age[dati$Stand=="C6"]<-"Mid-aged forest" 
+dati$Age[dati$Stand=="C7"]<-"Mature forest"
+dati$Age[dati$Stand=="C8"]<-"Mature forest"
+dati$Age[dati$Stand=="C9"]<-"Mature forest"
 
 names(dati)
 
-dati <- dati[dati$Age=="~60 years old",]
+sel_stand_age <- "Mature forest"
+
+## Select Stand age
+dati <- dati[dati$Age==sel_stand_age ,]
 
 #spec <- dati[dati$Age=="~60 years old",]
 spec <- dati[ , -ncol(dati)]
@@ -80,6 +83,10 @@ cv_results <- perf(plsda_cv,
 # Plot CV results
 pdf("R_output/PLSDA_component_selection.pdf", width = 8, height = 6)
 plot(cv_results, main = "PLSDA Component Selection")
+
+
+
+ 
 dev.off()
 
 # Find optimal components (minimum error rate)
@@ -157,13 +164,9 @@ corrplot::corrplot(conf_prop,
 mtext("Prediction",2,at=3, line=-3, cex=1.3)
 mtext("Reference",at = 2, line = 0, cex=1.3)
 
-# create output folder
-if(!exists(here::here("R_output","PLSDA_output"))){ 
-  dir.create(here::here("R_output","PLSDA_output"))}
 
-write.csv(conf_prop, here::here("R_output","PLSDA_output","mid_stands_treatment_plsda.csv"))
-write.csv(conf_table, here::here("R_output","PLSDA_output","test_count_stands_treatment_plsda.csv"))
-
+## data used to make the corrplot are saved below in a .csv and 
+# made in a subsequent R file for the PLSDA figure
 
 
 # 
@@ -171,65 +174,85 @@ write.csv(conf_table, here::here("R_output","PLSDA_output","test_count_stands_tr
 # ###################################
 # #dev.off()
 # 
-# 
-# ### 8. Variable Importance ###
-# # Get VIP scores for important wavelengths/variables
-# vip_scores <- vip(final_plsda)
-# important_vars <- which(vip_scores[, 1] > 1)  # VIP > 1 are considered important
-# 
-# cat("\n=== Important Variables ===\n")
-# cat("Number of important variables (VIP > 1):", length(important_vars), "\n")
-# 
-# # Plot VIP scores
-# pdf("PLSDA_VIP_scores.pdf", width = 10, height = 6)
-# plot(vip_scores[, 1], type = "l", 
-#      xlab = "Variable Index", 
-#      ylab = "VIP Score",
-#      main = "Variable Importance in Projection (VIP)")
-# abline(h = 1, col = "red", lty = 2)
-# points(important_vars, vip_scores[important_vars, 1], col = "red", pch = 19)
-# dev.off()
-# 
-# ### 9. Cross-Validation Assessment ###
-# # Perform cross-validation for more robust performance estimate
-# set.seed(123)
-# cv_results <- perf(final_plsda, validation = "Mfold", 
-#                    folds = 10, nrepeat = 10)
-# 
-# cat("\n=== Cross-Validation Results ===\n")
-# cat("CV Error Rate:", round(cv_results$error.rate[pls_model$bestTune$ncomp], 3), "\n")
-# 
-# # preds <- as.data.frame(predictions$class$max.dist)
-# # dim(preds)
-# # predicted_classes <- preds[, opt_comp]
-# 
-# # Plot CV results
-# pdf("PLSDA_CV_performance.pdf", width = 8, height = 6)
-# plot(cv_results, main = "Cross-Validation Performance")
-# dev.off()
-# 
-# # Create comprehensive results summary
-# results_summary <- data.frame(
-#   Metric = c("Test_Accuracy", "Test_Kappa", "CV_Accuracy", 
-#              "Components_Used", "Important_Variables", "Sample_Size"),
-#   Value = c(round(accuracy, 4),
-#             round(kappa, 4),
-#             round(1 - cv_error, 4),
-#             opt_comp,
-#             length(important_vars),
-#             nrow(train_spec)))
-# 
-# # Save summary files
-# #write.csv(results_summary, "R_output/plsda_results_summary.csv", row.names = FALSE)
-# write.csv(conf_matrix$table, "R_output/confusion_matrix_counts.csv")
-# write.csv(conf_prop, "R_output/confusion_matrix_proportions.csv")
-# 
-# # Save VIP scores
-# vip_df <- data.frame(
-#   Variable_Index = 1:length(vip_scores[, 1]),
-#   VIP_Score = vip_scores[, 1],
-#   Important = vip_scores[, 1] > 1
-# )
-# write.csv(vip_df, "R_output/vip_scores.csv", row.names = FALSE)
-# #######################################################
-# 
+
+### 8. Variable Importance ###
+# Get VIP scores for important wavelengths/variables
+vip_scores <- vip(final_plsda)
+important_vars <- which(vip_scores[, 1] > 1)  # VIP > 1 are considered important
+
+cat("\n=== Important Variables ===\n")
+cat("Number of important variables (VIP > 1):", length(important_vars), "\n")
+
+# Plot VIP scores
+pdf("PLSDA_VIP_scores.pdf", width = 10, height = 6)
+plot(vip_scores[, 1], type = "l",
+     xlab = "Variable Index",
+     ylab = "VIP Score",
+     main = "Variable Importance in Projection (VIP)")
+abline(h = 1, col = "red", lty = 2)
+points(important_vars, vip_scores[important_vars, 1], col = "red", pch = 19)
+dev.off()
+
+### 9. Cross-Validation Assessment ###
+# Perform cross-validation for more robust performance estimate
+set.seed(123)
+cv_results <- perf(final_plsda, validation = "Mfold",
+                   folds = 10, nrepeat = 10)
+
+
+ preds <- as.data.frame(predictions$class$max.dist)
+ dim(preds)
+ predicted_classes <- preds[, opt_comp]
+
+# Plot CV results
+pdf("PLSDA_CV_performance.pdf", width = 8, height = 6)
+plot(cv_results, main = "Cross-Validation Performance")
+dev.off()
+
+### 11. Final Cross-Validation Summary ###
+cat("\n=== Cross-Validation Summary ===\n")
+cv_error <- cv_results$error.rate$BER[, "centroids.dist"][opt_comp]
+
+cat("Cross-validation error rate:", round(cv_error, 3), "\n")
+cat("Cross-validation accuracy:", round(1 - cv_error, 3), "\n")
+
+
+
+# Create comprehensive results summary
+results_summary <- data.frame(
+  Metric = c("Test_Accuracy", "Test_Kappa", "CV_Accuracy",
+             "Components_Used", "Important_Variables", "Sample_Size"),
+  Value = c(round(accuracy, 4),
+            round(kappa, 4),
+            round(1 - cv_error[1], 4),
+            opt_comp,
+            length(important_vars),
+            nrow(train_spec)))
+
+
+# Save VIP scores
+vip_df <- data.frame(
+  Variable_Index = 1:length(vip_scores[, 1]),
+  VIP_Score = vip_scores[, 1],
+  Important = vip_scores[, 1] > 1)
+
+
+# create output folder
+if(!exists(here::here("R_output","PLSDA_output"))){ 
+  dir.create(here::here("R_output","PLSDA_output"))}
+
+# Save summary files
+
+# make age-specific folder
+plsda_out <- here::here("R_output","PLSDA_output",sel_stand_age)
+
+if(!exists(plsda_out )){ 
+  dir.create(plsda_out)}else {}
+
+write.csv(conf_prop,file.path(plsda_out,"prop_treatment_plsda.csv"))
+write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
+write.csv(results_summary, file.path(plsda_out,"results_summary_plsda.csv"))
+write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
+
+#######################################################
+
