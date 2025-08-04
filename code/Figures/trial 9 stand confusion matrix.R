@@ -1,19 +1,26 @@
 # Define age groups and file paths
-age_groups <- c("Young forest", "Mid-aged forest", "Mature forest")
+stand_groups <- c("C1","C2","C3","C4","C5","C6","C7","C8","C9")
 
 # determine file paths
 file_paths <- c(
-  here::here("R_output","PLSDA_output","Young forest","count_treatment_plsda.csv"),
-  here::here("R_output","PLSDA_output","Mid-aged forest","count_treatment_plsda.csv"),
-  here::here("R_output","PLSDA_output","Mature forest","count_treatment_plsda.csv")
+  here::here("R_output","PLSDA_output","C1","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C2","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C3","count_treatment_plsda.csv"),  
+  here::here("R_output","PLSDA_output","C4","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C5","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C6","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C7","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C8","count_treatment_plsda.csv"),
+  here::here("R_output","PLSDA_output","C9","count_treatment_plsda.csv")
 )
 
 out_conf <- list()
 
-for(i in 1:3){
-  # Read data for current age group
+for(i in 5){
+i=5
+    # Read data for current age group
   data <- read.csv(file_paths[i])
-  sel_Age <- age_groups[i]
+  sel_Age <- stand_groups[i]
   
   # Extract confusion matrix from your dataframe format
   cm_df <- data.frame(
@@ -56,9 +63,12 @@ for(i in 1:3){
   out_conf[[i]] <- res
 }
 
+
+
 # Combine all results
 final_results <- do.call(rbind, out_conf)
 
+final_results
 
 trt_acc <- tidyr::gather(final_results[ ,c(1,3,4,7 )], "acc_type","accuracy",2:3 )
 
@@ -79,3 +89,5 @@ ggplot(trt_acc[trt_acc$acc_type=="Producers_accuracy",], aes(x=Treat_class, y=ac
   labs(x="Nutrient addition treatment", y="PLSDA model accuracy",
        fill="", col="")
 
+
+}

@@ -8,24 +8,38 @@ library(MLmetrics)
 # ## install mixOmics
 #   BiocManager::install('mixOmics')
 
-dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
 
-dati$Age[dati$Stand=="C1"]<-"Young forest"
-dati$Age[dati$Stand=="C2"]<-"Young forest"
-dati$Age[dati$Stand=="C3"]<-"Young forest"
-dati$Age[dati$Stand=="C4"]<-"Mid-aged forest"
-dati$Age[dati$Stand=="C5"]<-"Mid-aged forest"
-dati$Age[dati$Stand=="C6"]<-"Mid-aged forest" 
-dati$Age[dati$Stand=="C7"]<-"Mature forest"
-dati$Age[dati$Stand=="C8"]<-"Mature forest"
-dati$Age[dati$Stand=="C9"]<-"Mature forest"
+# sel_stand_age <- "Mature forest"
+# ## Select Stand age
+# dati <- dati[dati$Age==sel_stand_age ,]
 
-names(dati)
+# do with stands instead
 
-sel_stand_age <- "Mature forest"
 
+for(i in c(3:9)){
+
+  dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+  
+  dati$Age[dati$Stand=="C1"]<-"Young forest"
+  dati$Age[dati$Stand=="C2"]<-"Young forest"
+  dati$Age[dati$Stand=="C3"]<-"Young forest"
+  dati$Age[dati$Stand=="C4"]<-"Mid-aged forest"
+  dati$Age[dati$Stand=="C5"]<-"Mid-aged forest"
+  dati$Age[dati$Stand=="C6"]<-"Mid-aged forest" 
+  dati$Age[dati$Stand=="C7"]<-"Mature forest"
+  dati$Age[dati$Stand=="C8"]<-"Mature forest"
+  dati$Age[dati$Stand=="C9"]<-"Mature forest"
+  
+  
+  sel_stand <- paste0("C",i)
+
+  print(paste("Starting", sel_stand , "processing"))
+  
 ## Select Stand age
-dati <- dati[dati$Age==sel_stand_age ,]
+dati <- dati[dati$Stand==sel_stand ,]
+
+
+
 
 #spec <- dati[dati$Age=="~60 years old",]
 spec <- dati[ , -ncol(dati)]
@@ -34,7 +48,6 @@ spec <- dati[ , -ncol(dati)]
 ### 1. Prepare Data ###
 # Assuming 'dati' contains your data with Treatment column
 # and 'spec' contains your spectral data
-
 
 spec <- spec[complete.cases(spec),] ### remove NAs
 
@@ -81,13 +94,11 @@ cv_results <- perf(plsda_cv,
                    progressBar = TRUE)
 
 # Plot CV results
-pdf("R_output/PLSDA_component_selection.pdf", width = 8, height = 6)
+#pdf("R_output/PLSDA_component_selection.pdf", width = 8, height = 6)
 plot(cv_results, main = "PLSDA Component Selection")
 
 
-
- 
-dev.off()
+#dev.off()
 
 # Find optimal components (minimum error rate)
 opt_comp <- cv_results$choice.ncomp["BER", "max.dist"]
@@ -184,14 +195,18 @@ cat("\n=== Important Variables ===\n")
 cat("Number of important variables (VIP > 1):", length(important_vars), "\n")
 
 # Plot VIP scores
-pdf("PLSDA_VIP_scores.pdf", width = 10, height = 6)
+#pdf("PLSDA_VIP_scores.pdf", width = 10, height = 6)
 plot(vip_scores[, 1], type = "l",
      xlab = "Variable Index",
      ylab = "VIP Score",
      main = "Variable Importance in Projection (VIP)")
 abline(h = 1, col = "red", lty = 2)
-points(important_vars, vip_scores[important_vars, 1], col = "red", pch = 19)
-dev.off()
+#points(important_vars, vip_scores[important_vars, 1], col = "red", pch = 19)
+#dev.off()
+
+
+
+
 
 ### 9. Cross-Validation Assessment ###
 # Perform cross-validation for more robust performance estimate
@@ -205,9 +220,9 @@ cv_results <- perf(final_plsda, validation = "Mfold",
  predicted_classes <- preds[, opt_comp]
 
 # Plot CV results
-pdf("PLSDA_CV_performance.pdf", width = 8, height = 6)
+#pdf("PLSDA_CV_performance.pdf", width = 8, height = 6)
 plot(cv_results, main = "Cross-Validation Performance")
-dev.off()
+#dev.off()
 
 ### 11. Final Cross-Validation Summary ###
 cat("\n=== Cross-Validation Summary ===\n")
@@ -238,13 +253,14 @@ vip_df <- data.frame(
 
 
 # create output folder
-if(!exists(here::here("R_output","PLSDA_output"))){ 
-  dir.create(here::here("R_output","PLSDA_output"))}
+# if(!exists(here::here("R_output","PLSDA_output"))){ 
+#   dir.create(here::here("R_output","PLSDA_output"))}
 
 # Save summary files
 
 # make age-specific folder
-plsda_out <- here::here("R_output","PLSDA_output",sel_stand_age)
+#plsda_out <- here::here("R_output","PLSDA_output",sel_stand_age)
+plsda_out <- here::here("R_output","PLSDA_output",sel_stand)
 
 if(!exists(plsda_out )){ 
   dir.create(plsda_out)}else {}
@@ -256,3 +272,4 @@ write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
 
 #######################################################
 
+}
