@@ -32,7 +32,7 @@ plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
 
 
 # Alex's tree tops
-trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
+trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_09_04.shp"))
 trees <- sf::st_transform(trees, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
@@ -43,11 +43,11 @@ east <- centroids[, 2]
 north <-centroids[, 1]
 
 
-# # Download the hypersepctral data
+# Download the hypersepctral data
 # byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
 #           northing = north,
 #           year="2019",buffer = 200, savepath = "data_folder/Bart_tiles/",check.size = T)
-
+# 
 
 # Download DSMs
 # byTileAOP(dpID="DP3.30024.001",site="BART",
@@ -69,6 +69,9 @@ spectra_df <- list()
 
 
 # Start for loop ####
+
+# Loop through the various tiff files that were downloaded, intersect tree points
+# to create spectra #
 
  for (k in 1:length(ff)){
 
@@ -191,7 +194,7 @@ spectra_df <- list()
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
+  ndvi_lim <- ndvi_calc >= 0.6 # set NDVI threshold, could be 0.6
    plot(ndvi_lim)
    plot(plots_UTM, add=T)
 
@@ -235,7 +238,7 @@ spectra_df <- list()
     
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.5
+  shade_mask <- dsm_shade >= 0.2 # was 0.5
   
   ###################
   
@@ -340,4 +343,4 @@ if (length(spectra_df) > 0) {
   
 
 
- write.csv(combined_spectra, file=here::here("data_folder","actual_tops.csv"))
+ write.csv(combined_spectra, file=here::here("data_folder","actual_tops_9_04_2025.csv"))

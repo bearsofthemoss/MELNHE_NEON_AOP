@@ -94,7 +94,6 @@ g1 <- ggplot() +
                                               y=  st_coordinates(stand_centroids)[,2],
                                               label = Site))+
   labs(fill="Age", shape="Age", x="", y="")+
-  ggtitle("A. 9 forest stands in Bartlett Experimental Forest")+
   theme(plot.title = element_text(size = 16))
 
 # Create inset map showing location in world context
@@ -173,11 +172,13 @@ g2 <- ggplot() +
   
   theme_void() +  # Try theme_void() instead of theme_minimal()
   labs(fill = "Treatment",col="Treatment", x = "", y = "") +
-  ggtitle("B. Example stand in clearcut with 4 treatment plots") +
   theme(
     plot.title = element_text(size = 16),
     legend.position = "right"
   ) +
+  # geom_sf(data = m7ctops_sf, 
+  #         aes(color = shade_intensity), 
+  #         size = 2)+ 
   # Set coordinate limits explicitly
   coord_sf(xlim = c(min(chm_c2_df$x), max(chm_c2_df$x)),
            ylim = c(min(chm_c2_df$y), max(chm_c2_df$y)),
@@ -359,8 +360,7 @@ g3 <- ggplot() +
   geom_sf(data = single_plot, 
           fill = NA, color = "black", size = 1, linewidth=3) +
   theme_void() +
-  theme(plot.title = element_text(size = 14)) +
-  labs(title = "C: Shade mask (threshold >= 0.1)")
+  theme(plot.title = element_text(size = 14)) 
 
 g3
 
@@ -373,25 +373,20 @@ shaded_pixels <- m7ctops_sf[m7ctops_sf$kept=="FALSE",]
 g4 <- ggplot() +
   # Add RGB raster as background
   geom_raster(data = rgb_df, aes(x = x, y = y), fill = rgb_df$rgb) +
-  geom_sf(data = remove_shaded_pixels, 
-          aes(col = height),  # color by tree height
+  geom_sf(data = m7ctops_sf, 
+          aes(col = shade_intensity  ),  # color by shade intensity
           size = 3) +
-  geom_sf(data = shaded_pixels, 
-          col = "black", shape =8 ,  # color by tree height
-          size = 3) +
-  
-  geom_sf(data = m7crowns, 
-          fill = NA, 
-          color = "red", 
-          size = 0.5, 
-          alpha = 0.8) +
-  scale_color_viridis_c(name = "Tree Height (m)", option = "plasma") +
+    # geom_sf(data = m7crowns, 
+    #       fill = NA, 
+    #       color = "red", 
+    #       size = 0.5, 
+    #       alpha = 0.8) +
+  scale_color_viridis_c(name = "Tree shade intensity", option = "plasma") +
   # Add the single plot boundary
   geom_sf(data = single_plot, aes(), 
           col = "black", fill=NA, linewidth = 3, size = 2) +
   theme_void() +
-  ggtitle("D. Tree crown delineations and selected tree tops") +
-  theme(
+    theme(
     plot.title = element_text(size = 16),
     legend.position = "right"
   ) +
@@ -403,4 +398,4 @@ g4
 
 
  library(cowplot)
- plot_grid(g1, g2, g3, g4, ncol = 2, nrow = 2)
+ plot_grid(g1, g2, g4, ncol = 3, nrow = 1)

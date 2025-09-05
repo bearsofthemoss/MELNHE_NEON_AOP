@@ -281,70 +281,51 @@ contour_data <- expand.grid(x = interp_result$x, y = interp_result$y)
 contour_data$z <- as.vector(interp_result$z)
 contour_data <- contour_data[!is.na(contour_data$z), ]
 
-# Now plot with the interpolated data
-p <- ggplot() +
-  geom_contour(data = contour_data, aes(x = x, y = y, z = z, color = after_stat(level)), 
-               size = 3, bins = 20) +
-  scale_color_gradient(low = "pink", high = "darkred", name = "Soil P") +
-  # Add transparent ellipses behind the points
-  stat_ellipse(data = plot_data, aes(x = LD1, y = LD2, fill = Treatment), 
-               alpha = 0.2, level = 0.68, geom = "polygon") +
-  geom_point(data = plot_data, aes(x = LD1, y = LD2, fill = Treatment), 
-             size = 3,shape=21, stroke = 0.3) +
-  scale_fill_manual(values = c("black","blue","red","purple")) +
-
-  scale_shape_manual(values = c(21, 24, 22)) +
-  
-  labs(x = paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
-       y = paste0("LD 2 (", round(prop.lda[2], 1), "%)"),
-       title = paste0(sel_Age, " Soil Phosphorus")) +
-  theme_classic()
-
-print(p)
 
 
 
-#Here we could ask how much the tree species explained the spectral variation by plot
 
-############ quick adonis test
-## Add back in plot level information
-dada$staplo<-paste(dada$Stand, dada$Treatment)
-dada$total_N<-chem$total_N[match(dada$staplo, chem$treat_stand )]
-dada$total_P<-chem$PO4.hyphen.P[match(dada$staplo, chem$treat_stand )]
-dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
-
-
-names(dada)
-spec.matrix<-dada[,7:351]
-adonis2(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
-
-spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
-# spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels
-plot(spec.pca,type="l")
-summary(spec.pca)
-
-plot(spec.pca)
-
-
-
-head(pcdat)
-pcdat$Trt<-factor(pcdat$Trt, levels=c("Control","N","P","NP"))
-
-PC1<-spec.pca$x[,1]
-PC2<-spec.pca$x[,2]
-PC3<-spec.pca$x[,3]
-PC4<-spec.pca$x[,4]
-PC5<-spec.pca$x[,5]
-PC6<-spec.pca$x[,6]
-
-pcdat<-data.frame(PC1,PC2,PC3,PC4, PC5, PC6)
-pcdat
-dim(dada)
-perm<-cbind(dada[,c(1:5,351:355) ],pcdat)
-
-names(dada)
-head(perm[1:10])
-names(perm)
-adonis(perm[,11:16] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
-
+# #Here we could ask how much the tree species explained the spectral variation by plot
+# 
+# ############ quick adonis test
+# ## Add back in plot level information
+# dada$staplo<-paste(dada$Stand, dada$Treatment)
+# dada$total_N<-chem$total_N[match(dada$staplo, chem$treat_stand )]
+# dada$total_P<-chem$PO4.hyphen.P[match(dada$staplo, chem$treat_stand )]
+# dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
+# 
+# 
+# names(dada)
+# spec.matrix<-dada[,7:351]
+# adonis2(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
+# 
+# spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
+# # spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels
+# plot(spec.pca,type="l")
+# summary(spec.pca)
+# 
+# plot(spec.pca)
+# 
+# 
+# 
+# head(pcdat)
+# pcdat$Trt<-factor(pcdat$Trt, levels=c("Control","N","P","NP"))
+# 
+# PC1<-spec.pca$x[,1]
+# PC2<-spec.pca$x[,2]
+# PC3<-spec.pca$x[,3]
+# PC4<-spec.pca$x[,4]
+# PC5<-spec.pca$x[,5]
+# PC6<-spec.pca$x[,6]
+# 
+# pcdat<-data.frame(PC1,PC2,PC3,PC4, PC5, PC6)
+# pcdat
+# dim(dada)
+# perm<-cbind(dada[,c(1:5,351:355) ],pcdat)
+# 
+# names(dada)
+# head(perm[1:10])
+# names(perm)
+# adonis(perm[,11:16] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
+# 
 

@@ -1,7 +1,6 @@
 
 # Variable importance for each age class
 
-colnames(dada)
 wvl <- colnames(read.csv(here::here("data_folder","actual_tops.csv")))
 # select wvl columns
 wvl <- wvl[8:352]
@@ -33,6 +32,7 @@ g1 <- ggplot(vip, aes(x= wvl, y= VIP_Score))+
        legend="Young forest PLSDA")+
   annotate('rect', xmin=1340, xmax=1455, ymin=0, ymax=2.5, alpha=.2, fill='gray')+
   annotate('rect', xmin=1790, xmax=1995, ymin=0, ymax=2.5, alpha=.2, fill='gray')+
-  facet_wrap(~Age, nrow=3)
+  facet_wrap(~Age, nrow=3)+
+  scale_x_continuous(breaks=seq(400, 2500, 100))
 
 g1
