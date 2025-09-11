@@ -4,18 +4,21 @@ library(corrplot)
 library(MLmetrics)
 
 
-# Age PLSDA 
+# Age PLSDA   - be able to produce the proportion adn the count for each class.
 
-#  sel_stand_age <- "Mature forest"
-# # ## Select Stand age
-#  dati <- dati[dati$Age==sel_stand_age ,]
-# dim(dati)
-# do with stands instead
+# For each age group
 
 
-#for(i in c(1:9)){
-  
-  dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+# Do mature forest first 
+
+
+sel_stand_age <- "Mature forest"
+
+
+  dati <- read.csv("./data_folder/actual_tops_9_04_2025.csv", row.names = 1)
+
+  table(dati$Stand)  
+# Provide the Age column  
   dati$Age[dati$Stand=="C1"]<-"Young forest"
   dati$Age[dati$Stand=="C2"]<-"Young forest"
   dati$Age[dati$Stand=="C3"]<-"Young forest"
@@ -26,13 +29,17 @@ library(MLmetrics)
   dati$Age[dati$Stand=="C8"]<-"Mature forest"
   dati$Age[dati$Stand=="C9"]<-"Mature forest"
   
-  # Add in the 4X3 grid of age and nutrient addition
-  dati$age_nutrient_class <- as.factor(paste(dati$Age, dati$Treatment))
+  ## Select Stand age
+  dati <- dati[dati$Age==sel_stand_age ,]
   
-  count_tops <- as.data.frame(table(dati$Treatment, dati$Stand))
+  
+  ## Count tops
+  count_tops <- as.data.frame(table(dati$Treatment, dati$Stand, dati$Age))
+  count_tops <- count_tops[count_tops$Freq>0,]
   count_tops
   
   
+  ### 
   
   
   ### 1. Data Splitting ###
@@ -275,7 +282,7 @@ library(MLmetrics)
   
   # make age-specific folder
   #plsda_out <- here::here("R_output","PLSDA_output",sel_stand_age)
-  plsda_out <- here::here("R_output","PLSDA_output_September")
+  plsda_out <- here::here("R_output","PLSDA_output_September",sel_stand_age)
   
   if(!exists(plsda_out )){ 
     dir.create(plsda_out)}else {}

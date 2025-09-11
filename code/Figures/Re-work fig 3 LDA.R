@@ -12,7 +12,10 @@ library(metR)
 library(tidyr)
 
 
+# do one age class at a time
+sel_Age <- "Young forest"
 
+  
 ## dada contains the tree top reflectance.This was made in file 2. 
 dada<- read.csv(here::here("data_folder","actual_tops.csv"))
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
@@ -51,18 +54,18 @@ table(spectra_gather$Stand)
 
 ###### LDA ##############
 
-
+dim(pre_lda)
 
 pre_lda<-spread(spectra_gather, wvl,refl) ### means
 
-names(pre_lda)
+# Based on the specified sel_Age at the top, run the stats for that age class
 
-par(mfrow=c(3,2))
+################################################################
 
-#  Young stands #### 
-sel_Age <- "Young forest"
+## Selected age above
 
-lda_obj<-pre_lda[pre_lda$Age== sel_Age ,c(4,10:353)]
+lda_obj<-pre_lda[  ,c(4,10:354)]
+#lda_obj<-pre_lda[pre_lda$Age==sel_Age ,c(4,10:354)]
 
 nzv <- nearZeroVar(lda_obj[,-1])
 problem_vars <- nzv
@@ -70,7 +73,7 @@ problem_vars <- nzv
 
 # Remove vars with 0 variance
 if(length(problem_vars) > 0) {
-  lda_obj_cleaned <- lda_obj[, -(problem_vars + 1)]
+  lda_obj_cleaned <- lda_obj[, -(problem_vars$Position + 1)]
   cat("Removed", length(problem_vars), "near-zero variance variables\n")
 } else{
   lda_obj_cleaned <- lda_obj
@@ -123,10 +126,13 @@ lda_res <- lda(as.factor(Treatment) ~ . , data = lda_obj_cleaned, CV=F) ### try 
 lda_out <-  as.data.frame(as.matrix(lda_obj_cleaned[,-1]) %*% as.matrix(lda_res$scaling))
 
 
+dim(lda_out)
+
+
 ## Add back in plot level information
-lda_out$Stand<-pre_lda[pre_lda$Age==sel_Age, "Stand"]
-lda_out$Age<-pre_lda[pre_lda$Age==sel_Age, "Age"]
-lda_out$Treatment<-pre_lda[pre_lda$Age==sel_Age, "Treatment"]
+lda_out$Stand<- pre_lda[ , "Stand"]
+lda_out$Age<-pre_lda[, "Age"]
+lda_out$Treatment<-pre_lda[ , "Treatment"]
 lda_out$Treatment<-factor(lda_out$Treatment, levels=c("Control","N","P","NP"))
 
 lda_out$staplo<-paste(lda_out$Stand, lda_out$Treatment)
@@ -135,197 +141,105 @@ lda_out$total_P<-chem$PO4.hyphen.P[match(lda_out$staplo, chem$treat_stand )]
 
 out <- lda_out
 
-plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", 
+
+plot_avg <- aggregate(list(LD1 = out$LD1,
+                           LD2 = out$LD2),
+                      by= list(Stand=  out$Stand,
+                               Age = out$Age,
+                               Stand = out$Stand,
+                               Treatment = out$Treatment,
+                               staplo = out$staplo), FUN="mean", na.rm=T)
+
+# Combined LDA visualization with P ordiellipse in red and N isoclines in blue
+# Set up layout: 2 plots side by side, with shared legend on right
+layout(matrix(c(1, 2, 3, 3), nrow = 2, ncol = 2, byrow = TRUE), 
+       widths = c(1, 1), heights = c(4, 1))
+
+# Alternative layout option (uncomment if you prefer):
+# layout(matrix(c(1, 2, 3), nrow = 1, ncol = 3), widths = c(1, 1, 0.5))
+
+# Plot 1: Left figure (your existing plot)
+par(mar = c(4, 4, 3, 1))  # smaller right margin since legend is separate
+
+
+# Create the base plot
+plot(out$LD1, out$LD2, type="n", bty="l", col="grey50", 
      xlab=paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
      ylab=paste0("LD 2 (", round(prop.lda[2], 1), "%)"))
-title(main=paste0(sel_Age, " Soil Nitrogen"),   cex.main=1.5,adj = 0)
-points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
 
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_N,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
+title(main="Soil N availability", cex.main=1.5, adj = 0)
 
-###
-plot(out$LD1, out$LD2, type="n",bty="l",col="grey50",
+# Add the data points
+points(plot_avg$LD1, plot_avg$LD2, 
+       col=c("black","blue","red","purple")[as.factor(plot_avg$Treatment)],
+       alpha.f=0.6,
+       pch=c(16,17,15)[as.factor(plot_avg$Age)], cex=1)
+
+# Add ellipse
+ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon",
+           col = c("black","blue","red","purple")) 
+
+# # Nitrogen contours in blue
+ordisurf(out[,c(1,2)]~total_N, out, add=T, col="blue",
+         lwd.cl = c(0.5, 1, 1.5, 2, 2.5), labcex=1.2)
+
+
+# Plot 2: Right figure (your second plot)- P in the soil
+par(mar = c(4, 3, 3, 1))  # smaller left margin too
+
+# Create the base plot
+plot(out$LD1, out$LD2, type="n", bty="l", col="grey50", 
      xlab=paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
      ylab=paste0("LD 2 (", round(prop.lda[2], 1), "%)"))
-     title(main=paste0(sel_Age, " Soil Phosphorus"),   cex.main=1.5,adj = 0)
-points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
 
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
+title(main="Soil P availability", cex.main=1.5, adj = 0)
 
+# Add the data points
+points(plot_avg$LD1, plot_avg$LD2, 
+       col=c("black","blue","red","purple")[as.factor(plot_avg$Treatment)],
+       alpha.f=0.6,
+       pch=c(16,17,15)[as.factor(plot_avg$Age)], cex=1)
 
+# Add ellipse
+ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon",
+             col = c("black","blue","red","purple")) 
 
-
-#  Mid-aged forest #####
-sel_Age <- "Mid-aged forest"
-
-lda_obj<-pre_lda[pre_lda$Age== sel_Age ,c(4,10:353)]
-
-nzv <- nearZeroVar(lda_obj[,-1])
-problem_vars <- nzv
-
-
-# Remove vars with 0 variance
-if(length(problem_vars) > 0) {
-  lda_obj_cleaned <- lda_obj[, -(problem_vars + 1)]
-  cat("Removed", length(problem_vars), "near-zero variance variables\n")
-} else{
-  lda_obj_cleaned <- lda_obj
-}
-
-
-# proportion explained by treatment
-lda_res <- lda(as.factor(Treatment) ~ . , data = lda_obj_cleaned, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100) ### variability explained
-lda_out <-  as.data.frame(as.matrix(lda_obj_cleaned[,-1]) %*% as.matrix(lda_res$scaling))
-
-
-## Add back in plot level information
-lda_out$Stand<-pre_lda[pre_lda$Age==sel_Age, "Stand"]
-lda_out$Age<-pre_lda[pre_lda$Age==sel_Age, "Age"]
-lda_out$Treatment<-pre_lda[pre_lda$Age==sel_Age, "Treatment"]
-lda_out$Treatment<-factor(lda_out$Treatment, levels=c("Control","N","P","NP"))
-
-lda_out$staplo<-paste(lda_out$Stand, lda_out$Treatment)
-lda_out$total_N<-chem$NH4.hyphen.N[match(lda_out$staplo, chem$treat_stand )]
-lda_out$total_P<-chem$PO4.hyphen.P[match(lda_out$staplo, chem$treat_stand )]
-
-out <- lda_out
-
-plot(out$LD1, out$LD2, type="n",bty="l",col="grey50",
-     xlab=paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
-     ylab=paste0("LD 2 (", round(prop.lda[2], 1), "%)"))
-title(main=paste0(sel_Age, " Soil Nitrogen"),   cex.main=1.5,adj = 0)
-points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
-
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_N,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
-
-###
-plot(out$LD1, out$LD2, type="n",bty="l",col="grey50",
-     xlab=paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
-     ylab=paste0("LD 2 (", round(prop.lda[2], 1), "%)"))
-title(main=paste0(sel_Age, " Soil Phosphorus"),   cex.main=1.5,adj = 0)
-points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
-
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
+# # P contours in red
+ordisurf(out[,c(1,2)]~total_P, out, add=T, col="red",
+         lwd.cl = c(0.5, 1, 1.5, 2, 2.5), labcex=1.2)
 
 
 
+# Plot 3: Shared legend below both plots
+par(mar = c(0, 0, 0, 0))
+plot.new()
 
+# Create three separate legend columns
+# Column 1: Age Classes
+legend(0.1, 1, 
+       legend = c("Age Classes:", unique(out$Age)), 
+       pch = c(NA, c(16,17,15)[1:length(unique(out$Age))]),
+       col = c(NA, rep("black", length(unique(out$Age)))),
+       bty = "n", cex = 1.2)
 
-# Mature forest #### 
+# Column 2: Nutrient Treatments  
+legend(0.45, 1, 
+       legend = c("Nutrient Treatments:", "Control", "N", "P", "NP"), 
+       pch = c(NA, rep(19, 4)),
+       col = c(NA, "black", "blue", "red", "purple"),
+       bty = "n", cex = 1.2)
 
-sel_Age <- "Mature forest"
+# Column 3: Soil Nutrients
+legend(0.8, 1, 
+       legend = c("Soil Nutrients:", "Soil N", "Soil P"), 
+       pch = c(NA, NA, NA),
+       lty = c(NA, 1, 1),
+       col = c(NA, "blue", "red"),
+       bty = "n", cex = 1.2)
 
-lda_obj<-pre_lda[pre_lda$Age== sel_Age ,c(4,10:353)]
-
-nzv <- nearZeroVar(lda_obj[,-1])
-problem_vars <- which(nzv$nzv == TRUE)
-
-
-# Remove vars with 0 variance
-if(length(problem_vars) > 0) {
-  lda_obj_cleaned <- lda_obj[, -(problem_vars + 1)]
-  cat("Removed", length(problem_vars), "near-zero variance variables\n")
-} else{
-  lda_obj_cleaned <- lda_obj
-}
-
-
-# proportion explained by treatment
-lda_res <- lda(as.factor(Treatment) ~ . , data = lda_obj_cleaned, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100) ### variability explained
-lda_out <-  as.data.frame(as.matrix(lda_obj_cleaned[,-1]) %*% as.matrix(lda_res$scaling))
-
-
-## Add back in plot level information
-lda_out$Stand<-pre_lda[pre_lda$Age==sel_Age, "Stand"]
-lda_out$Age<-pre_lda[pre_lda$Age==sel_Age, "Age"]
-lda_out$Treatment<-pre_lda[pre_lda$Age==sel_Age, "Treatment"]
-lda_out$Treatment<-factor(lda_out$Treatment, levels=c("Control","N","P","NP"))
-
-lda_out$staplo<-paste(lda_out$Stand, lda_out$Treatment)
-lda_out$total_N<-chem$NH4.hyphen.N[match(lda_out$staplo, chem$treat_stand )]
-lda_out$total_P<-chem$PO4.hyphen.P[match(lda_out$staplo, chem$treat_stand )]
-
-plot_data <- lda_out
-
-library(akima)
-
-# Create a grid for interpolation
-ld1_range <- range(plot_data$LD1, na.rm = TRUE)
-ld2_range <- range(plot_data$LD2, na.rm = TRUE)
-
-# Interpolate to create a smooth surface
-interp_result <- akima::interp(x = plot_data$LD1, 
-                        y = plot_data$LD2, 
-                        z = plot_data$total_P,
-                        xo = seq(ld1_range[1], ld1_range[2], length = 50),
-                        yo = seq(ld2_range[1], ld2_range[2], length = 50))
-
-# Convert to data frame for ggplot
-contour_data <- expand.grid(x = interp_result$x, y = interp_result$y)
-contour_data$z <- as.vector(interp_result$z)
-contour_data <- contour_data[!is.na(contour_data$z), ]
+# Reset layout when done
+layout(1)
 
 
 
-
-
-# #Here we could ask how much the tree species explained the spectral variation by plot
-# 
-# ############ quick adonis test
-# ## Add back in plot level information
-# dada$staplo<-paste(dada$Stand, dada$Treatment)
-# dada$total_N<-chem$total_N[match(dada$staplo, chem$treat_stand )]
-# dada$total_P<-chem$PO4.hyphen.P[match(dada$staplo, chem$treat_stand )]
-# dada$bap<-bap$x[match(dada$staplo, bap$staplo)]
-# 
-# 
-# names(dada)
-# spec.matrix<-dada[,7:351]
-# adonis2(spec.matrix ~ total_N, data=dada, permutations = 100, method = "bray",strata = dada$Stand)
-# 
-# spec.pca <- prcomp(spec.matrix ,center = TRUE, scale = TRUE) ## means per treat_stand
-# # spec.pca <- prcomp(dada[,-c(1:5)],center = TRUE, scale = TRUE) ## pixels
-# plot(spec.pca,type="l")
-# summary(spec.pca)
-# 
-# plot(spec.pca)
-# 
-# 
-# 
-# head(pcdat)
-# pcdat$Trt<-factor(pcdat$Trt, levels=c("Control","N","P","NP"))
-# 
-# PC1<-spec.pca$x[,1]
-# PC2<-spec.pca$x[,2]
-# PC3<-spec.pca$x[,3]
-# PC4<-spec.pca$x[,4]
-# PC5<-spec.pca$x[,5]
-# PC6<-spec.pca$x[,6]
-# 
-# pcdat<-data.frame(PC1,PC2,PC3,PC4, PC5, PC6)
-# pcdat
-# dim(dada)
-# perm<-cbind(dada[,c(1:5,351:355) ],pcdat)
-# 
-# names(dada)
-# head(perm[1:10])
-# names(perm)
-# adonis(perm[,11:16] ~ perm$Treatment,method="euclidean", strata=perm$Stand, data=perm)
-# 
 
