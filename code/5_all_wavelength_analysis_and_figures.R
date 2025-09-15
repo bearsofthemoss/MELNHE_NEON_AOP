@@ -71,9 +71,20 @@ ggplot(avg_pri, aes(x=Age, y=pri,
   theme_bw()+theme(panel.grid = element_blank())+
   labs(x="Stand age class", y= "Average Photochemical Reflective Index")
 
+pri_mod <- lmer(pri ~ Ntrmt*Ptrmt+Age+(1|Stand/staplo), data=gat)
+anova( pri_mod)
 
+library(emmeans)
+emm_object <- emmeans(pri_mod, specs = "Ntrmt")
 
+effect_sizes <- eff_size(emm_object, sigma = sigma(pri_mod), edf = df.residual(pri_mod))
+print(effect_sizes)
 
+-.14 - -.152 / ((-.14 + -.152)/2)
+
+.152-.14
+
+.12 / .14
 ########
 names(dada)
 vis <-gather(dada, "wvl","refl",c(7:66))
