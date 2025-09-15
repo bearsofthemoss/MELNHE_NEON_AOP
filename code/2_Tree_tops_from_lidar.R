@@ -155,15 +155,15 @@ m9np<-crop(chm.C9, C9[C9$Treatment=="NP",])
 #####################################
 
 ##
-lin.C <- function(x){x * 0.02}
-lin.C2 <- function(x){x * 0.02}
-lin.C3 <- function(x){x * 0.02}
-lin.C4 <- function(x){x * 0.02}
-lin.C5 <- function(x){x * 0.02}
-lin.C6 <- function(x){x * 0.02}
-lin.C7 <- function(x){x * 0.02}
-lin.C8 <- function(x){x * 0.02}
-lin.C9 <- function(x){x * 0.02}
+lin.C <- function(x){x * 0.01}
+lin.C2 <- function(x){x * 0.01}
+lin.C3 <- function(x){x * 0.01}
+lin.C4 <- function(x){x * 0.01}
+lin.C5 <- function(x){x * 0.01}
+lin.C6 <- function(x){x * 0.01}
+lin.C7 <- function(x){x * 0.01}
+lin.C8 <- function(x){x * 0.01}
+lin.C9 <- function(x){x * 0.01}
 
 
 # set the window size using the function 0.02 m width for each pixel height value.
@@ -365,7 +365,8 @@ tree$staplo<-paste(tree$Stand, tree$Plot)
 head(tree)
 
 library(tidyr)
-bap<-aggregate(tree$BA.m2, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), FUN="sum", simplify=T)
+bap<-aggregate(tree$DBH2019* 0.005454, list(Stand=tree$Stand,Plot=tree$Plot, Age=tree$Age), 
+               FUN="sum",na.rm=T, simplify=T)
 bap$staplo<-paste(bap$Stand, bap$Plot)
 
 bap$Treatment<-sapply(bap$staplo,switch,
@@ -384,36 +385,40 @@ bap$Treatment<-sapply(bap$staplo,switch,
 tree_count <- as.data.frame(table(tree$staplo))
 head(tree_count)
 
-tree_count$tree_per_hectare <- tree_count$Freq / 900
+# plot size is 900 m, then convert from m2 to ha
+tree_count$tree_per_ha <- tree_count$Freq / 900 / 0.0001
 
-bap$TPA_ha <- tree_count$tree_per_hectare[match(bap$staplo, tree_count$Var1)]
+bap$tree_per_ha <- tree_count$tree_per_ha[match(bap$staplo, tree_count$Var1)]
 
 bap$count <- tree_count$Freq[match(bap$staplo, tree_count$Var1)]
 
-head(bap)
-
-ggplot(bap, aes(x=TPA_ha,y=x , shape=Age, col=Age))+
-  geom_point()
 
 # Now bring in the lidar detected tree tops
- bap$statr<-paste(bap$Stand, bap$Treatment)
+bap$statr<-paste(bap$Stand, bap$Treatment)
 
 bap$lidar_top_count <- lt$Freq[match(bap$statr, lt$statr)]
 
+bap$lidar_top_per_ha <- bap$lidar_top_count/900  / 0.0001
 
-zero.02 <- ggplot(bap, aes(x= count, y= lidar_top_count, col=Age))+geom_point()+
-  geom_abline()+ggtitle("paramater 0.02")
+bap$Age <- factor(bap$Age, levels=rev(c("~30 years old", "~60 years old", "~100 years old")))
 
-zero.02
+ ggplot(bap, aes(x= tree_per_ha, y= lidar_top_per_ha, col=Age))+geom_point()+
+  geom_abline(linetype= "dashed")+
+  theme_bw()+
+   labs(x="Inventory-based tree density (trees per hectare)",
+        y="Lidar-based tree top density (trees per hectare)")+
+  xlim(0,1800)+ylim(0,900)
 
-# library(patchwork)
-# 
-# zero.2 / zero.05 / zero.01
  
-# write shape file.
-#writeOGR(obj=,dsn="data_folder"  ,layer="bart_ttops_2025_04_10", driver="ESRI Shapefile", overwrite=T)
+ ggplot(bap, aes(x= count      , y= lidar_top_count, col=Age))+geom_point()+
+   geom_abline(linetype= "dashed")+
+   theme_bw()+
+   labs(x="Inventory-based tree density ",
+        y="Lidar-based tree top density ")
 
-st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_21.shp"))
+ head(bap)
+ ####  Write output
 
-######################################################################
-
+ st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_22.shp"))
+ 
+ 
