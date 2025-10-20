@@ -5,6 +5,7 @@
 ####  Alex Young  9-7-2020
 library(neonUtilities)
 library(ForestTools)
+library(terra)
 
 library(sf)
 library(stringr) # this is for data management
@@ -55,15 +56,15 @@ stdf$staplo <-paste(stdf$stand, stdf$plot)
                          "JBO 1"="NP", "JBO 2"="P",  "JBO 3"="N",   "JBO 4"="Control")
 rm(stdf)
 #################################   Each stand as a shapefile
-C1<-stands[stands$stand=="C1",]
-C2<-stands[stands$stand=="C2",]
-C3<-stands[stands$stand=="C3",]
-C4<-stands[stands$stand=="C4",]
-C5<-stands[stands$stand=="C5",]
-C6<-stands[stands$stand=="C6",]
-C7<-stands[stands$stand=="C7",]
-C8<-stands[stands$stand=="C8",]
-C9<-stands[stands$stand=="C9",]
+C1<-vect(stands[stands$stand=="C1",])
+C2<-vect(stands[stands$stand=="C2",])
+C3<-vect(stands[stands$stand=="C3",])
+C4<-vect(stands[stands$stand=="C4",])
+C5<-vect(stands[stands$stand=="C5",])
+C6<-vect(stands[stands$stand=="C6",])
+C7<-vect(stands[stands$stand=="C7",])
+C8<-vect(stands[stands$stand=="C8",])
+C9<-vect(stands[stands$stand=="C9",])
 
 ############################################################################################################
 # these are the easting and northings for the plot locations
@@ -89,21 +90,21 @@ north <-centroids[, 2]
 
 lidar_path <- here::here("data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 
-chm.C1a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
-chm.C1b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4879000_CHM.tif"))
-chm.C1 <- raster::merge(chm.C1a,chm.C1b)
-chm.C2a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4881000_CHM.tif"))
-chm.C2b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
-chm.C2 <- raster::merge(chm.C2a,chm.C2b)
-chm.C3<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
-chm.C4<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
-chm.C5<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4878000_CHM.tif"))
-chm.C6<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4878000_CHM.tif"))
-chm.C7<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
-chm.C8a<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
-chm.C8b<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif"))
-chm.C8 <- raster::merge(chm.C8a,chm.C8b)
-chm.C9<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
+chm.C1a<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_313000_4879000_CHM.tif"))
+chm.C1b<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4879000_CHM.tif"))
+chm.C1 <- terra::merge(chm.C1a,chm.C1b)
+chm.C2a<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4881000_CHM.tif"))
+chm.C2b<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
+chm.C2 <-  terra::merge(chm.C2a,chm.C2b)
+chm.C3<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4878000_CHM.tif"))
+chm.C4<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
+chm.C5<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_314000_4878000_CHM.tif"))
+chm.C6<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4878000_CHM.tif"))
+chm.C7<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8a<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C8b<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_316000_4880000_CHM.tif"))
+chm.C8 <-  terra::merge(chm.C8a,chm.C8b)
+chm.C9<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
 
 ## this makes a canopy height per plot
@@ -155,27 +156,20 @@ m9np<-crop(chm.C9, C9[C9$Treatment=="NP",])
 #####################################
 
 ##
-lin.C <- function(x){x * 0.01}
-lin.C2 <- function(x){x * 0.01}
-lin.C3 <- function(x){x * 0.01}
-lin.C4 <- function(x){x * 0.01}
-lin.C5 <- function(x){x * 0.01}
-lin.C6 <- function(x){x * 0.01}
-lin.C7 <- function(x){x * 0.01}
-lin.C8 <- function(x){x * 0.01}
-lin.C9 <- function(x){x * 0.01}
+lin.C <- function(x){x * 0.04}
+lin.C2 <- function(x){x * 0.04}
+lin.C3 <- function(x){x * 0.04}
+lin.C4 <- function(x){x * 0.04}
+lin.C5 <- function(x){x * 0.04}
+lin.C6 <- function(x){x * 0.04}
+lin.C7 <- function(x){x * 0.04}
+lin.C8 <- function(x){x * 0.04}
+lin.C9 <- function(x){x * 0.04}
 
 
 # set the window size using the function 0.02 m width for each pixel height value.
 
-# a 20 ft tall tree would have a X width for 0.1
-
-# 20 ft @ 0.02 = 0.4 m crown width
-# 20 ft @ 0.03 = 0.4 m crown width
-# 20 ft @ 0.1 = 2 m crown width
-#          .2 = 4 m
-# 20 ft @ 0.5 = 10 m wide tree
-
+# a 20 m tall tree would have a X width for 0.1
 # convert TPA from plots, then optimize crown search window.
 
 
@@ -184,129 +178,131 @@ lin.C9 <- function(x){x * 0.01}
 #############################################################################
 # start automating tree tops
 #############################################################################
-
-m1c <- mask(crop(chm.C1, extent(C1[C1$Treatment=="Control",])), C1[C1$Treatment=="Control",])
-m1n <- mask(crop(chm.C1, extent(C1[C1$Treatment=="N",])),C1[C1$Treatment=="N",] )
-m1p <- mask(crop(chm.C1, extent(C1[C1$Treatment=="P",])),C1[C1$Treatment=="P",] )
-m1np <- mask(crop(chm.C1, extent(C1[C1$Treatment=="NP",])),C1[C1$Treatment=="NP",] )
-
-
-library(ForestTools)
-
-m1ctops <- vwf(CHM = m1c, winFun = lin.C, minHeight = 12)
-m1ctops$Treatment<-"Control"
+# C1
+m1c <- mask(crop(chm.C1, C1[C1$Treatment=="Control",]), C1[C1$Treatment=="Control",])
+m1n <- mask(crop(chm.C1, C1[C1$Treatment=="N",]), C1[C1$Treatment=="N",])
+m1p <- mask(crop(chm.C1, C1[C1$Treatment=="P",]), C1[C1$Treatment=="P",])
+m1np <- mask(crop(chm.C1, C1[C1$Treatment=="NP",]), C1[C1$Treatment=="NP",])
+m1ctops <- vwf(CHM = m1c, winFun = lin.C, minHeight = 3)
+m1ctops$Treatment <- "Control"
 m1ntops <- vwf(CHM = m1n, winFun = lin.C, minHeight = 3)
-m1ntops$Treatment<-"N"
+m1ntops$Treatment <- "N"
 m1ptops <- vwf(CHM = m1p, winFun = lin.C, minHeight = 3)
-m1ptops$Treatment<-"P"
-m1nptops<- vwf(CHM = m1np,winFun = lin.C, minHeight = 3)
-m1nptops$Treatment<-"NP"
-##
-m2c <- mask(crop(chm.C2, extent(C2[C2$Treatment=="Control",])), C2[C2$Treatment=="Control",])
-m2n <- mask(crop(chm.C2, extent(C2[C2$Treatment=="N",])),C2[C2$Treatment=="N",] )
-m2p <- mask(crop(chm.C2, extent(C2[C2$Treatment=="P",])),C2[C2$Treatment=="P",] )
-m2np <- mask(crop(chm.C2, extent(C2[C2$Treatment=="NP",])),C2[C2$Treatment=="NP",] )
-m2ctops <- vwf(CHM = m2c, winFun = lin.C2, minHeight = 3)
-m2ctops$Treatment<-"Control"
-m2ntops <- vwf(CHM = m2n, winFun = lin.C2, minHeight = 3)
-m2ntops$Treatment<-"N"
-##
-m2ptops <- vwf(CHM = m2p, winFun = lin.C2, minHeight = 3)
-m2ptops$Treatment<-"P"
-m2nptops <- vwf(CHM = m2np, winFun = lin.C2, minHeight = 3)
-m2nptops$Treatment<-"NP"
-##
-m3c <- mask(crop(chm.C3, extent(C3[C3$Treatment=="Control",])), C3[C3$Treatment=="Control",])
-m3n <- mask(crop(chm.C3, extent(C3[C3$Treatment=="N",])),C3[C3$Treatment=="N",] )
-m3p <- mask(crop(chm.C3, extent(C3[C3$Treatment=="P",])),C3[C3$Treatment=="P",] )
-m3np <- mask(crop(chm.C3, extent(C3[C3$Treatment=="NP",])),C3[C3$Treatment=="NP",] )
-m3ctops <- vwf(CHM = m3c, winFun = lin.C3, minHeight = 3)
-m3ctops$Treatment<-"Control"
-m3ntops <- vwf(CHM = m3n, winFun = lin.C3, minHeight = 3)
-m3ntops$Treatment<-"N"
-m3ptops <- vwf(CHM = m3p, winFun = lin.C3, minHeight = 3)
-m3ptops$Treatment<-"P"
-m3nptops <- vwf(CHM = m3np, winFun = lin.C3, minHeight = 3)
-m3nptops$Treatment<-"NP"
-##
-m4c <- mask(crop(chm.C4, extent(C4[C4$Treatment=="Control",])), C4[C4$Treatment=="Control",])
-m4n <- mask(crop(chm.C4, extent(C4[C4$Treatment=="N",])),C4[C4$Treatment=="N",] )
-m4p <- mask(crop(chm.C4, extent(C4[C4$Treatment=="P",])),C4[C4$Treatment=="P",] )
-m4np <- mask(crop(chm.C4, extent(C4[C4$Treatment=="NP",])),C4[C4$Treatment=="NP",] )
-m4ctops <- vwf(CHM = m4c, winFun = lin.C4, minHeight = 3)
-m4ctops$Treatment<-"Control"
-m4ntops <- vwf(CHM = m4n, winFun = lin.C4, minHeight = 3)
-m4ntops$Treatment<-"N"
-m4ptops <- vwf(CHM = m4p, winFun = lin.C4, minHeight = 3)
-m4ptops$Treatment<-"P"
-m4nptops <- vwf(CHM = m4np, winFun = lin.C4, minHeight = 3)
-m4nptops$Treatment<-"NP"
-##
-m5c <- mask(crop(chm.C5, extent(C5[C5$Treatment=="Control",])), C5[C5$Treatment=="Control",])
-m5n <- mask(crop(chm.C5, extent(C5[C5$Treatment=="N",])),C5[C5$Treatment=="N",] )
-m5p <- mask(crop(chm.C5, extent(C5[C5$Treatment=="P",])),C5[C5$Treatment=="P",] )
-m5np <- mask(crop(chm.C5, extent(C5[C5$Treatment=="NP",])),C5[C5$Treatment=="NP",] )
-m5ctops <- vwf(CHM = m5c, winFun = lin.C5, minHeight = 3)
-m5ctops$Treatment<-"Control"
-m5ntops <- vwf(CHM = m5n, winFun = lin.C5, minHeight = 3)
-m5ntops$Treatment<-"N"
-m5ptops <- vwf(CHM = m5p, winFun = lin.C5, minHeight = 3)
-m5ptops$Treatment<-"P"
-m5nptops <- vwf(CHM = m5np, winFun = lin.C5, minHeight = 3)
-m5nptops$Treatment<-"NP"
-##
-m6c <- mask(crop(chm.C6, extent(C6[C6$Treatment=="Control",])), C6[C6$Treatment=="Control",])
-m6n <- mask(crop(chm.C6, extent(C6[C6$Treatment=="N",])),C6[C6$Treatment=="N",] )
-m6p <- mask(crop(chm.C6, extent(C6[C6$Treatment=="P",])),C6[C6$Treatment=="P",] )
-m6np <- mask(crop(chm.C6, extent(C6[C6$Treatment=="NP",])),C6[C6$Treatment=="NP",] )
-m6ctops <- vwf(CHM = m6c, winFun = lin.C6, minHeight = 3)
-m6ctops$Treatment<-"Control"
-m6ntops <- vwf(CHM = m6n, winFun = lin.C6, minHeight = 3)
-m6ntops$Treatment<-"N"
-m6ptops <- vwf(CHM = m6p, winFun = lin.C6, minHeight = 3)
-m6ptops$Treatment<-"P"
-m6nptops <- vwf(CHM = m6np, winFun = lin.C6, minHeight = 3)
-m6nptops$Treatment<-"NP"
-##
-m7c <- mask(crop(chm.C7, extent(C7[C7$Treatment=="Control",])), C7[C7$Treatment=="Control",])
-m7n <- mask(crop(chm.C7, extent(C7[C7$Treatment=="N",])),C7[C7$Treatment=="N",] )
-m7p <- mask(crop(chm.C7, extent(C7[C7$Treatment=="P",])),C7[C7$Treatment=="P",] )
-m7np <- mask(crop(chm.C7, extent(C7[C7$Treatment=="NP",])),C7[C7$Treatment=="NP",] )
-m7ctops <- vwf(CHM = m7c, winFun = lin.C7, minHeight = 3)
-m7ctops$Treatment<-"Control"
-m7ntops <- vwf(CHM = m7n, winFun = lin.C7, minHeight = 3)
-m7ntops$Treatment<-"N"
-m7ptops <- vwf(CHM = m7p, winFun = lin.C7, minHeight = 3)
-m7ptops$Treatment<-"P"
-m7nptops <- vwf(CHM = m7np, winFun = lin.C7, minHeight = 3)
-m7nptops$Treatment<-"NP"
-##
-m8c <- mask(crop(chm.C8, extent(C8[C8$Treatment=="Control",])), C8[C8$Treatment=="Control",])
-m8n <- mask(crop(chm.C8, extent(C8[C8$Treatment=="N",])),C8[C8$Treatment=="N",] )
-m8p <- mask(crop(chm.C8, extent(C8[C8$Treatment=="P",])),C8[C8$Treatment=="P",] )
-m8np <- mask(crop(chm.C8, extent(C8[C8$Treatment=="NP",])),C8[C8$Treatment=="NP",] )
-m8ctops <- vwf(CHM = m8c, winFun = lin.C8, minHeight = 3)
-m8ctops$Treatment<-"Control"
-m8ntops <- vwf(CHM = m8n, winFun = lin.C8, minHeight = 3)
-m8ntops$Treatment<-"N"
-m8ptops <- vwf(CHM = m8p, winFun = lin.C8, minHeight = 3)
-m8ptops$Treatment<-"P"
-m8nptops <- vwf(CHM = m8np, winFun = lin.C8, minHeight = 3)
-m8nptops$Treatment<-"NP"
-##
-m9c <- mask(crop(chm.C9, extent(C9[C9$Treatment=="Control",])), C9[C9$Treatment=="Control",])
-m9n <- mask(crop(chm.C9, extent(C9[C9$Treatment=="N",])),C9[C9$Treatment=="N",] )
-m9p <- mask(crop(chm.C9, extent(C9[C9$Treatment=="P",])),C9[C9$Treatment=="P",] )
-m9np <- mask(crop(chm.C9, extent(C9[C9$Treatment=="NP",])),C9[C9$Treatment=="NP",] )
-m9ctops <- vwf(CHM = m9c, winFun = lin.C9, minHeight = 3)
-m9ctops$Treatment<-"Control"
-m9ntops <- vwf(CHM = m9n, winFun = lin.C9, minHeight = 3)
-m9ntops$Treatment<-"N"
-m9ptops <- vwf(CHM = m9p, winFun = lin.C9, minHeight = 3)
-m9ptops$Treatment<-"P"
-m9nptops <- vwf(CHM = m9np, winFun = lin.C9, minHeight = 3)
-m9nptops$Treatment<-"NP"
+m1ptops$Treatment <- "P"
+m1nptops <- vwf(CHM = m1np, winFun = lin.C, minHeight = 3)
+m1nptops$Treatment <- "NP"
 
+# C2
+m2c <- mask(crop(chm.C2, C2[C2$Treatment=="Control",]), C2[C2$Treatment=="Control",])
+m2n <- mask(crop(chm.C2, C2[C2$Treatment=="N",]), C2[C2$Treatment=="N",])
+m2p <- mask(crop(chm.C2, C2[C2$Treatment=="P",]), C2[C2$Treatment=="P",])
+m2np <- mask(crop(chm.C2, C2[C2$Treatment=="NP",]), C2[C2$Treatment=="NP",])
+m2ctops <- vwf(CHM = m2c, winFun = lin.C, minHeight = 3)
+m2ctops$Treatment <- "Control"
+m2ntops <- vwf(CHM = m2n, winFun = lin.C, minHeight = 3)
+m2ntops$Treatment <- "N"
+m2ptops <- vwf(CHM = m2p, winFun = lin.C, minHeight = 3)
+m2ptops$Treatment <- "P"
+m2nptops <- vwf(CHM = m2np, winFun = lin.C, minHeight = 3)
+m2nptops$Treatment <- "NP"
+
+# C3
+m3c <- mask(crop(chm.C3, C3[C3$Treatment=="Control",]), C3[C3$Treatment=="Control",])
+m3n <- mask(crop(chm.C3, C3[C3$Treatment=="N",]), C3[C3$Treatment=="N",])
+m3p <- mask(crop(chm.C3, C3[C3$Treatment=="P",]), C3[C3$Treatment=="P",])
+m3np <- mask(crop(chm.C3, C3[C3$Treatment=="NP",]), C3[C3$Treatment=="NP",])
+m3ctops <- vwf(CHM = m3c, winFun = lin.C, minHeight = 3)
+m3ctops$Treatment <- "Control"
+m3ntops <- vwf(CHM = m3n, winFun = lin.C, minHeight = 3)
+m3ntops$Treatment <- "N"
+m3ptops <- vwf(CHM = m3p, winFun = lin.C, minHeight = 3)
+m3ptops$Treatment <- "P"
+m3nptops <- vwf(CHM = m3np, winFun = lin.C, minHeight = 3)
+m3nptops$Treatment <- "NP"
+
+# C4
+m4c <- mask(crop(chm.C4, C4[C4$Treatment=="Control",]), C4[C4$Treatment=="Control",])
+m4n <- mask(crop(chm.C4, C4[C4$Treatment=="N",]), C4[C4$Treatment=="N",])
+m4p <- mask(crop(chm.C4, C4[C4$Treatment=="P",]), C4[C4$Treatment=="P",])
+m4np <- mask(crop(chm.C4, C4[C4$Treatment=="NP",]), C4[C4$Treatment=="NP",])
+m4ctops <- vwf(CHM = m4c, winFun = lin.C, minHeight = 3)
+m4ctops$Treatment <- "Control"
+m4ntops <- vwf(CHM = m4n, winFun = lin.C, minHeight = 3)
+m4ntops$Treatment <- "N"
+m4ptops <- vwf(CHM = m4p, winFun = lin.C, minHeight = 3)
+m4ptops$Treatment <- "P"
+m4nptops <- vwf(CHM = m4np, winFun = lin.C, minHeight = 3)
+m4nptops$Treatment <- "NP"
+
+# C5
+m5c <- mask(crop(chm.C5, C5[C5$Treatment=="Control",]), C5[C5$Treatment=="Control",])
+m5n <- mask(crop(chm.C5, C5[C5$Treatment=="N",]), C5[C5$Treatment=="N",])
+m5p <- mask(crop(chm.C5, C5[C5$Treatment=="P",]), C5[C5$Treatment=="P",])
+m5np <- mask(crop(chm.C5, C5[C5$Treatment=="NP",]), C5[C5$Treatment=="NP",])
+m5ctops <- vwf(CHM = m5c, winFun = lin.C, minHeight = 3)
+m5ctops$Treatment <- "Control"
+m5ntops <- vwf(CHM = m5n, winFun = lin.C, minHeight = 3)
+m5ntops$Treatment <- "N"
+m5ptops <- vwf(CHM = m5p, winFun = lin.C, minHeight = 3)
+m5ptops$Treatment <- "P"
+m5nptops <- vwf(CHM = m5np, winFun = lin.C, minHeight = 3)
+m5nptops$Treatment <- "NP"
+
+# C6
+m6c <- mask(crop(chm.C6, C6[C6$Treatment=="Control",]), C6[C6$Treatment=="Control",])
+m6n <- mask(crop(chm.C6, C6[C6$Treatment=="N",]), C6[C6$Treatment=="N",])
+m6p <- mask(crop(chm.C6, C6[C6$Treatment=="P",]), C6[C6$Treatment=="P",])
+m6np <- mask(crop(chm.C6, C6[C6$Treatment=="NP",]), C6[C6$Treatment=="NP",])
+m6ctops <- vwf(CHM = m6c, winFun = lin.C, minHeight = 3)
+m6ctops$Treatment <- "Control"
+m6ntops <- vwf(CHM = m6n, winFun = lin.C, minHeight = 3)
+m6ntops$Treatment <- "N"
+m6ptops <- vwf(CHM = m6p, winFun = lin.C, minHeight = 3)
+m6ptops$Treatment <- "P"
+m6nptops <- vwf(CHM = m6np, winFun = lin.C, minHeight = 3)
+m6nptops$Treatment <- "NP"
+
+# C7
+m7c <- mask(crop(chm.C7, C7[C7$Treatment=="Control",]), C7[C7$Treatment=="Control",])
+m7n <- mask(crop(chm.C7, C7[C7$Treatment=="N",]), C7[C7$Treatment=="N",])
+m7p <- mask(crop(chm.C7, C7[C7$Treatment=="P",]), C7[C7$Treatment=="P",])
+m7np <- mask(crop(chm.C7, C7[C7$Treatment=="NP",]), C7[C7$Treatment=="NP",])
+m7ctops <- vwf(CHM = m7c, winFun = lin.C, minHeight = 3)
+m7ctops$Treatment <- "Control"
+m7ntops <- vwf(CHM = m7n, winFun = lin.C, minHeight = 3)
+m7ntops$Treatment <- "N"
+m7ptops <- vwf(CHM = m7p, winFun = lin.C, minHeight = 3)
+m7ptops$Treatment <- "P"
+m7nptops <- vwf(CHM = m7np, winFun = lin.C, minHeight = 3)
+m7nptops$Treatment <- "NP"
+
+# C8
+m8c <- mask(crop(chm.C8, C8[C8$Treatment=="Control",]), C8[C8$Treatment=="Control",])
+m8n <- mask(crop(chm.C8, C8[C8$Treatment=="N",]), C8[C8$Treatment=="N",])
+m8p <- mask(crop(chm.C8, C8[C8$Treatment=="P",]), C8[C8$Treatment=="P",])
+m8np <- mask(crop(chm.C8, C8[C8$Treatment=="NP",]), C8[C8$Treatment=="NP",])
+m8ctops <- vwf(CHM = m8c, winFun = lin.C, minHeight = 3)
+m8ctops$Treatment <- "Control"
+m8ntops <- vwf(CHM = m8n, winFun = lin.C, minHeight = 3)
+m8ntops$Treatment <- "N"
+m8ptops <- vwf(CHM = m8p, winFun = lin.C, minHeight = 3)
+m8ptops$Treatment <- "P"
+m8nptops <- vwf(CHM = m8np, winFun = lin.C, minHeight = 3)
+m8nptops$Treatment <- "NP"
+
+# C9
+m9c <- mask(crop(chm.C9, C9[C9$Treatment=="Control",]), C9[C9$Treatment=="Control",])
+m9n <- mask(crop(chm.C9, C9[C9$Treatment=="N",]), C9[C9$Treatment=="N",])
+m9p <- mask(crop(chm.C9, C9[C9$Treatment=="P",]), C9[C9$Treatment=="P",])
+m9np <- mask(crop(chm.C9, C9[C9$Treatment=="NP",]), C9[C9$Treatment=="NP",])
+m9ctops <- vwf(CHM = m9c, winFun = lin.C, minHeight = 3)
+m9ctops$Treatment <- "Control"
+m9ntops <- vwf(CHM = m9n, winFun = lin.C, minHeight = 3)
+m9ntops$Treatment <- "N"
+m9ptops <- vwf(CHM = m9p, winFun = lin.C, minHeight = 3)
+m9ptops$Treatment <- "P"
+m9nptops <- vwf(CHM = m9np, winFun = lin.C, minHeight = 3)
+m9nptops$Treatment <- "NP"
 
 #######################################################################
 ### combine tops
@@ -418,7 +414,7 @@ bap$Age <- factor(bap$Age, levels=rev(c("~30 years old", "~60 years old", "~100 
 
  head(bap)
  ####  Write output
-
- st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_05_22.shp"))
+ 
+ st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_10_10.shp"))
  
  

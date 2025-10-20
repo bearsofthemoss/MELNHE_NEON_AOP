@@ -1,4 +1,4 @@
-dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+dati <- read.csv(here::here("data_folder/actual_tops.csv"))
 
 dati$Age[dati$Stand=="C1"]<-"Young forest"
 dati$Age[dati$Stand=="C2"]<-"Young forest"
@@ -76,6 +76,7 @@ ggplot(a[a$wvl>2100 & a$wvl<2500, ], aes(x= wvl, y= value, col=Treatment))+
 
 ######
 
+unique(a$wvl)
 
 ### 530 and 550
 a530 <- a[a$wvl==528.99, ]
@@ -85,56 +86,67 @@ a550 <- a[a$wvl==549.02, ]
 
 a530$a550 <- a550$value[match(a530$one_tree, a550$one_tree)]
 
-head(a530)
-ggplot(a530, aes(x= value, y=a550, col=Treatment))+
-  geom_point()+
-  facet_wrap(~Stand, nrow=3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(x="530 (nm) reflectance", y="550 (nm) reflectance",
-       title="Two wavelengths used in PRI index")+
-  theme_bw()+theme(panel.grid = element_blank())
-
-
-ggplot(a, aes(x=shade_intensity, y=value)) +
-  geom_point()
-
-              
-
 
 ##########
 
+a530$PRI <-   ( a530$value - a530$a550 )/ ( a530$value + a530$a550 )
+
+summary_data <- aggregate(list(
+  PRI = a530$PRI ),
+  by= list( staplo = a530$staplo,
+            Treatment = a530$Treatment,
+            Stand = a530$Stand,
+            Age = a530$Age),
+  FUN= "mean", na.rm=T)
+
+st.err <- function(x, na.rm=FALSE) {
+  if(na.rm==TRUE) x <- na.omit(x)
+  sd(x)/sqrt(length(x))
+}
+
+summary_se <- aggregate(list(
+  PRI_se = a530$value / a530$a550),
+  by= list( staplo = a530$staplo,
+            Treatment = a530$Treatment,
+            Stand = a530$Stand,
+            Age = a530$Age),
+  FUN= st.err, na.rm=T)
+
+summary_data$se <- summary_se$PRI_se[match(summary_data$staplo, summary_se$staplo)]
 
 
 
-# Calculate means and standard errors by treatment
-summary_data <- a530 %>%
-  group_by(staplo, Treatment,Stand,Age) %>%
-  summarise(
-    mean_530 = mean(value, na.rm = TRUE),
-    se_530 = sd(value, na.rm = TRUE) / sqrt(n()),
-    mean_550 = mean(a550, na.rm = TRUE),
-    se_550 = sd(a550, na.rm = TRUE) / sqrt(n()),
-    .groups = 'drop'
-  )
+sum_2 <- aggregate(list(
+  PRI = summary_data$PRI ),
+  by= list(Treatment = summary_data$Treatment,
+            Age = summary_data$Age),
+  FUN= "mean", na.rm=T)
 
-# Create the plot
-ggplot(summary_data, aes(x = mean_530, y = mean_550, color = Treatment)) +
-  geom_point(size = 3) +
-  facet_wrap(~Age, nrow=1)+
-  geom_errorbar(aes(ymin = mean_550 - se_550, ymax = mean_550 + se_550), 
-                width = 0.0001, size = 0.8) +
-  geom_errorbarh(aes(xmin = mean_530 - se_530, xmax = mean_530 + se_530), 
-                 height = 0.0001, size = 0.8) +
-  scale_color_manual(values = c("black","blue","red","purple")) +
-  labs(x = "530 nm reflectance (mean ± SE)", 
-       y = "550 nm reflectance (mean ± SE)",
-       title = "Treatment effects on PRI wavelengths") +
-  theme_bw() +
-  coord_fixed()+
-  geom_abline(linetype = "dashed")+
-  theme(
-    panel.grid = element_blank(),
-    legend.position = "right",
-    plot.title = element_text(size = 12, hjust = 0.5)
-  )
+sum_2_se <- aggregate(list(
+  PRI_se = summary_data$PRI ),
+  by= list(Treatment = summary_data$Treatment,
+           Age = summary_data$Age),
+  FUN= st.err, na.rm=T)
+
+sum_2$se <- sum_2_se$PRI_se
+
+
+ggplot( sum_2, aes(x= Treatment, y= PRI, col=Treatment))+
+  geom_point(data=sum_2, aes(x= Treatment, y=PRI), size=3)+
+  geom_errorbar(aes(ymin = PRI-se, ymax = PRI+se))+
+  facet_wrap(~Age, scales="free_x")+
+  labs( y= "PRI  (530 - 550 ) / (530 + 550)",
+        col="")+
+  scale_color_manual(values=c("black","blue","red","purple"))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+                   legend.position = "bottom")+
+  geom_jitter(data=summary_data, aes(x= Treatment, y=PRI),
+             position=position_dodge(.3),
+             alpha = .2)
+
+
+
+
+
 

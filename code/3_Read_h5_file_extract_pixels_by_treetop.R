@@ -10,8 +10,9 @@ library(raster)
 library(rhdf5)
 library(neonUtilities)
 
-
 source(here::here("code","band2raster.R"))
+
+date <- "2025_10_10"  # better control on data versioning
 
 # if (!require("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
@@ -32,7 +33,7 @@ plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
 
 
 # Alex's tree tops
-trees <- st_read(here::here("data_folder","private_melnhe_locations","bart_ttops_2025_09_04.shp"))
+trees <- st_read(here::here("data_folder","private_melnhe_locations",paste0("bart_ttops_",date ,".shp")))
 trees <- sf::st_transform(trees, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
@@ -44,10 +45,11 @@ north <-centroids[, 1]
 
 
 # Download the hypersepctral data
-# byTileAOP(dpID="DP3.30006.001",site="BART", easting= east,
+# byTileAOP(dpID="DP3.30006.001",site="BART", 
+#           easting= east,
 #           northing = north,
 #           year="2019",buffer = 200, savepath = "data_folder/Bart_tiles/",check.size = T)
-# 
+
 
 # Download DSMs
 # byTileAOP(dpID="DP3.30024.001",site="BART",
@@ -57,8 +59,8 @@ north <-centroids[, 1]
 
 
 # Folder working directories
-ff <- list.files("data_folder/Bart_tiles/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
-dd <- list.files("data_folder/Bart_DSM/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
+ff <- list.files("data_folder/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
+dd <- list.files("data_folder/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
 
 
 

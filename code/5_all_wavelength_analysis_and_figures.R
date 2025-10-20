@@ -53,26 +53,24 @@ avg_pri <-aggregate(list(height=gat$height,
                             pri = gat$pri), 
                        by=list(Stand=gat$Stand,
                                Age=gat$Age,
-                               Treatment = gat$Treatment), 
+                               Treatment = gat$Treatment,
+                               Ntrmt =gat$Ntrmt,
+                               Ptrmt = gat$Ptrmt,
+                               Stand = gat$Stand,
+                               staplo = gat$staplo), 
                        FUN="mean", na.rm=T)
 
 avg_pri$Age <- factor(avg_pri$Age, levels=c("~30 years old",
                                             "~60 years old",
                                             "~100 years old"))
 
-ggplot(avg_pri, aes(x=Age, y=pri,
-                           col = Treatment,
-                           shape= Treatment))+
-  geom_point(position = position_dodge(.5), size= 3)+
-  #geom_violin()+
-  scale_color_manual( values=c("black","blue","red","purple"))+
-  geom_smooth(se=F, method="lm")+
-  scale_shape_manual( values=c(1, 3, 4, 8))+
-  theme_bw()+theme(panel.grid = element_blank())+
-  labs(x="Stand age class", y= "Average Photochemical Reflective Index")
+sel_age <- "~30 years old"
 
-pri_mod <- lmer(pri ~ Ntrmt*Ptrmt+Age+(1|Stand/staplo), data=gat)
-anova( pri_mod)
+young_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
+
+anova( young_pri_mod_tree)
+
+
 
 library(emmeans)
 emm_object <- emmeans(pri_mod, specs = "Ntrmt")

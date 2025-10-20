@@ -1,14 +1,19 @@
 ### Ordinations ################
 ### Anna Schweiger Nov 6 2019- Alex Young 10_4_2020 ###
 library(tidyverse)
-
+library(ggrepel)
 library(MASS)
 library(plotly)
 library(vegan)
 library(agricolae)
 library(here)
 library(caret)
+library(tidyr)
 
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(akima)
 
 
 ## dada contains the tree top reflectance.This was made in file 2. 
@@ -16,15 +21,15 @@ dada<- read.csv(here::here("data_folder","actual_tops.csv"))
 dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
-dada$Age[dada$Stand=="C1"]<-"~30 years old"
-dada$Age[dada$Stand=="C2"]<-"~30 years old"
-dada$Age[dada$Stand=="C3"]<-"~30 years old"
-dada$Age[dada$Stand=="C4"]<-"~60 years old"
-dada$Age[dada$Stand=="C5"]<-"~60 years old"
-dada$Age[dada$Stand=="C6"]<-"~60 years old" 
-dada$Age[dada$Stand=="C7"]<-"~100 years old"
-dada$Age[dada$Stand=="C8"]<-"~100 years old"
-dada$Age[dada$Stand=="C9"]<-"~100 years old"
+dada$Age[dada$Stand=="C1"]<-"Young forest"
+dada$Age[dada$Stand=="C2"]<-"Young forest"
+dada$Age[dada$Stand=="C3"]<-"Young forest"
+dada$Age[dada$Stand=="C4"]<-"Mid-aged forest"
+dada$Age[dada$Stand=="C5"]<-"Mid-aged forest"
+dada$Age[dada$Stand=="C6"]<-"Mid-aged forest" 
+dada$Age[dada$Stand=="C7"]<-"Mature forest"
+dada$Age[dada$Stand=="C8"]<-"Mature forest"
+dada$Age[dada$Stand=="C9"]<-"Mature forest"
 
 
 ## chem contains the resin available N and P from 2017 measurements
@@ -34,127 +39,185 @@ chem$treat_stand<-paste(chem$Stand, chem$trmt)
 
 head(chem)
 
-library(tidyr)
-# gather spectra for averaging
-names(dada)
-spectra_gather<-gather(dada, "wvl","refl",6:350)
-table(spectra_gather$height)
+#############
 
-names(spectra_gather)
-spectra_gather$plot<-paste(spectra_gather$Stand, spectra_gather$Treatment)
-head(spectra_gather)
-table(spectra_gather$Stand)
+###############################
+#
+#  Young Forest set up  (p1 and p2)
+########
+yd <- dada[dada$Age=="Young forest",]
 
-# calculate plot-level average
-names(spectra_gather)
-dadam <-aggregate(list(refl=spectra_gather$refl), by=list(Stand=spectra_gather$Stand,Age=spectra_gather$Age, wvl=spectra_gather$wvl, Treatment=spectra_gather$Treatment, Plot=spectra_gather$plot), FUN="mean", na.rm=T)
-dadam <- dadam[complete.cases(dadam),] ### pixels
-# convert wavelengths to just have numeric values
-dadam$wvl<-as.numeric(gsub(".*_","",dadam$wvl))
-names(dadam)
-head(dadam)
+lda_obj<-yd[complete.cases(yd),]
+
+lda_obj<-lda_obj[,c(4,7:351)]
+
+### create lda_obj_filtered
 
 
-########################
-###### LDA ##############
-#  maximizes group differences
-names(dadam)
-dim(dadam)
-library(tidyr)
-head(dadam)
-pre_lda<-spread(spectra_gather, wvl,refl) ### means
-names(pre_lda)
-head(pre_lda[1:10])
-dim(pre_lda)
-names(pre_lda)
+nzv <- nearZeroVar(lda_obj[, -1])
 
-#######################
-dat_lda<-pre_lda[,c(4,10:353)]
+problem_vars <- nzv
 
-# proportion explained by treatment
-lda_res <- lda(as.factor(Treatment) ~ . , data = dat_lda, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100) ### variability explained
-out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
+# Remove vars with 0 variance
 
-# examine variation by stand
-stand_lda<-pre_lda[,c(5,9:352)]
-stand_lda_res <- lda(as.factor(Stand) ~ . , data = stand_lda, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- stand_lda_res$svd^2/sum(stand_lda_res$svd^2)*100) ### variability explained
-#out <-  as.data.frame(as.matrix(dat_lda[,-1]) %*% as.matrix(lda_res$scaling))
+if(length(problem_vars) > 0) {
+  lda_obj_cleaned <- lda_obj[, -(problem_vars + 1)]
+ lda_obj_cleaned <- lda_obj[, -(problem_vars$Position + 1)]
+   cat("Removed", length(problem_vars), "near-zero variance variables\n")
+} else{
+  lda_obj_cleaned <- lda_obj
+}
 
-age_lda<-pre_lda[,c(8,10:353)]
-age_lda_res <- lda(as.factor(Age) ~ . , data = age_lda, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- age_lda_res$svd^2/sum(age_lda_res$svd^2)*100) ### variability explained
+# Function to identify constant variables within groups
+find_constant_vars <- function(data, group_var) {
+    group_col <- which(names(data) == group_var)
+  predictor_data <- data[, -group_col]
+  groups <- data[[group_var]]
 
+  constant_vars <- c()
+  
+  for(i in 1:ncol(predictor_data)) {
+    # Check if variable is constant within any group
+    is_constant <- any(tapply(predictor_data[,i], groups, function(x) var(x, na.rm = TRUE) == 0))
+    if(is_constant) {
+      constant_vars <- c(constant_vars, i)
+    }
+    
+  }
+  return(constant_vars)
+}
 
+# Find constant variables
+constant_vars <- find_constant_vars(lda_obj_cleaned, "Treatment")
 
-## Add back in plot level information
-out$Stand<-pre_lda$Stand
-out$Age<-pre_lda$Age
-out$Treatment<-pre_lda$Treatment
-out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
+# Remove constant variables
 
-out$staplo<-paste(out$Stand, out$Treatment)
-out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
-out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
-
-
-
-out
-##  tree-level
-names(dada)
-dada<-dada[complete.cases(dada),]
-
-t.lda<-dada[,c(4,6:350)]
-names(t.lda)
+if(length(constant_vars) > 0) {
+  lda_obj_filtered <- lda_obj_cleaned[, -constant_vars]
+  cat("Removed", length(constant_vars), "constant variables\n")
+} else {
+  lda_obj_filtered <- lda_obj_cleaned
+}
 
 
-lres <- lda(as.factor(Treatment) ~., data = t.lda, CV=F) ### try resampling spectra to coarser resolution
+# Check for missing values
+missing_summary <- colSums(is.na(lda_obj_filtered))
+vars_with_missing <- which(missing_summary > 0)
+
+
+# Remove highly correlated variables
+cor_matrix <- cor(lda_obj_filtered[,-1])  # Exclude Treatment column
+high_cor <- findCorrelation(cor_matrix, cutoff = 0.95)  # Adjust cutoff as needed
+
+if(length(high_cor) > 0) {
+  lda_obj_final <- lda_obj_filtered[, -(high_cor + 1)]  # +1 to account for Treatment column
+  cat("Removed", length(high_cor), "highly correlated variables\n")
+} else {
+  lda_obj_final <- lda_obj_filtered
+}
+
+# Now try LDA
+lda_test <- lda(as.factor(Treatment) ~ ., data = lda_obj_final, CV = FALSE)
+
+
+# calculate proportion
+lres <- lda(as.factor(Treatment) ~ ., data = lda_obj_final, CV = FALSE)
 (prop.lda <- lres$svd^2/sum(lres$svd^2)*100) ### variability explained
-out <-  as.data.frame(as.matrix(t.lda[,-1]) %*% as.matrix(lres$scaling))
+out <-  as.data.frame(as.matrix(lda_obj_final[,-1]) %*% as.matrix(lres$scaling))
+
+dim(out)
+dim(yd)
+
+out$Stand <- yd$Stand
+out$Treatment <- yd$Treatment
+
+# take plot-level average of LD1 and LD2 scores
+out <- aggregate(list( LD1 = out$LD1, LD2 = out$LD2),
+                 by=list(Treatment = out$Treatment,
+                         Stand = out$Stand),
+                 FUN= "mean", na.rm=T)
+
 
 ## Add back in plot level information
-out$Stand<-dada$Stand
-out$Age<-dada$Age
-out$Treatment<-dada$Treatment
+
 out$Treatment<-factor(out$Treatment, levels=c("Control","N","P","NP"))
 table(out$Treatment)
 out$staplo<-paste(out$Stand, out$Treatment)
-out$total_N<-chem$total_N[match(out$staplo, chem$treat_stand )]
-out$total_P<-chem$P[match(out$staplo, chem$treat_stand )]
-
-#3
-#dev.off()
-par(mfrow=c(1,2))
-plot(out$LD1, out$LD2, type="n",bty="l",col="grey50", xlab="LD 1 (71%)",ylab="LD 2 (23%)")
-title(main="a",   cex.main=1.5,adj = 0)
-points(out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
-
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_N,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
-
-#### P
-plot(out$LD1, out$LD2, type="n",bty="l", col="grey50",xlab="LD 1 (71%)",ylab="LD 2 (23%)",  cex.lab=1.5)
-title(main="b",   cex.main=  1.5,adj = 0)
-points( main="a",out$LD1, out$LD2, col=c("black","blue","red","purple")[as.factor(out$Treatment)],
-       pch=c(16,17,15)[as.factor(out$Age)], cex=1)
-#text(out$LD1, out$LD2, labels=out$Stand, cex= 1,pos=4) ### label points
-
-ordiellipse(out[,c(1,2)], groups = out$Treatment, draw = "polygon", lty = 1, col = c("black","blue","red","purple"))
-ordisurf(out[,c(1,2)]~total_P,out,add=T, col="grey50", lwd=1.5, labcex=1.2)
-legend("topleft", legend = unique(out$Treatment), pch=19,col=c("black","blue","red","purple")[out$Treatment] ,bty ="n", cex=1.3) 
-legend("topright", legend = unique(out$Age), pch=c(16,17,15)[as.factor(unique(out$Age))] ,bty ="n", cex=1.3) 
-
+out$total_N<-chem$NH4.hyphen.N[match(out$staplo, chem$treat_stand )]
+out$total_P<-chem$PO4.hyphen.P[match(out$staplo, chem$treat_stand )]
 
 
 ### 
+# Interpolate for smoother contours
+library(akima)
+interp_N <- with(out, interp(LD1, LD2, total_N, duplicate = "mean"))
+interp_P <- with(out, interp(LD1, LD2, total_P, duplicate = "mean"))
+
+# Convert to data frame
+df_N <- expand.grid(x = interp_N$x, y = interp_N$y) %>%
+  mutate(z = as.vector(interp_N$z))
+
+df_P <- expand.grid(x = interp_P$x, y = interp_P$y) %>%
+  mutate(z = as.vector(interp_P$z))
+
+
+# For the Nitrogen plot (p1)
+p1 <- ggplot(out, aes(x = LD1, y = LD2)) +
+  geom_contour_filled(data = df_N, aes(x = x, y = y, z = z), 
+                      alpha = 0.7, bins = 5) +
+  geom_text_repel(aes(label = Stand)) +
+  geom_point(aes(color = Treatment), size = 3) +
+  stat_ellipse(aes(color = Treatment), linewidth = 1) +
+  scale_fill_manual(values = colorRampPalette(c("lightblue", "darkblue"))(9),
+                    name = "Total N") +
+  scale_color_manual(values = c("Control" = "black", "N" = "blue", 
+                                "P" = "red", "NP" = "purple")) +
+  labs(x = paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
+       y = paste0("LD 2 (", round(prop.lda[2], 1), "%)"),
+       title = "Young forests") +
+  theme_classic()
+
+# For the Phosphorus plot (p2)
+p2 <- ggplot(out, aes(x = LD1, y = LD2)) +
+  geom_contour_filled(data = df_P, aes(x = x, y = y, z = z), 
+                      alpha = 0.7, bins = 5) +
+  geom_text_repel(aes(label = Stand)) +
+  geom_point(aes(color = Treatment), size = 3) +
+  stat_ellipse(aes(color = Treatment), linewidth = 1) +
+  scale_fill_manual(values = colorRampPalette(c("lightpink", "darkred"))(9),
+                    name = "Total P") +
+  scale_color_manual(values = c("Control" = "black", "N" = "blue", 
+                                "P" = "red", "NP" = "purple")) +
+  labs(x = paste0("LD 1 (", round(prop.lda[1], 1), "%)"),
+       y = paste0("LD 2 (", round(prop.lda[2], 1), "%)"),
+       title = "Young forests") +
+  theme_classic()
+
+p1+p2
+
+
+###############################
+#
+#  Young Forest set up  (p3 and p4)
+########
+md <- dada[dada$Age=="Mid-aged forest",]
+
+lda_obj<-md[complete.cases(md),]
 
 
 
+###############################
+#
+#  Mature Forest set up  (p5 and p6)
+########
+od <- dada[dada$Age=="Mature forest",]
+
+lda_obj<-od[complete.cases(od),]
 
 
+################
 
+
+# Now with all 6 ggplot figures made
+(p1 + p2) / (p3 + p4) / (p5 + p6) + plot_layout(guides = "collect")
 

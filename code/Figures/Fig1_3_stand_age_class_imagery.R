@@ -1,6 +1,6 @@
 
 
-## 2 x 2 pattern.
+## 4 x 1 pattern.
 
 ### top left:  WREF boundary
 ### top right, 4 plot RGB with outline plot and 30x30
@@ -21,6 +21,11 @@ library(dplyr)
 library(terra)
 library(tidyterra)
 library(rhdf5)
+
+library(ggrepel)
+library(maps)
+library(cowplot)  # for combining plots
+
 
 ### Bartlett shapefile
 
@@ -68,64 +73,77 @@ stand_centroids$Age <- factor(stand_centroids$Age,
                               levels = c("Young", "Mid-aged", "Mature"))
 #####
 
-library(ggplot2)
-library(sf)
-library(ggrepel)
-library(maps)
-library(cowplot)  # for combining plots
+# 2nd figure
 
-# Get world map data
-world_map <- map_data("world")
-
-# Your original detailed map
 g1 <- ggplot() + 
-  geom_sf(data=ba, fill="lightgreen")+
-  geom_sf(data = stand_centroids, aes(fill=Age, shape=Age), size = 4) +
-  scale_fill_manual(values=c("Young"="#E6AB02", "Mid-aged"="#666666","Mature"="#D95F02")) +
-  scale_shape_manual(values=c("Young"=21, "Mid-aged"=22, "Mature"=24)) +
-  theme_minimal()+
-  theme(panel.grid.major = element_blank())+
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank()
-  )+
-  geom_text_repel(data = stand_centroids, aes(x = st_coordinates(stand_centroids)[,1], 
-                                              y=  st_coordinates(stand_centroids)[,2],
-                                              label = Site))+
-  labs(fill="Age", shape="Age", x="", y="")+
-  theme(plot.title = element_text(size = 16))
+  geom_sf(data = ba, fill = "lightgreen") +
+  geom_sf(data = stand_centroids, aes(fill = Age, shape = Age), size = 4) +
+  scale_fill_manual(values = c("Young" = "#E6AB02", "Mid-aged" = "#666666", "Mature" = "#D95F02")) +
+  scale_shape_manual(values = c("Young" = 21, "Mid-aged" = 22, "Mature" = 24)) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_blank(),
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    plot.title = element_text(size = 16)
+  ) +
+  guides(
+    fill = guide_legend(
+      title = "Forest age",
+      title.position = "top",
+      title.hjust = 0.5,
+      ncol = 1,
+      byrow = TRUE
+    ),
+    shape = guide_legend(
+      title = "Forest age",
+      title.position = "top", 
+      title.hjust = 0.5,
+      ncol = 1,
+      byrow = TRUE
+    )
+  ) +
+  geom_text_repel(data = stand_centroids, 
+                  aes(x = st_coordinates(stand_centroids)[, 1], 
+                      y = st_coordinates(stand_centroids)[, 2],
+                      label = Site)) +
+  labs(x = "", y = "")
+g1
 
 # Create inset map showing location in world context
 # You'll need to replace these coordinates with your actual study site location
 study_site_lon <- -71.5  # Replace with your actual longitude
 study_site_lat <- 43.8   # Replace with your actual latitude
 
+# Get world map data
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Get North America countries
+north_america <- ne_countries(scale = "medium", continent = "North America", returnclass = "sf")
+
+# Get state/province boundaries
+states_provinces <- ne_states(country = c("United States of America", "Canada"), returnclass = "sf")
+
 inset_map <- ggplot() +
-  geom_polygon(data = world_map, 
-               aes(x = long, y = lat, group = group), 
-               fill = "lightgray", color = "white", size = 0.1) +
+  geom_sf(data = north_america, fill = "lightgray", color = "white", size = 0.3) +
+  geom_sf(data = states_provinces, fill = NA, color = "white", size = 0.2) +
   geom_point(aes(x = study_site_lon, y = study_site_lat), 
-             color = "red", size = 2, shape = 8) +  # star shape
-  coord_fixed(1.3) +  # maintain aspect ratio
+             color = "red", size = 2, shape = 8) +
+  coord_sf(xlim = c(-86, -49), ylim = c(30, 50), expand = FALSE) +
   theme_void() +
-  theme(panel.border = element_rect(color = "black", fill = NA, size = 1),
-        plot.background = element_rect(fill = "white", color = "black"),
-        panel.background = element_rect(fill = "lightblue"))  # ocean color
-
-# Combine the main map with the inset
-g1 <- ggdraw(g1) +
-  draw_plot(inset_map, 
-            x = 0.65, y = 0.02,    # position (bottom-left corner)
-            width = 0.3, height = 0.3)  # size of inset
-
-
-
-g1
+  theme(panel.background = element_rect(fill = "lightblue"))
+inset_map
 
 ########
 
-# B should just be an example stand, with the chm, show 4 plots in a stand with CHM 
+# 3 should just be an example stand, with the chm, show 4 plots in a stand with CHM 
 
 # Read in C2 CHM raster 
 
@@ -152,40 +170,58 @@ chm_c2_df <- as.data.frame(chm_c2, xy = TRUE)
 names(chm_c2_df) <- c("x", "y", "height")
 
 g2 <- ggplot() +
-  # Add raster layer first (background)
   geom_raster(data = chm_c2_df, aes(x = x, y = y, fill = height)) +
   scale_fill_gradientn(colors = rev(terrain.colors(100)), 
                        name = "Height (m)",
-                       na.value = "transparent") +
-  
-  # Add new fill scale for treatments
+                       na.value = "transparent",
+                       guide = guide_colorbar(
+                         title = "Height (m)",
+                         title.position = "top",
+                         title.hjust = 0.5,
+                         barwidth = 10,
+                         barheight = 0.5,
+                         order = 1
+                       )) +
   ggnewscale::new_scale_fill() +
-  
-  # Add C2 plots with treatment colors
-  geom_sf(data = C2, aes( fill = Treatment, col=Treatment), alpha = 0.4, linewidth = 2) +
-  
-  # Treatment color scale
+  geom_sf(data = C2, aes(fill = Treatment, col = Treatment), alpha = 0.4, linewidth = 2) +
   scale_fill_manual(values = c("Control" = "black", "N" = "blue", 
                                "P" = "red", "N+P" = "purple")) +
   scale_color_manual(values = c("Control" = "black", "N" = "blue", 
-                               "P" = "red", "N+P" = "purple")) +
-  
-  theme_void() +  # Try theme_void() instead of theme_minimal()
-  labs(fill = "Treatment",col="Treatment", x = "", y = "") +
+                                "P" = "red", "N+P" = "purple")) +
+  theme_void() +
+  labs(x = "", y = "") +
   theme(
-    plot.title = element_text(size = 16),
-    legend.position = "right"
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    plot.title = element_text(size = 16)
   ) +
-  # geom_sf(data = m7ctops_sf, 
-  #         aes(color = shade_intensity), 
-  #         size = 2)+ 
-  # Set coordinate limits explicitly
+  guides(
+    fill = guide_legend(
+      title = "Treatment",
+      title.position = "top",
+      title.hjust = 0.5,
+      nrow = 1,
+      byrow = TRUE,
+      override.aes = list(alpha = 1),
+      order = 2
+    ),
+    color = guide_legend(
+      title = "Treatment",
+      title.position = "top",
+      title.hjust = 0.5,
+      nrow = 1,
+      byrow = TRUE,
+      order = 2
+    )
+  ) +
   coord_sf(xlim = c(min(chm_c2_df$x), max(chm_c2_df$x)),
            ylim = c(min(chm_c2_df$y), max(chm_c2_df$y)),
            expand = FALSE)
-
 g2
-# C. Show one plot with tree tops, RGB 15 cm. 
+
+# 4. Show one plot with tree tops, RGB 15 cm. 
 
 # Get the RGB tile for C8
 # east = 315000
@@ -198,9 +234,9 @@ g2
 lidar_path <- here::here("data_folder","DP3.30015.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","CanopyHeightModelGtif")
 rgb_path <- here::here("data_folder","DP3.30010.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Camera","Mosaic")
 
-chm.C7<-raster(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
+chm.C7<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
 
-pic_C7<-rast(file.path(rgb_path,"2019_BART_5_315000_4880000_image.tif"))
+pic_C7<-terra::rast(file.path(rgb_path,"2019_BART_5_315000_4880000_image.tif"))
 
 single_plot <- stands[stands$Site=="C7" &
                         stands$Plot==2 ,]
@@ -250,8 +286,8 @@ st_crs(single_plot) == st_crs(m7ctops_sf)
 ### Shade mask
 ### Shade mask
 #  nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
-dsm_path <- here::here("data_folder","Bart_DSM","DP3.30024.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","DSMGtif")
-h5_path <- here::here("data_folder","Bart_tiles","DP3.30006.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Spectrometer","Reflectance")
+dsm_path <- here::here("data_folder","DP3.30024.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","DiscreteLidar","DSMGtif")
+h5_path <- here::here("data_folder","DP3.30006.001","neon-aop-products","2019","FullSite","D01","2019_BART_5","L3","Spectrometer","Reflectance")
 
 dsm <- terra::rast(file.path(dsm_path, "NEON_D01_BART_DP3_315000_4880000_DSM.tif"))
 dsm_slope <- terra::terrain(dsm,v="slope")
@@ -331,38 +367,7 @@ tree_mask_values <- terra::extract(shade_mask, coords_matrix)
 
 # Add to tree tops data
 m7ctops_sf$shade_intensity <- tree_shade_values$hillshade  # Continuous shade values
-m7ctops_sf$kept <- tree_mask_values$hillshade  # Binary kept/removed
-m7ctops_sf$status <- ifelse(m7ctops_sf$kept == 1, "Kept (≥0.1)", "Removed (<0.1)")
 
-# Convert hillshade to dataframe for ggplot
-shade_crop_df <- as.data.frame(dsm_shade_crop, xy = TRUE)
-names(shade_crop_df) <- c("x", "y", "hillshade")
-
-shade_crop_df$hillshade_cat <- cut(shade_crop_df$hillshade, 
-                                   breaks = 4, 
-                                   labels = c("Very Low", "Low", "Moderate", "High"))
-
-
-g3 <- ggplot() +
-  geom_raster(data = shade_crop_df, aes(x = x, y = y, fill = hillshade_cat)) +
-  scale_fill_manual(values = c("Very Low" = "#000000", 
-                               "Low" = "#555555", 
-                               "Moderate" = "#AAAAAA", 
-                               "High" = "#FFFFFF"),
-                    name = "Shade value") +
-  geom_sf(data = m7ctops_sf, 
-          aes(color = status), 
-          size = 2) +
-  scale_color_manual(values = c("Kept (≥0.1)" = "green", 
-                                "Removed (<0.1)" = "red"),
-                     name = "Tree Status") +
-  coord_sf(expand = FALSE) +
-  geom_sf(data = single_plot, 
-          fill = NA, color = "black", size = 1, linewidth=3) +
-  theme_void() +
-  theme(plot.title = element_text(size = 14)) 
-
-g3
 
 
 ###################
@@ -371,24 +376,29 @@ remove_shaded_pixels <- m7ctops_sf[m7ctops_sf$kept=="TRUE",]
 shaded_pixels <- m7ctops_sf[m7ctops_sf$kept=="FALSE",]
 
 g4 <- ggplot() +
-  # Add RGB raster as background
   geom_raster(data = rgb_df, aes(x = x, y = y), fill = rgb_df$rgb) +
   geom_sf(data = m7ctops_sf, 
-          aes(col = shade_intensity  ),  # color by shade intensity
+          aes(col = shade_intensity),
           size = 3) +
-    # geom_sf(data = m7crowns, 
-    #       fill = NA, 
-    #       color = "red", 
-    #       size = 0.5, 
-    #       alpha = 0.8) +
-  scale_color_viridis_c(name = "Tree shade intensity", option = "plasma") +
-  # Add the single plot boundary
+  scale_color_viridis_c(name = "Shade intensity", option = "plasma") +
   geom_sf(data = single_plot, aes(), 
-          col = "black", fill=NA, linewidth = 3, size = 2) +
+          col = "black", fill = NA, linewidth = 3, size = 2) +
   theme_void() +
-    theme(
+  theme(
     plot.title = element_text(size = 16),
-    legend.position = "right"
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9)
+  ) +
+  guides(
+    color = guide_colorbar(
+      title = "Shade intensity",
+      title.position = "top",
+      title.hjust = 0.5,
+      barwidth = 10,
+      barheight = 0.5
+    )
   ) +
   coord_sf(xlim = c(min(rgb_df$x), max(rgb_df$x)),
            ylim = c(min(rgb_df$y), max(rgb_df$y)),
@@ -396,6 +406,22 @@ g4 <- ggplot() +
 
 g4
 
+library(patchwork)
 
- library(cowplot)
- plot_grid(g1, g2, g4, ncol = 3, nrow = 1)
+final_plot <- inset_map + g1 + g2 + g4 + 
+  plot_layout(ncol = 4, widths = c(0.8, 1, 1, 1)) 
+
+final_plot
+
+
+library(cowplot)
+final_plot <- plot_grid(
+  inset_map, g1, g2, g4, 
+  ncol = 4, 
+  nrow = 1,
+  rel_widths = c(1, 1, 1, 1),
+  align = 'h',
+  axis = 'tb'
+)
+
+final_plot
