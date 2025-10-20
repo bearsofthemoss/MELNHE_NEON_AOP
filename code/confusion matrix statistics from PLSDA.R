@@ -7,9 +7,9 @@ library(dplyr)
 
 # Read the confusion matrix data from CSV
 
-o_data <- read.csv(here::here("R_output","PLSDA_output","Mature forest","count_treatment_plsda.csv"))
-m_data <- read.csv(here::here("R_output","PLSDA_output","Mid-aged forest","count_treatment_plsda.csv"))
-y_data <- read.csv(here::here("R_output","PLSDA_output","Young forest","count_treatment_plsda.csv"))
+o_data <- read.csv(here::here("R_output","PLSDA_output_September","Mature forest","count_treatment_plsda.csv"))
+m_data <- read.csv(here::here("R_output","PLSDA_output_September","Mid-aged forest","count_treatment_plsda.csv"))
+y_data <- read.csv(here::here("R_output","PLSDA_output_September","Young forest","count_treatment_plsda.csv"))
 
 
 out_conf <- list()
@@ -20,10 +20,10 @@ sel_Age <- "Young forest"  #  "Mature forest" and/or "Mid-aged forest"
 
 # Extract confusion matrix from your dataframe format
 cm_df <- data.frame(
-  Control = as.numeric(data[1,2:5]), 
-  N = as.numeric(data[2,2:5]), 
-  P = as.numeric(data[4,2:5]),
-  NP = as.numeric(data[3,2:5]))
+  Control = as.numeric(y_data[1,2:5]), 
+  N = as.numeric(y_data[2,2:5]), 
+  P = as.numeric(y_data[4,2:5]),
+  NP = as.numeric(y_data[3,2:5]))
 
 rownames(cm_df) <- c("Control", "N", "P", "NP")
 
