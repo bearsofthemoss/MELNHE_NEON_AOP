@@ -58,23 +58,49 @@ res<-res[!res$Treatment=="Ca" ,]
 res <- res[res$Site=="Bartlett",]
 
 # only use year 17 data
-res<-res[res$Year=="2017" ,]
+#res<-res[res$Year=="2017" ,]
 
 
 
 
 
+res$Age[res$Stand=="C1"]<-"~30 years old"
+res$Age[res$Stand=="C2"]<-"~30 years old"
+res$Age[res$Stand=="C3"]<-"~30 years old"
+res$Age[res$Stand=="C4"]<-"~60 years old"
+res$Age[res$Stand=="C5"]<-"~60 years old"
+res$Age[res$Stand=="C6"]<-"~60 years old" 
+res$Age[res$Stand=="C7"]<-"~100 years old"
+res$Age[res$Stand=="C8"]<-"~100 years old"
+res$Age[res$Stand=="C9"]<-"~100 years old"
 
-
-ggplot(res, aes(x=log(PO4.hyphen.P), y=log(NH4.plus.NO3), colour=Treatment, size=.5))+geom_point()+theme_classic()+
+a <- ggplot(res, aes(x=Year, y=log(NH4.plus.NO3), colour=Treatment))+geom_point()+theme_classic()+
   scale_color_manual("", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ 
-  scale_y_log10()+ scale_x_log10() + 
-  theme(text=element_text(size=14)) +guides(size=F)+ggtitle("2017 resin available soil N and P") 
+  # scale_y_log10()+
+  # scale_x_log10() +
+  geom_smooth(method = "lm")+
+  facet_wrap(~Stand, nrow=3)+
+  theme(text=element_text(size=14)) +guides(size=F)+ggtitle("Resin available soil N") 
 
+
+b <- ggplot(res, aes(x=Year, y=log(PO4.hyphen.P), colour=Treatment))+geom_point()+theme_classic()+
+  scale_color_manual("", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ 
+  # scale_y_log10()+
+  # scale_x_log10() +
+  geom_smooth(method = "lm")+
+  facet_wrap(~Stand, nrow=3)+
+  theme(text=element_text(size=14)) +guides(size=F)+ggtitle("Resin available soil P") 
+
+
+library(patchwork)
+
+a+b
 
 
 
 res$Trt<-factor(res$Treatment, levels=c("Con","N","P","NP"))
+
+table(res$Stand, res$Plot, res$Subplot)
 
 np<-ggplot(res, aes(x=Trt, y=log(NH4.hyphen.N), colour=Trt))+geom_point()+facet_wrap(~Stand)+theme_bw()+
   geom_smooth(, se=T)+ scale_colour_manual("legend", values = c("Con" = "black", "N" = "blue", "P" = "red", "NP" = "purple"))+ scale_y_log10()+

@@ -4,16 +4,18 @@ library(reshape2)
 library(dplyr)
 
 # Read the confusion matrix data from CSV
+
+
 # Read proportion data
-o_data <- read.csv(here::here("R_output","PLSDA_output_September","Mature forest","prop_treatment_plsda.csv"))
-m_data <- read.csv(here::here("R_output","PLSDA_output_September","Mid-aged forest","prop_treatment_plsda.csv"))
-y_data <- read.csv(here::here("R_output","PLSDA_output_September","Young forest","prop_treatment_plsda.csv"))
+o_data <- read.csv(here::here("R_output","PLSDA_output_November","Mature forest","prop_treatment_plsda.csv"))
+m_data <- read.csv(here::here("R_output","PLSDA_output_November","Mid-aged forest","prop_treatment_plsda.csv"))
+y_data <- read.csv(here::here("R_output","PLSDA_output_November","Young forest","prop_treatment_plsda.csv"))
 
 
 # Read count data
-o_c_data <- read.csv(here::here("R_output","PLSDA_output_September","Mature forest","count_treatment_plsda.csv"))
-m_c_data <- read.csv(here::here("R_output","PLSDA_output_September","Mid-aged forest","count_treatment_plsda.csv"))
-y_c_data <- read.csv(here::here("R_output","PLSDA_output_September","Young forest","count_treatment_plsda.csv"))
+o_c_data <- read.csv(here::here("R_output","PLSDA_output_November","Mature forest","count_treatment_plsda.csv"))
+m_c_data <- read.csv(here::here("R_output","PLSDA_output_November","Mid-aged forest","count_treatment_plsda.csv"))
+y_c_data <- read.csv(here::here("R_output","PLSDA_output_November","Young forest","count_treatment_plsda.csv"))
 
 # Convert proportion data to long format for ggplot
 o_long <- o_data[, 2:5] %>%
@@ -88,7 +90,7 @@ conf_data <- merge(conf_prop_data, conf_count_data,
                    by = c("Prediction", "Reference", "Age"))
 
 # Create custom color palette
-col <- colorRampPalette(c("black","brown","gold","forestgreen"))
+col <- colorRampPalette(c("black","black","brown","gold","forestgreen"))
 
 
 conf_data$Proportion <- round(conf_data$Proportion, 1)
@@ -96,14 +98,12 @@ conf_data$Proportion <- round(conf_data$Proportion, 1)
 # Create ggplot confusion matrix heatmap
 ggplot(conf_data, aes(x = Reference, y = Prediction , fill = Proportion)) +
   geom_tile(color = "white", size = 0.5) +
-  geom_text(aes(label = Proportion), 
+  geom_text(aes(label = round(Proportion,0)), 
             color = "white", size = 4, fontface = "bold") +
   scale_fill_gradientn(colors = col(20),
-                       name = "Proportion\nof classes",
+                       name = "Percent\nof classes",
                        limits = c(0, 100)) +
-  labs(title = "PLSDA Confusion Matrix",
-       subtitle = "Nutrient Treatment Classification (Count values shown)",
-       x = "Reference class",
+  labs(x = "Reference class",
        y = "Predicted class") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),

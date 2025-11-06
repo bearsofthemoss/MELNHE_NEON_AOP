@@ -4,9 +4,10 @@ library(corrplot)
 library(MLmetrics)
 
 # Select age group
-sel_stand_age <- "Young forest"
+sel_stand_age <- "Mid-aged forest"
 
-dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+#dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+dati <- read.csv("tree_spectra_processed.csv")
 
 # Provide the Age column  
 dati$Age[dati$Stand=="C1"]<-"Young forest"
@@ -27,9 +28,9 @@ count_tops <- as.data.frame(table(dati$Treatment, dati$Stand, dati$Age))
 count_tops <- count_tops[count_tops$Freq>0,]
 print(count_tops)
 
+train_min_75 <- ceiling(min(count_tops$Freq) * .75)
+
 ### 1. Data Splitting ###
-n_train = 10
-n_test = 6
 
 # Initialize empty data frames
 out_train_data <- data.frame()
@@ -45,37 +46,23 @@ for(plot in plots) {
   
   plot_data <- dati[dati$statr == plot, ]
   
-  # Show available data for this plot
-  available_count <- nrow(plot_data)
   
-  # Check if plot has enough data points
-  total_needed <- n_train + n_test
-  
-  if(available_count < total_needed) {
-    cat(sprintf("Plot %s: SKIPPED - only %d points available, need %d\n", 
-                plot, available_count, total_needed))
-    next
-  }
+######
   
   # Randomly sample indices for this plot
-  sampled_indices <- sample(1:nrow(plot_data), total_needed, replace = FALSE)
-  
-  # Split into train and test
-  train_indices <- sampled_indices[1:n_train]
-  test_indices <- sampled_indices[(n_train + 1):total_needed]
+  train_indices <- sample(1:nrow(plot_data), train_min_75, replace = FALSE)
   
   # Add to train and test sets 
-  out_train_data <- rbind(out_train_data, plot_data[train_indices, ])
-  out_test_data <- rbind(out_test_data, plot_data[test_indices, ])
+  out_train_data <- rbind(out_train_data, plot_data[train_indices,] )
+  out_test_data <- rbind(out_test_data,  plot_data[-train_indices,] )
   
   # Print summary for this plot
-  cat(sprintf("Plot %s: Available=%d, Train=%d, Test=%d ✓\n", 
-              plot, available_count, length(train_indices), length(test_indices)))
+  cat(sprintf("Plot %s: Minumum=%d, Train=%d, Test=%d ✓\n", 
+              plot, train_min_75, length(train_indices), nrow(plot_data) - length(train_indices)))
 }
 
-cat("\nInitial sizes:\n")
-cat("Train:", nrow(out_train_data), "\n")
-cat("Test:", nrow(out_test_data), "\n")
+table(out_train_data$Stand, out_train_data$Treatment)
+table(out_test_data$Stand, out_test_data$Treatment)
 
 ### 2. Data clean up - CRITICAL: Track complete cases
 # Get complete cases BEFORE selecting columns
@@ -219,7 +206,7 @@ vip_df <- data.frame(
   Important = vip_scores[, 1] > 1)
 
 # Save outputs
-plsda_out <- here::here("R_output","PLSDA_output_September", sel_stand_age)
+plsda_out <- here::here("R_output","PLSDA_output_November", sel_stand_age)
 
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)

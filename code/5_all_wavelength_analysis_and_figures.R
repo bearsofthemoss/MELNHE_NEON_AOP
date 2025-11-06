@@ -67,8 +67,24 @@ avg_pri$Age <- factor(avg_pri$Age, levels=c("~30 years old",
 sel_age <- "~30 years old"
 
 young_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
+anova(young_pri_mod_tree)
+write.csv(anova( young_pri_mod_tree), file=here::here("R_output","PRI_young_p_values.csv"))
 
-anova( young_pri_mod_tree)
+
+sel_age <- "~60 years old"
+
+mid_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
+anova(mid_pri_mod_tree)
+
+write.csv(anova( mid_pri_mod_tree), file=here::here("R_output","PRI_mid_p_values.csv"))
+
+sel_age <- "~100 years old"
+
+old_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
+anova(old_pri_mod_tree)
+write.csv(anova( old_pri_mod_tree), file=here::here("R_output","PRI_old_p_values.csv"))
+
+
 
 
 
