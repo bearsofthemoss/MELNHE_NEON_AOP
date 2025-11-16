@@ -6,7 +6,7 @@ library(ggplot2)
 library(lmerTest)
 library(lme4)
 library(tidyr)
-library(data.table)
+library(dplyr)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
 dada<- read.csv(here::here("data_folder","actual_tops.csv"))
@@ -45,9 +45,16 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 ##########
 
 
+
+
 ## calculate plot-level PRI avg
 gat<-spread(ldada, "wvl","refl")
 gat$pri<-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
+names(gat)
+
+pri_Anna <-  gat[ , c("Stand","treeID","height","Treatment","Ntrmt","Ptrmt","pri")]
+
+write.csv(pri_Anna , file="PRI_data_Bartlett_NP.csv")
 
 avg_pri <-aggregate(list(height=gat$height,
                             pri = gat$pri), 
@@ -65,62 +72,41 @@ avg_pri$Age <- factor(avg_pri$Age, levels=c("~30 years old",
                                             "~100 years old"))
 
 sel_age <- "~30 years old"
+plot_data <- gat[gat$Age==sel_age,] %>%
+  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
+  summarise(pri_mean = mean(pri))
+dim(plot_data)
 
-young_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
-anova(young_pri_mod_tree)
-write.csv(anova( young_pri_mod_tree), file=here::here("R_output","PRI_young_p_values.csv"))
-
+model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+young_pri_mod_tree <- as.data.frame(anova(model))
+young_pri_mod_tree$Age <- sel_age
 
 sel_age <- "~60 years old"
+plot_data <- gat[gat$Age==sel_age,] %>%
+  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
+  summarise(pri_mean = mean(pri))
+dim(plot_data)
+model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+mid_pri_mod_tree <-as.data.frame( anova(model))
+mid_pri_mod_tree$Age <- sel_age
 
-mid_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
-anova(mid_pri_mod_tree)
-
-write.csv(anova( mid_pri_mod_tree), file=here::here("R_output","PRI_mid_p_values.csv"))
-
+##########
 sel_age <- "~100 years old"
 
-old_pri_mod_tree <- lmer(pri ~ Ntrmt*Ptrmt+(1|Stand/staplo), data=gat[gat$Age==sel_age,])
-anova(old_pri_mod_tree)
-write.csv(anova( old_pri_mod_tree), file=here::here("R_output","PRI_old_p_values.csv"))
+plot_data <- gat[gat$Age==sel_age,] %>%
+  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
+  summarise(pri_mean = mean(pri))
+dim(plot_data)
+model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+old_pri_mod_tree <- as.data.frame(anova(model))
+old_pri_mod_tree$Age <- sel_age
 
 
 
+pri_results_anova <- rbind(old_pri_mod_tree, mid_pri_mod_tree, young_pri_mod_tree)
+
+write.csv(pri_results_anova, file=here::here("R_output","PRI_results.csv"))
+
+##########
 
 
-library(emmeans)
-emm_object <- emmeans(pri_mod, specs = "Ntrmt")
-
-effect_sizes <- eff_size(emm_object, sigma = sigma(pri_mod), edf = df.residual(pri_mod))
-print(effect_sizes)
-
--.14 - -.152 / ((-.14 + -.152)/2)
-
-.152-.14
-
-.12 / .14
-########
-names(dada)
-vis <-gather(dada, "wvl","refl",c(7:66))
-
-vis$Age <- dada$Age[match(vis$Stand, dada$Stand)]
-
-total_vis<-aggregate(list(vis=vis$refl), 
-by=list(Stand=vis$Stand,
-        Age=vis$Age, 
-        treeID=paste(vis$treeID, vis$Stand),
-        Treatment=vis$Treatment), 
-FUN="sum", na.rm=T)
-
-total_vis$Ntrmt <- factor(  ifelse(total_vis$Treatment == "N" | total_vis$Treatment == "NP", "N", "NoN"))
-total_vis$Ptrmt <- factor(  ifelse(total_vis$Treatment %in% c("P", "NP"), "P", "NoP"))
-
-
-anova(lmer(vis ~ Ntrmt*Ptrmt+Age+(1|Stand), data=total_vis))
-
-total_vis$Treatment <- factor( total_vis$Treatment, levels=c("Control","N","P","NP"))
-
-ggplot(total_vis, aes(x=Treatment, y=vis, fill = Treatment))+
-  geom_col(position= position_dodge(), aes(group=Stand))+
-  facet_wrap(~Age, scales="free_x")+
-  scale_fill_manual( values=c("black","blue","red","purple"))
