@@ -10,18 +10,19 @@ library(dplyr)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
 dada<- read.csv(here::here("data_folder","actual_tops.csv"))
+#dati <- read.csv("tree_spectra_processed.csv")
 dada<-dada[,-1]
 
 # stand ages
-dada$Age[dada$Stand=="C1"]<-"~30 years old"
-dada$Age[dada$Stand=="C2"]<-"~30 years old"
-dada$Age[dada$Stand=="C3"]<-"~30 years old"
-dada$Age[dada$Stand=="C4"]<-"~60 years old"
-dada$Age[dada$Stand=="C5"]<-"~60 years old"
-dada$Age[dada$Stand=="C6"]<-"~60 years old" 
-dada$Age[dada$Stand=="C7"]<-"~100 years old"
-dada$Age[dada$Stand=="C8"]<-"~100 years old"
-dada$Age[dada$Stand=="C9"]<-"~100 years old"
+dada$Age[dada$Stand=="C1"]<-"Young forest"
+dada$Age[dada$Stand=="C2"]<-"Young forest"
+dada$Age[dada$Stand=="C3"]<-"Young forest"
+dada$Age[dada$Stand=="C4"]<-"Mid-aged forest"
+dada$Age[dada$Stand=="C5"]<-"Mid-aged forest"
+dada$Age[dada$Stand=="C6"]<-"Mid-aged forest" 
+dada$Age[dada$Stand=="C7"]<-"Mature forest"
+dada$Age[dada$Stand=="C8"]<-"Mature forest"
+dada$Age[dada$Stand=="C9"]<-"Mature forest"
 
 names(dada)
 # make a 'long' version of dada
@@ -51,10 +52,7 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 gat<-spread(ldada, "wvl","refl")
 gat$pri<-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
 names(gat)
-
-pri_Anna <-  gat[ , c("Stand","treeID","height","Treatment","Ntrmt","Ptrmt","pri")]
-
-write.csv(pri_Anna , file="PRI_data_Bartlett_NP.csv")
+dim(gat)
 
 avg_pri <-aggregate(list(height=gat$height,
                             pri = gat$pri), 
@@ -67,37 +65,28 @@ avg_pri <-aggregate(list(height=gat$height,
                                staplo = gat$staplo), 
                        FUN="mean", na.rm=T)
 
-avg_pri$Age <- factor(avg_pri$Age, levels=c("~30 years old",
-                                            "~60 years old",
-                                            "~100 years old"))
 
-sel_age <- "~30 years old"
-plot_data <- gat[gat$Age==sel_age,] %>%
-  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
-  summarise(pri_mean = mean(pri))
-dim(plot_data)
+avg_pri$Age <- factor(avg_pri$Age, levels=c("Young forest",
+                                            "Mid-aged forest",
+                                            "Mature forest"))
 
-model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+sel_age <- "Young forest"
+
+model <- lm(pri ~ Ntrmt*Ptrmt + Stand, data=avg_pri[avg_pri$Age== sel_age,])
 young_pri_mod_tree <- as.data.frame(anova(model))
 young_pri_mod_tree$Age <- sel_age
 
-sel_age <- "~60 years old"
-plot_data <- gat[gat$Age==sel_age,] %>%
-  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
-  summarise(pri_mean = mean(pri))
-dim(plot_data)
-model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+sel_age <- "Mid-aged forest"
+model <- lm(pri ~ Ntrmt*Ptrmt + Stand, data=avg_pri[avg_pri$Age== sel_age,])
+
 mid_pri_mod_tree <-as.data.frame( anova(model))
 mid_pri_mod_tree$Age <- sel_age
 
 ##########
-sel_age <- "~100 years old"
+sel_age <- "Mature forest"
 
-plot_data <- gat[gat$Age==sel_age,] %>%
-  group_by(Stand, staplo, Ntrmt, Ptrmt) %>%
-  summarise(pri_mean = mean(pri))
-dim(plot_data)
-model <- lmer(pri_mean ~ Ntrmt*Ptrmt + (1|Stand), data=plot_data)
+model <- lm(pri ~ Ntrmt*Ptrmt + Stand, data=avg_pri[avg_pri$Age== sel_age,])
+
 old_pri_mod_tree <- as.data.frame(anova(model))
 old_pri_mod_tree$Age <- sel_age
 
@@ -109,4 +98,56 @@ write.csv(pri_results_anova, file=here::here("R_output","PRI_results.csv"))
 
 ##########
 
+head(gat)
 
+plot_data <- gat %>%
+  group_by(Age, Stand, staplo, Ntrmt, Ptrmt) %>%
+  summarise(pri_mean = mean(pri))
+
+
+ndf_wide <- plot_data[, c(1,2,4,5,6)] %>%
+  pivot_wider(
+    names_from = Ntrmt,
+    values_from = pri_mean
+  )
+
+
+ndf_wide$Age <- factor(ndf_wide$Age , 
+                       values= c("Young forest","Mid-aged forest","Mature forest"))
+
+
+gN <- ggplot(ndf_wide, aes(x=NoN, y=N, col= Ptrmt))+
+  geom_point()+
+  geom_line(aes(group=Stand), col="black")+
+  facet_wrap(~Age)+
+  scale_color_manual(values=c("black","red"))+
+  geom_abline(linetype="dashed")+
+  theme_bw()+
+  coord_fixed()+
+  theme(panel.grid = element_blank())
+
+gN
+
+#######
+
+pdf_wide <- plot_data[, c(1,2,4,5,6)] %>%
+  pivot_wider(
+    names_from = Ptrmt,
+    values_from = pri_mean
+  )
+pdf_wide
+
+pdf_wide$Age <- factor(pdf_wide$Age , 
+                       values= c("Young forest","Mid-aged forest","Mature forest"))
+
+gP <- ggplot(pdf_wide, aes(x=NoP, y=P, col= Ntrmt))+
+  geom_point()+
+  geom_line(aes(group=Stand), col="black")+
+  facet_wrap(~Age)+
+  scale_color_manual(values=c("blue", "black"))+
+  geom_abline(linetype="dashed")+
+  theme_bw()+
+  coord_fixed()+
+  theme(panel.grid = element_blank())
+
+gP

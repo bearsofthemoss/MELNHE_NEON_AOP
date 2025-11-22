@@ -240,7 +240,7 @@ spectra_df <- list()
     
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.2 # was 0.5
+  shade_mask <- dsm_shade >= 0.1 # was 0.5
   
   ###################
   

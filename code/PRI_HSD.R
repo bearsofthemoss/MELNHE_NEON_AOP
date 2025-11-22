@@ -6,29 +6,101 @@ library(agricolae)
 vals <- read.csv("./PRI_data_Bartlett_NP.csv")
 
 ## add age info
-dat <- as.data.frame(matrix(data = c(rep("young",3), rep("mid",3), rep("old",3),
-       "C1", "C2","C3","C4","C5","C6","C7","C8","C9"), ncol = 2))
+dat <- as.data.frame(matrix(data = c(rep("Young forest",3), rep("Mid-aged forest",3), rep("Mature forest",3),
+                                     "C1", "C2","C3","C4","C5","C6","C7","C8","C9"), ncol = 2))
 
 colnames(dat) <- c("age", "Stand")
 vals <- vals %>% merge(dat,"Stand")
 
 
-age_class <- c("young","mid","old")
+age_class <- c("Young forest","Mid-aged forest","Mature forest")
 
 
+## overall
+all <- vals %>% group_by(Stand,Treatment, age) %>%
+  summarize_at(c("pri"), .funs = mean)
+
+
+
+all <- aggregate( list(pri = vals$pri),
+           by=list(age = vals$age,
+                   Stand = vals$Stand,
+                   Ntrmt = vals$Ntrmt,
+                   Ptrmt = vals$Ptrmt,
+                   Treatment = vals$Treatment),
+           FUN="mean", na.rm=T)
+
+
+st.err <- function(x, na.rm=FALSE) {
+  if(na.rm==TRUE) x <- na.omit(x)
+  sd(x)/sqrt(length(x))}
+
+
+
+all_se <- aggregate( list(se_pri = vals$pri),
+                     by=list(age = vals$age,
+                             Stand = vals$Stand,
+                             Treatment = vals$Treatment),
+                     FUN= st.err, na.rm=T)
+
+all$statr <- paste(all$Stand, all$Treatment)
+all_se$statr <- paste(all_se$Stand, all_se$Treatment)
+
+all$se <- all_se$se_pri[match(all$statr, all_se$statr)]
+
+
+all$Treatment <- factor(all$Treatment , levels = c("Control","N","P","NP"))
+
+all$age <- factor(all$age, levels=c("Young forest","Mid-aged forest","Mature forest"))
+
+pos_dodge_width <- .8
+
+ggplot(all, aes(x=Treatment, y=pri, fill= Treatment, group=Stand))+ 
+  geom_errorbar(aes(ymin = pri - se, ymax = pri+se),
+                position = position_dodge(pos_dodge_width),
+                width = .3,
+                col = "black")+
+  geom_point(position = position_dodge(pos_dodge_width),
+             col="black", stroke = 1,
+             size = 3,
+             shape = 21)+
+  facet_wrap(~age, scales= "free_x", nrow=1)+
+  scale_fill_manual(values=c("black","blue","red","purple"))+
+  theme_bw()+theme(panel.grid = element_blank())+
+  labs( x = "Nutrient treatment", y = "Photochemical Reflectance Index")
+
+
+
+anova(lm( pri ~ Ntrmt * Ptrmt * age + Stand, data = all))
+
+anova(lm( pri ~ Treatment * age + Stand, data = all))
+
+tt <- HSD.test(lm( pri ~ Treatment * age + Stand, data = all), "Treatment") 
+tt
 ###########################################################
-### Young stands - all tree tops (no averaging by stand)
 
 out_sel <- list()
+out_res <- list()
 
 for(i in 1:3){
 sel <- vals %>% filter(age== age_class[i] )
 
+seli <- sel %>% group_by(Stand,Treatment) %>%
+  summarize_at(c("pri"), .funs = mean)
 
-mod <-lm(pri~Treatment+Stand,sel) 
-anova(mod)
-tt <- HSD.test(mod, "Treatment")
-tt ### PRI is lower for P 
+ggplot(seli, aes(x=Treatment, y=pri))+ 
+  geom_boxplot()+
+  geom_point(pch=1, size=4)+ ### add original data points
+  theme_minimal()
+
+
+modi <-lm(pri~Treatment+Stand,seli) 
+
+tt <- HSD.test(modi, "Treatment") 
+tt ###
+
+results <- as.data.frame( anova(modi))
+results$age <- age_class[i]
 
 sel$group <- tt$groups$groups[match(sel$Treatment, rownames(tt$groups))]
 
@@ -48,7 +120,7 @@ sel$max_y <- group_labels$max_y[match(sel$Treatment, group_labels$Treatment)]
 sel$age <- age_class[i]
 
 out_sel <- rbind(sel, out_sel)
-
+out_res <- rbind(results, out_res)
 }
 
 out_sel$age <- factor(out_sel$age, levels=c("young","mid","old"))
@@ -69,20 +141,9 @@ g1
 
 
 
-###########################################################
-### Young stands - averaged by stand (and treatment)
+out_res
 
-seli <- sel %>% select(Stand, Treatment, pri) %>% group_by(Stand,Treatment) %>%
-  summarize_at(c("pri"), .funs = mean)
+tt$groups
 
-
-model <- lmer(pri ~ Treatment + (1|Stand), data=seli)
-young_pri_mod_tree <- as.data.frame(anova(model))
-
-modi <-lm(pri~Treatment,seli) 
-anova(modi)
-tt <- HSD.test(modi, "Treatment") 
-tt ### no sign differences.... with 3 observations by treatment that is to be expected
-
-##### END #######
-
+tt$groups$avg <- mean(tt$groups$pri)
+tt$groups$diff <- (tt$groups$pri - tt$groups$avg) * 100

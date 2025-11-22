@@ -4,10 +4,9 @@ library(corrplot)
 library(MLmetrics)
 
 # Select age group
-sel_stand_age <- "Mid-aged forest"
+sel_stand_age <- "Young forest"
 
-#dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
-dati <- read.csv("tree_spectra_processed.csv")
+dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
 
 # Provide the Age column  
 dati$Age[dati$Stand=="C1"]<-"Young forest"
@@ -95,7 +94,7 @@ plsda_cv <- plsda(X = train_spec, Y = train_classes, ncomp = max_comp)
 cv_results <- perf(plsda_cv, 
                    validation = "Mfold",
                    folds = 5,
-                   nrepeat = 10,
+                   nrepeat = 100,
                    progressBar = TRUE)
 
 # Plot CV results
@@ -119,7 +118,7 @@ predicted_classes <- preds[, opt_comp]
 
 # Ensure same factor levels
 predicted_classes <- factor(predicted_classes, levels = levels(factor(train_classes)))
-test_classes <- factor(test_classes, levels = levels(factor(train_classes)))
+test_classes <- factor(test_classes, levels = levels(factor(test_classes)))
 
 cat("\nPrediction dimensions check:\n")
 cat("Predicted classes:", length(predicted_classes), "\n")
@@ -138,6 +137,22 @@ cat("Overall Accuracy:", round(accuracy, 3), "\n")
 cat("Kappa Statistic:", round(kappa, 3), "\n")
 cat("95% CI for Accuracy:", round(conf_matrix$overall["AccuracyLower"], 3), 
     "to", round(conf_matrix$overall["AccuracyUpper"], 3), "\n")
+
+### After the perf() call for component selection ###
+
+# Get the error rates for all repeats
+error_rates <- cv_results$error.rate$BER[opt_comp, ]
+
+# Calculate accuracy from error rates
+accuracies <- 1 - error_rates
+
+# Calculate mean and SD
+mean_accuracy <- mean(accuracies)
+sd_accuracy <- sd(accuracies)
+
+cat("\n=== Cross-Validation Accuracy (", cv_results$nrepeat, " repeats) ===\n", sep="")
+cat("Accuracy: ", round(mean_accuracy, 4), " ± ", round(sd_accuracy, 4), "\n", sep="")
+
 
 # Per-class statistics
 cat("\nPer-class Performance:\n")
@@ -186,12 +201,14 @@ cat("Cross-validation accuracy:", round(1 - cv_error, 3), "\n")
 
 # Create comprehensive results summary
 results_summary <- data.frame(
-  Metric = c("Test_Accuracy", "Test_Kappa", "CV_Accuracy",
+  Metric = c("Test_Accuracy", "Test_Kappa", 
+             "CV_Accuracy_Mean", "CV_Accuracy_SD",
              "Components_Used", "Important_Variables", 
              "Train_Sample_Size", "Test_Sample_Size"),
   Value = c(round(accuracy, 4),
             round(kappa, 4),
-            round(1 - cv_error[1], 4),
+            round(mean_accuracy, 4),
+            round(sd_accuracy, 4),
             opt_comp,
             length(important_vars),
             nrow(train_spec),
