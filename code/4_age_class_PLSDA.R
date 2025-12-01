@@ -6,7 +6,9 @@ library(MLmetrics)
 # Select age group
 sel_stand_age <- "Young forest"
 
-dati <- read.csv("./data_folder/actual_tops.csv", row.names = 1)
+dati <- read.csv(here::here( "data_folder","processed_spectra.csv"))
+
+min(table(dati$Treatment, dati$Stand))
 
 # Provide the Age column  
 dati$Age[dati$Stand=="C1"]<-"Young forest"
@@ -94,7 +96,7 @@ plsda_cv <- plsda(X = train_spec, Y = train_classes, ncomp = max_comp)
 cv_results <- perf(plsda_cv, 
                    validation = "Mfold",
                    folds = 5,
-                   nrepeat = 100,
+                   nrepeat = 20,
                    progressBar = TRUE)
 
 # Plot CV results
@@ -111,7 +113,7 @@ final_plsda <- plsda(X = train_spec,
                      ncomp = opt_comp)
 
 ### 5. Model Validation on Test Set ###
-# FIXED: Predict on TEST data, not full dataset
+
 predictions <- predict(final_plsda, newdata = test_spec)
 preds <- as.data.frame(predictions$class$max.dist)
 predicted_classes <- preds[, opt_comp]
@@ -223,7 +225,7 @@ vip_df <- data.frame(
   Important = vip_scores[, 1] > 1)
 
 # Save outputs
-plsda_out <- here::here("R_output","PLSDA_output_November", sel_stand_age)
+plsda_out <- here::here("R_output","PLSDA_output", sel_stand_age)
 
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)

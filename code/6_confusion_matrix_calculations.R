@@ -59,6 +59,7 @@ for(i in 1:3){
 # Combine all results
 final_results <- do.call(rbind, out_conf)
 
+## are these consistent with the 4_PLSDA R code?
 
 trt_acc <- tidyr::gather(final_results[ ,c(1,3,4,7 )], "acc_type","accuracy",2:3 )
 
@@ -79,3 +80,5 @@ ggplot(trt_acc[trt_acc$acc_type=="Producers_accuracy",], aes(x=Treat_class, y=ac
   labs(x="Nutrient addition treatment", y="PLSDA model accuracy",
        fill="", col="")
 
+
+#

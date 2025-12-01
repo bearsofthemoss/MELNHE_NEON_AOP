@@ -13,6 +13,8 @@ colnames(dat) <- c("age", "Stand")
 vals <- vals %>% merge(dat,"Stand")
 
 
+vals$statr <- paste(vals$Stand, vals$Treatment)
+
 age_class <- c("Young forest","Mid-aged forest","Mature forest")
 
 
@@ -69,32 +71,53 @@ ggplot(all, aes(x=Treatment, y=pri, fill= Treatment, group=Stand))+
   theme_bw()+theme(panel.grid = element_blank())+
   labs( x = "Nutrient treatment", y = "Photochemical Reflectance Index")
 
+##########
+
+chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
+chem[chem$trmt=="Con", "trmt"] <- "Control"
+chem$treat_stand<-paste(chem$Stand, chem$trmt)
+
+head(chem)
+table(chem$Year)
+
+all$N <- chem$NH4.plus.NO3[match(all$statr, chem$treat_stand )]
+
+vals$N <- chem$NH4.plus.NO3[match(vals$statr, chem$treat_stand )] 
+
+head(all)
+
+anova(lm( pri ~ Ntrmt * Ptrmt * N + Stand, data = all))
 
 
-anova(lm( pri ~ Ntrmt * Ptrmt * age + Stand, data = all))
+ggplot(all, aes(x= N, y = pri, col= Treatment, shape=age))+
+  geom_point(size = 3)+
+  #geom_smooth(method = "lm", se=F)+
+  scale_color_manual(values = c("black","blue","red","purple"))+
+  labs(x="Soil N", y="PRI")+
+  facet_wrap(~age)
 
 anova(lm( pri ~ Treatment * age + Stand, data = all))
 
-tt <- HSD.test(lm( pri ~ Treatment * age + Stand, data = all), "Treatment") 
+tt <- HSD.test(lm( pri ~ Treatment +N + Stand, data = all), "Treatment") 
 tt
+
+
+
+
+
 ###########################################################
 
 out_sel <- list()
 out_res <- list()
 
 for(i in 1:3){
-sel <- vals %>% filter(age== age_class[i] )
+sel <- vals %>% filter(age== age_class[2] )
 
-seli <- sel %>% group_by(Stand,Treatment) %>%
+seli <- sel %>% group_by(Stand,Ntrmt, Ptrmt,Treatment, N) %>%
   summarize_at(c("pri"), .funs = mean)
 
-ggplot(seli, aes(x=Treatment, y=pri))+ 
-  geom_boxplot()+
-  geom_point(pch=1, size=4)+ ### add original data points
-  theme_minimal()
 
-
-modi <-lm(pri~Treatment+Stand,seli) 
+modi <-lm(pri~Treatment+N+Stand,seli) 
 
 tt <- HSD.test(modi, "Treatment") 
 tt ###

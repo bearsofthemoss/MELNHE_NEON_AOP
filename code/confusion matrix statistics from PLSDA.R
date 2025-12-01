@@ -1,7 +1,7 @@
 # Read all datasets
-o_data <- read.csv(here::here("R_output","PLSDA_output_November","Mature forest","count_treatment_plsda.csv"))
-m_data <- read.csv(here::here("R_output","PLSDA_output_November","Mid-aged forest","count_treatment_plsda.csv"))
-y_data <- read.csv(here::here("R_output","PLSDA_output_November","Young forest","count_treatment_plsda.csv"))
+o_data <- read.csv(here::here("R_output","PLSDA_output","Mature forest","count_treatment_plsda.csv"))
+m_data <- read.csv(here::here("R_output","PLSDA_output","Mid-aged forest","count_treatment_plsda.csv"))
+y_data <- read.csv(here::here("R_output","PLSDA_output","Young forest","count_treatment_plsda.csv"))
 
 # Create list of datasets and their corresponding age labels
 data_list <- list(

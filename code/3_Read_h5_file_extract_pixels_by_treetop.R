@@ -33,7 +33,7 @@ plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
 
 
 # Alex's tree tops
-trees <- st_read(here::here("data_folder","private_melnhe_locations",paste0("bart_ttops_",date ,".shp")))
+trees <- st_read(here::here("data_folder","bart_tree_tops.shp"))
 trees <- sf::st_transform(trees, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
@@ -43,19 +43,6 @@ centroids <-  st_coordinates(st_centroid(stands))
 east <- centroids[, 2]
 north <-centroids[, 1]
 
-
-# Download the hypersepctral data
-# byTileAOP(dpID="DP3.30006.001",site="BART", 
-#           easting= east,
-#           northing = north,
-#           year="2019",buffer = 200, savepath = "data_folder/Bart_tiles/",check.size = T)
-
-
-# Download DSMs
-# byTileAOP(dpID="DP3.30024.001",site="BART",
-#           year="2019", easting= east,
-#           northing = north,
-#           buffer=200, savepath = "./data_folder/Bart_DSM/",check.size = T)
 
 
 # Folder working directories
@@ -154,7 +141,7 @@ spectra_df <- list()
   
   #########################################################
   ## index hyperspectral .h5 file 'f', call it nami. Use the 11th slot to match the .h5 tile to the chm .tif file 
-  nami<-sapply(strsplit(f,"/"),"[",12)  
+  nami<-sapply(strsplit(f,"/"),"[",11)  
   nami
   
 
@@ -176,12 +163,7 @@ spectra_df <- list()
   ndvi_calc <- calc(ndvi_stack,NDVI)
 
   
-  #For Anna's wd: save if needed
-  # writeRaster(ndvi_calc, file= paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"), 
-  #             format="GTiff", overwrite=T)
-  
-  # read again 
-  # ndvi_calc <- raster(paste0("./R_output/Bart_tiles_processed/", nami,"_NDVI.tif"))
+
   h5closeAll()
 
 ## 
@@ -196,10 +178,8 @@ spectra_df <- list()
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.6 # set NDVI threshold, could be 0.6
-   plot(ndvi_lim)
-   plot(plots_UTM, add=T)
-
+  ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
+  
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
 
@@ -343,6 +323,6 @@ if (length(spectra_df) > 0) {
   
    ###########
   
+min(table(combined_spectra$Stand, combined_spectra$Treatment ))
 
-
- write.csv(combined_spectra, file=here::here("data_folder","actual_tops_11_06_2025.csv"))
+ write.csv(combined_spectra, file=here::here("data_folder","processed_spectra.csv"))

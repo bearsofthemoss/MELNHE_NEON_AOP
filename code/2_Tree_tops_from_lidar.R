@@ -380,6 +380,7 @@ bap$Treatment<-sapply(bap$staplo,switch,
 # count trees per plot
 tree_count <- as.data.frame(table(tree$staplo))
 head(tree_count)
+min(tree_count$Freq)
 
 # plot size is 900 m, then convert from m2 to ha
 tree_count$tree_per_ha <- tree_count$Freq / 900 / 0.0001
@@ -415,6 +416,6 @@ bap$Age <- factor(bap$Age, levels=rev(c("~30 years old", "~60 years old", "~100 
  head(bap)
  ####  Write output
  
- st_write( bart_ttops, here::here("data_folder","private_melnhe_locations","bart_ttops_2025_10_10.shp"))
+ st_write( bart_ttops, here::here("data_folder","bart_tree_tops.shp"))
  
  

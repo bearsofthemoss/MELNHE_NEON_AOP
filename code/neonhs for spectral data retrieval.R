@@ -8,13 +8,17 @@ devtools::install_github('earthlab/neonhs')
 
 
 library(neonhs)
-library(raster)
+#library(raster)
 library(viridis)
-library(sp)
+#library(sp)
 library(tidyverse)
 
-path_to_file <- system.file('extdata', 'ex.h5', package = 'neonhs')
-r <- hs_read(path_to_file, bands = c(1, 50, 100, 400))
+ff <- list.files("data_folder/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
+
+f <- ff[1]
+
+# path_to_file <- system.file('extdata', 'ex.h5', package = 'neonhs')
+r <- hs_read( f , bands = c(1:426))
 r
 
 plot(r, col = cividis(100), axes = FALSE, box = FALSE)
@@ -25,3 +29,7 @@ pts <- SpatialPointsDataFrame(coords = data.frame(x = c(257025, 257011),
                               proj4string = CRS(hs_proj4string(path_to_file)))
 plot(r[[1]], axes = FALSE, box = FALSE)
 plot(pts, add = TRUE)
+
+
+
+

@@ -14,8 +14,8 @@ library(tidyr)
 
   
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-  read.csv("tree_spectra_processed.csv")
-#dada<-dada[,-1]   # when saving the .csv, the first column values are just X
+dada<-  read.csv(here::here("data_folder","processed_spectra.csv"))
+dada<-dada[,-1]   # when saving the .csv, the first column values are just X
 names(dada)
 # add in stand ages
 dada$Age[dada$Stand=="C1"]<-"Young forest"
@@ -29,12 +29,12 @@ dada$Age[dada$Stand=="C8"]<-"Mature forest"
 dada$Age[dada$Stand=="C9"]<-"Mature forest"
 
 
-## chem contains the resin available N and P from 2017 measurements
-chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
-chem[chem$trmt=="Con", "trmt"] <- "Control"
-chem$treat_stand<-paste(chem$Stand, chem$trmt)
-
-head(chem)
+# ## chem contains the resin available N and P from 2017 measurements
+# chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
+# chem[chem$trmt=="Con", "trmt"] <- "Control"
+# chem$treat_stand<-paste(chem$Stand, chem$trmt)
+# 
+# head(chem)
 
 library(tidyr)
 # gather spectra for averaging
@@ -45,6 +45,7 @@ spectra_gather$plot<-paste(spectra_gather$Stand, spectra_gather$Treatment)
 
 pre_lda<-spread(spectra_gather, wvl,refl) ### means
 
+names(pre_lda)
 lda_obj<-pre_lda[  ,c(4,10:354)]
 
 
@@ -114,8 +115,8 @@ lda_out$Treatment<-pre_lda[ , "Treatment"]
 lda_out$Treatment<-factor(lda_out$Treatment, levels=c("Control","N","P","NP"))
 
 lda_out$staplo<-paste(lda_out$Stand, lda_out$Treatment)
-lda_out$total_N<-chem$NH4.hyphen.N[match(lda_out$staplo, chem$treat_stand )]
-lda_out$total_P<-chem$PO4.hyphen.P[match(lda_out$staplo, chem$treat_stand )]
+# lda_out$total_N<-chem$NH4.hyphen.N[match(lda_out$staplo, chem$treat_stand )]
+# lda_out$total_P<-chem$PO4.hyphen.P[match(lda_out$staplo, chem$treat_stand )]
 
 out <- lda_out
 

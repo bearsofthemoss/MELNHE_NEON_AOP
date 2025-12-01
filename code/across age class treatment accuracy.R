@@ -10,7 +10,7 @@ all_treatment_accuracy <- data.frame()
 for(age in age_classes) {
   
   # Read confusion matrix
-  conf_path <- here::here("R_output", "PLSDA_output_November", age, 
+  conf_path <- here::here("R_output", "PLSDA_output", age, 
                           "count_treatment_plsda.csv")
   
   conf_table <- read.csv(conf_path, row.names = 1)
@@ -50,13 +50,23 @@ cross_age_summary <- all_treatment_accuracy %>%
 
 print(cross_age_summary)
 
+cross_trt_summary <- all_treatment_accuracy %>%
+  group_by(Age_Class) %>%
+  summarise(
+    Mean_Accuracy = round(mean(Accuracy_Percent), 2),
+    SD_Accuracy = round(sd(Accuracy_Percent), 2),
+    Min_Accuracy = round(min(Accuracy_Percent), 2),
+    Max_Accuracy = round(max(Accuracy_Percent), 2),
+    .groups = 'drop'
+  )
+
 # Overall average across all treatments and age classes
 overall_avg <- mean(all_treatment_accuracy$Accuracy_Percent)
 cat("\nOverall Average Accuracy (all treatments, all ages):", 
     round(overall_avg, 2), "%\n")
 
 # Save results
-output_dir <- here::here("R_output", "PLSDA_output_November", "Cross_Age_Summary")
+output_dir <- here::here("R_output", "PLSDA_output", "Cross_Age_Summary")
 if(!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write.csv(all_treatment_accuracy, 
@@ -64,7 +74,7 @@ write.csv(all_treatment_accuracy,
           row.names = FALSE)
 
 write.csv(cross_age_summary, 
-          file.path(output_dir, "treatment_accuracy_cross_age_summary.csv"), 
+          file.path(output_dir, "avg_treatment_accuracy_summary.csv"), 
           row.names = FALSE)
 
 ### Visualization ###

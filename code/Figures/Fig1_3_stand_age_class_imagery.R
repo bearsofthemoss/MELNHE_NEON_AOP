@@ -1,48 +1,4 @@
-
-
-## 4 x 1 pattern.
-
-### top left:  WREF boundary
-### top right, 4 plot RGB with outline plot and 30x30
-### bottom left: select plot with CHM showing tree crowns
-### bottom right: select plot with shade / non-shade and pixel ID (i.e. in / out)
-
-
-library(ggplot2)
-library(sf)
-library(units)
-library(here)
-library(tidyr)
-library(remotes)
-#install_github("cran/ggsn")
-#library(ggsn)
-library(ggrepel)
-library(dplyr)
-library(terra)
-library(tidyterra)
-library(rhdf5)
-
-library(ggrepel)
-library(maps)
-library(cowplot)  # for combining plots
-
-
-### Bartlett shapefile
-
-bart <- sf::read_sf("D:/Users/bears/Downloads/S_USA.Experimental_Area_Boundaries/S_USA.Experimental_Area_Boundaries.shp") 
-bart <- bart[bart$NAME=="Bartlett Experimental Forest",]
-ba <- st_union(bart)
-
-ba <- st_transform(ba, crs=4326)
-
-
-## stakes
-stands <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites.shp"))
-
-
-subp <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites_subplots.shp"))
-subp <- subp[subp$Site=="C9",]
-subp <- st_transform(subp, crs=4326)
+ 
 
 
 stands <- st_transform(stands, crs=4326)

@@ -58,7 +58,9 @@ res<-res[!res$Treatment=="Ca" ,]
 res <- res[res$Site=="Bartlett",]
 
 # only use year 17 data
-#res<-res[res$Year=="2017" ,]
+
+
+res<-res[res$Year=="2017" ,]
 
 
 
@@ -135,7 +137,7 @@ dim(ra)
 head(ra)
 
 ### Write resin N and P data ####
-write.csv(ra, file=here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
+write.csv(ra, file=here::here("data_folder","resin_available_N_P_melnhe.csv"))
 
 
 
@@ -253,7 +255,7 @@ head(tn)
 tn[tn$DBH2019==20.00,]
 
 ### Write tree dbh data 2-10  ####
-write.csv(tn, file=here::here("data_folder","melnhe_input_files","ten_plus_DBH_2019.csv"))
+write.csv(tn, file=here::here("data_folder","ten_plus_DBH_2019.csv"))
 
 
 
