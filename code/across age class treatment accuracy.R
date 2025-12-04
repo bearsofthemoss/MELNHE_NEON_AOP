@@ -59,6 +59,7 @@ cross_trt_summary <- all_treatment_accuracy %>%
     Max_Accuracy = round(max(Accuracy_Percent), 2),
     .groups = 'drop'
   )
+cross_trt_summary
 
 # Overall average across all treatments and age classes
 overall_avg <- mean(all_treatment_accuracy$Accuracy_Percent)
@@ -66,20 +67,27 @@ cat("\nOverall Average Accuracy (all treatments, all ages):",
     round(overall_avg, 2), "%\n")
 
 # Save results
-output_dir <- here::here("R_output", "PLSDA_output", "Cross_Age_Summary")
+output_dir <- here::here("R_output", "PLSDA_output")
 if(!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write.csv(all_treatment_accuracy, 
           file.path(output_dir, "treatment_accuracy_by_age.csv"), 
           row.names = FALSE)
 
-write.csv(cross_age_summary, 
+write.csv(cross_trt_summary, 
           file.path(output_dir, "avg_treatment_accuracy_summary.csv"), 
           row.names = FALSE)
+
+write.csv(cross_age_summary, 
+          file.path(output_dir, "avg_age_accuracy_summary.csv"), 
+          row.names = FALSE)
+
 
 ### Visualization ###
 library(ggplot2)
 
+all_treatment_accuracy$Treatment <- factor(all_treatment_accuracy$Treatment, 
+                                           levels=c("Control","N","P","NP"))
 ggplot(all_treatment_accuracy, 
        aes(x = Treatment, y = Accuracy_Percent, fill = Age_Class)) +
   geom_bar(stat = "identity", position = "dodge") +

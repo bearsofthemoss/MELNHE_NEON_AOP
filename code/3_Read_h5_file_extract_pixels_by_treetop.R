@@ -12,8 +12,6 @@ library(neonUtilities)
 
 source(here::here("code","band2raster.R"))
 
-date <- "2025_10_10"  # better control on data versioning
-
 # if (!require("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
 # BiocManager::install("rhdf5")
@@ -62,8 +60,8 @@ spectra_df <- list()
 # Loop through the various tiff files that were downloaded, intersect tree points
 # to create spectra #
 
- for (k in 1:length(ff)){
-
+#for (k in 1:length(ff)){
+for (k in 7 ){
 
    (f <- ff[k])
   
@@ -178,7 +176,7 @@ spectra_df <- list()
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold, could be 0.6
+  ndvi_lim <- ndvi_calc >= 0.8 # set NDVI threshold
   
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
@@ -220,20 +218,20 @@ spectra_df <- list()
     
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.1 # was 0.5
+  shade_mask <- dsm_shade >= 0.5 
   
   ###################
   
   
   # # Apply to processed images
-  # cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+ cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
   # 
   
   ################################################################################################
   ################################################################################################
   # Extract data
   
-  trees_proj <- sf::st_transform(trees, crs = crs(cube_norm))
+  trees_proj <- sf::st_transform(trees, crs = crs(cube_no_shade))
 dim(trees_proj)
 
   # Convert coordinates to matrix for terra extract
@@ -325,4 +323,18 @@ if (length(spectra_df) > 0) {
   
 min(table(combined_spectra$Stand, combined_spectra$Treatment ))
 
- write.csv(combined_spectra, file=here::here("data_folder","processed_spectra.csv"))
+ 
+#write.csv(combined_spectra, file=here::here("data_folder","processed_spectra.csv"))
+
+names(combined_spectra)
+test  <- gather(combined_spectra, "wvl","refl", 7:351)
+head(test)
+test$wvl <- round(as.numeric(gsub(".*_", "", test$wvl)),0)
+
+ggplot(test[test$Stand=="C9"&
+              test$wvl>500 & test$wvl<570,], aes(x= wvl, y= refl, fill=Treatment))+
+  geom_boxplot(aes(group = wvl))+
+  geom_line(aes(group = treeID))+
+  
+    facet_wrap(~Treatment)
+ 

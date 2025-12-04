@@ -139,18 +139,23 @@ ellipse_data <- out %>%
   select(LD1, LD2, Treatment) %>%
   filter(!is.na(LD1) & !is.na(LD2))
 
+library(ggrepel)
+
 # Create the ggplot
-ggplot() +
+fig2 <- ggplot() +
   # Add ellipses (using stat_ellipse for 95% confidence ellipses)
   stat_ellipse(data = ellipse_data,
                aes(x = LD1, y = LD2, fill = Treatment, color = Treatment),
                geom = "polygon", alpha = 0.05, level = 0.68, type = "norm") +
   # Add points
   geom_point(data = plot_avg,
-             aes(x = LD1, y = LD2, 
+             aes(x = LD1, y = LD2,
                  color = Treatment, 
                  shape = Age),
              size = 3, alpha = 0.6) +
+  geom_text_repel(data=plot_avg, 
+                  aes(x = LD1, y = LD2,
+                      label = Stand), size = 4)+
   # Set colors to match your original plot
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
   scale_fill_manual(values = c("black", "blue", "red", "purple")) +
@@ -162,4 +167,7 @@ ggplot() +
   # Theme adjustments
   theme_classic() +
   theme(plot.title = element_text(size = 15, hjust = 0))
+fig2
 
+ggsave("figure_2.png", fig2, 
+       width = 6, height = 4.5, dpi = 300, bg = "white")

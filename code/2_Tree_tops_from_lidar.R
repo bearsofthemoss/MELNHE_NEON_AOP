@@ -107,6 +107,11 @@ chm.C8 <-  terra::merge(chm.C8a,chm.C8b)
 chm.C9<-terra::rast(file.path(lidar_path,"NEON_D01_BART_DP3_317000_4879000_CHM.tif"))
 
 
+
+a <- crop(chm.C9, C9)
+plot(a)
+plot(stands, col=NA,add=T)
+
 ## this makes a canopy height per plot
 ############################################
 m1c<-crop(chm.C1, C1[C1$Treatment=="Control",])

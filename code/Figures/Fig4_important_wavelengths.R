@@ -42,12 +42,16 @@ g1 <- ggplot(vip, aes(x= wvl, y= VIP_Score, group = line_group))+
   geom_line()+
   theme_bw()+
   theme(panel.grid = element_blank())+
-  geom_point(data=vip[vip$Important=="TRUE",], col="forestgreen")+
+  geom_point(data=vip[vip$Important=="TRUE",], col="forestgreen", size=1)+
   geom_hline(yintercept=1, linetype = "dashed")+
   labs(x= "Wavelength (nm)", y="Variable Importance Value")+
   annotate('rect', xmin=1340, xmax=1455, ymin=0, ymax=2.5, alpha=.2, fill='gray')+
   annotate('rect', xmin=1790, xmax=1960, ymin=0, ymax=2.5, alpha=.2, fill='gray')+
   facet_wrap(~Age, nrow=3)+
   scale_x_continuous(breaks=seq(400, 2500, 200))+
-  theme(strip.text = element_text(size = 14))
+  theme(strip.text = element_text(size = 12))
 g1
+
+
+ggsave("figure_4.png", g1, 
+       width = 6, height = 4, dpi = 300, bg = "white")

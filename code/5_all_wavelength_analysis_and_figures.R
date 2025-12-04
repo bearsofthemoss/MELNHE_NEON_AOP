@@ -7,9 +7,11 @@ library(lmerTest)
 library(lme4)
 library(tidyr)
 library(dplyr)
+library(agricolae)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
 dada<- read.csv(here::here( "data_folder","processed_spectra.csv"))
+
 
 dada<-dada[,-1]
 
@@ -35,6 +37,8 @@ ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
 
+
+
 # min,max, and mean number of tree tops by plot.  6 is probably too low right?
 min(table(ldada$staplo))/345
 max(table(ldada$staplo))/345
@@ -55,6 +59,12 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 ## calculate plot-level PRI avg
 gat<-spread(ldada, "wvl","refl")
 gat$pri<-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
+
+
+# remove unreasonable PRI values?
+hist(gat$pri, breaks=200)
+
+gat <- gat[gat$pri> -.3, ]
 names(gat)
 dim(gat)
 
@@ -69,83 +79,8 @@ avg_pri <-aggregate(list(height=gat$height,
                        FUN="mean", na.rm=T)
 
 
-avg_pri$Age <- factor(avg_pri$Age, levels=c("Young forest",
-                                            "Mid-aged forest",
-                                            "Mature forest"))
+# Analysis of PRI
 
-st.err <- function(x, na.rm=FALSE) {
-  if(na.rm==TRUE) x <- na.omit(x)
-  sd(x)/sqrt(length(x))}
-
-
-
-all_se <- aggregate( list(se_pri = gat$pri),
-                     by=list(age = gat$Age,
-                             Stand = gat$Stand,
-                             Treatment = gat$Treatment),
-                     FUN= st.err, na.rm=T)
-
-
-avg_pri$statr <- paste(avg_pri$Stand, avg_pri$Treatment)
-all_se$statr <- paste(all_se$Stand, all_se$Treatment)
-
-avg_pri$se <- all_se$se_pri[match(avg_pri$statr, all_se$statr)]
-
-
-avg_pri$Treatment <- factor(avg_pri$Treatment , levels = c("Control","N","P","NP"))
-
-avg_pri$Age <- factor(avg_pri$Age, levels=c("Young forest","Mid-aged forest","Mature forest"))
-
-pos_dodge_width <- .8
-
-ggplot(avg_pri, aes(x=Treatment, y=pri, fill= Treatment, group=Stand))+ 
-  geom_errorbar(aes(ymin = pri - se, ymax = pri+se),
-                position = position_dodge(pos_dodge_width),
-                width = .3,
-                col = "black")+
-  geom_point(position = position_dodge(pos_dodge_width),
-             col="black", stroke = 1,
-             size = 3,
-             shape = 21)+
-  facet_wrap(~Age, scales= "free_x", nrow=1)+
-  scale_fill_manual(values=c("black","blue","red","purple"))+
-  theme_bw()+theme(panel.grid = element_blank())+
-  labs( x = "Nutrient treatment", y = "Photochemical Reflectance Index")
-
-
-
-
-########
-
-
-
-chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
-chem[chem$trmt=="Con", "trmt"] <- "Control"
-chem$treat_stand<-paste(chem$Stand, chem$trmt)
-
-head(chem)
-table(chem$Year)
-
-avg_pri$N <- chem$NH4.plus.NO3[match(avg_pri$statr, chem$treat_stand )]
-
-
-anova(lm( pri ~ Ntrmt * Ptrmt * N + Age +Stand, data = avg_pri))
-
-library(ggplot2)
-ggplot(avg_pri, aes(x= N, y = pri, col= Treatment, shape=Age))+
-  geom_point(size = 3)+
-  geom_smooth(method = "lm", se=F, aes(group = Treatment))+
-  scale_color_manual(values = c("black","blue","red","purple"))+
-  labs(x="Soil N", y="PRI")
-
-tt <- HSD.test(lm( pri ~ Treatment + N + Age +Stand, data = avg_pri), "Age") 
-tt
-
-
-
-
-
-###########################################################
 
 out_sel <- list()
 out_res <- list()
@@ -153,14 +88,16 @@ out_res <- list()
 for(i in 1:3){
   sel <- avg_pri %>% filter(Age== age_class[i] )
   
-  seli <- sel %>% group_by(Stand,Ntrmt, Ptrmt,Treatment, N) %>%
+  seli <- sel %>% group_by(Stand,Ntrmt, Ptrmt,Treatment) %>%
     summarize_at(c("pri"), .funs = mean)
   
   
-  modi <-lm(pri~Treatment+N+Stand,seli) 
+  modi <-lm(pri~Treatment+Stand,seli) 
   
   tt <- HSD.test(modi, "Treatment") 
-  tt ###
+
+# get p-value for contrast
+TukeyHSD(aov(modi), "Treatment")
   
   results <- as.data.frame( anova(modi))
   results$age <- age_class[i]
@@ -186,10 +123,120 @@ for(i in 1:3){
   out_res <- rbind(results, out_res)
 }
 
-
+options(scipen=999)
 out_res
 
-tt$groups
 
-tt$groups$avg <- mean(tt$groups$pri)
-tt$groups$diff <- (tt$groups$pri - tt$groups$avg) * 100
+out_sel$age <- factor(out_sel$age, levels=c("Young forest","Mid-aged forest","Mature forest"))
+
+fig5 <- ggplot(out_sel, aes(x = Treatment, y = pri, col=Treatment)) + 
+  geom_boxplot(outlier.colour = "black", outlier.shape = 16,
+               outlier.size = 2, notch = FALSE) +
+  geom_point()+
+  ylim(-.17, -.12)+
+  geom_text(aes(x = Treatment, y = max_y, label = group),
+            vjust = -0.5, size = 5, fontface = "bold",
+            inherit.aes = FALSE) +
+  facet_wrap(~age, nrow = 1) +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  scale_color_manual(values=c("black","blue","red","purple"))+
+  theme(legend.position = "none") +
+  labs(y = "PRI")+
+  theme(strip.text = element_text(size = 12))
+g5
+
+
+ggsave("figure_5.png", fig5, 
+       width = 7, height = 3.5, dpi = 300, bg = "white")
+
+
+
+
+
+
+# #######################
+# library(ggplot2)
+# 
+# 
+# # Community weighted
+# cwm <- read.csv(here::here("data_folder","CWM_2021-22.csv"))
+lin <- read.csv(here::here("data_folder","litter_N_2018.csv"))
+
+lin[lin$Treatment=="Con", "Treatment"] <- "Control"
+
+lin$staplo <- paste(lin$Stand, lin$Treatment)
+cwm$staplo <- paste(cwm$Stand, cwm$Treatment)
+
+avg_pri$foliar_N <- cwm$Ncwm[match(avg_pri$staplo, cwm$staplo)]
+
+avg_pri$litter_N <- lin$N[match(avg_pri$staplo, lin$staplo)]
+
+
+
+library(dplyr)
+correlations <- avg_pri %>%
+  group_by(Treatment) %>%
+  summarise(
+    r = cor(litter_N, pri, use = "complete.obs"),
+    p = cor.test(litter_N, pri)$p.value,
+    n = n()
+  )
+
+# Create figure with correlation info
+pub_fig <- ggplot(avg_pri, aes(x = litter_N, y = pri,
+                    shape = Age, col = Treatment)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, alpha = 0.15, aes(group=Treatment)) +
+  theme_bw() +
+  theme(
+    panel.grid = element_blank(),
+    legend.background = element_rect(fill = "white", color = "black"),
+    legend.title = element_text(face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 11)
+  ) +
+  #  facet_wrap(~Age)+
+  scale_color_manual(values = c("black", "blue", "red", "purple")) +
+  labs(x = "Litter N (mg/g)", 
+       y = "Photochemical Reflectance Index (PRI)",
+       color = "Treatment")
+
+
+pub_fig
+
+# 
+# cwm$Treatment <- factor(cwm$Treatment, levels=c("Control","N","P","NP"))
+
+
+
+
+########
+
+# 
+# 
+# chem <-  read.csv(here::here("data_folder","melnhe_input_files","resin_available_N_P_melnhe.csv"))
+# chem[chem$trmt=="Con", "trmt"] <- "Control"
+# chem$treat_stand<-paste(chem$Stand, chem$trmt)
+# 
+# head(chem)
+# table(chem$Year)
+# 
+# avg_pri$N <- chem$NH4.plus.NO3[match(avg_pri$statr, chem$treat_stand )]
+# 
+# 
+# anova(lm( pri ~ Ntrmt * Ptrmt * N + Age +Stand, data = avg_pri))
+# 
+# library(ggplot2)
+# ggplot(avg_pri, aes(x= N, y = pri, col= Treatment, shape=Age))+
+#   geom_point(size = 3)+
+#   geom_smooth(method = "lm", se=F, aes(group = Treatment))+
+#   scale_color_manual(values = c("black","blue","red","purple"))+
+#   labs(x="Soil N", y="PRI")
+# 
+
+
+
+
+###########################################################
+

@@ -4,7 +4,7 @@ library(corrplot)
 library(MLmetrics)
 
 # Select age group
-sel_stand_age <- "Young forest"
+sel_stand_age <- "Mature forest"
 
 dati <- read.csv(here::here( "data_folder","processed_spectra.csv"))
 
@@ -230,6 +230,9 @@ plsda_out <- here::here("R_output","PLSDA_output", sel_stand_age)
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)
 }
+
+results_summary
+
 
 write.csv(conf_prop, file.path(plsda_out,"prop_treatment_plsda.csv"))
 write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
