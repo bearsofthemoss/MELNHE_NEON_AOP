@@ -305,7 +305,7 @@ library(patchwork)
 option1 <- inset_map + g1 + g2 + g4 + 
   plot_layout(ncol = 4, widths = c(1, 1, 1, 1)) +
   plot_annotation(tag_levels = 'A', tag_suffix = ')')+
-  theme(plot.margin = margin(1, 1, 1, 1))
+  theme(plot.margin = margin(.2, .2, .2, .2))
 
 option1
 

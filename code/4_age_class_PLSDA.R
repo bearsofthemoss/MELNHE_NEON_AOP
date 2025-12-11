@@ -4,7 +4,7 @@ library(corrplot)
 library(MLmetrics)
 
 # Select age group
-sel_stand_age <- "Mature forest"
+sel_stand_age <- "Young forest"
 
 dati <- read.csv(here::here( "data_folder","processed_spectra.csv"))
 
@@ -30,6 +30,7 @@ count_tops <- count_tops[count_tops$Freq>0,]
 print(count_tops)
 
 train_min_75 <- ceiling(min(count_tops$Freq) * .75)
+train_min_75
 
 ### 1. Data Splitting ###
 

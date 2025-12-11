@@ -324,7 +324,7 @@ if (length(spectra_df) > 0) {
 min(table(combined_spectra$Stand, combined_spectra$Treatment ))
 
  
-#write.csv(combined_spectra, file=here::here("data_folder","processed_spectra.csv"))
+write.csv(combined_spectra, file=here::here("data_folder","processed_spectra_shade2.csv"))
 
 names(combined_spectra)
 test  <- gather(combined_spectra, "wvl","refl", 7:351)
