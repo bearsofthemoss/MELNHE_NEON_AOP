@@ -1,6 +1,7 @@
 library(ggplot2)
 # Variable importance for each age class
 wvl <- colnames(read.csv(here::here("data_folder","processed_spectra.csv")))
+
 # select wvl columns
 wvl <- wvl[8:352]
 wvl_nm <- round(as.numeric(sapply(strsplit(wvl, '_'), `[`, 2)),0)
@@ -31,18 +32,25 @@ m_vip$line_group[m_vip$wvl < 1340] <- "1"
 m_vip$line_group[m_vip$wvl > 1450 & m_vip$wvl < 1780] <- "2"
 m_vip$line_group[m_vip$wvl > 1960] <- "3"
 
+#############
+
+y_vip$is_important_1 <-   y_vip$vip_mean > 1 
+m_vip$is_important_1 <-   m_vip$vip_mean > 1 
+o_vip$is_important_1 <-   o_vip$vip_mean > 1 
+
 
 vip <- rbind(o_vip, m_vip, y_vip)
 
+vip <- o_vip
 vip <- vip[!is.na(vip$line_group),]
 
 
-summary(vip$wvl/1000)
-g1 <- ggplot(vip, aes(x= wvl, y= VIP_Score, group = line_group))+
+head(vip)
+g1 <- ggplot(vip, aes(x= wvl, y= vip_mean, group = line_group))+
   geom_line()+
   theme_bw()+
   theme(panel.grid = element_blank())+
-  geom_point(data=vip[vip$Important=="TRUE",], col="forestgreen", size=1)+
+  geom_point(data=vip[vip$is_important_1=="TRUE",], col="forestgreen", size=1)+
   geom_hline(yintercept=1, linetype = "dashed")+
   labs(x= "Wavelength (nm)", y="Variable Importance Value")+
   annotate('rect', xmin=1340, xmax=1455, ymin=0, ymax=2.5, alpha=.2, fill='gray')+

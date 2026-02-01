@@ -64,7 +64,12 @@ for(plot in plots) {
 }
 
 table(out_train_data$Stand, out_train_data$Treatment)
+sum(table(out_train_data$Stand, out_train_data$Treatment))
 table(out_test_data$Stand, out_test_data$Treatment)
+sum(table(out_test_data$Stand, out_test_data$Treatment)
+    
+    
+    )
 
 ### 2. Data clean up - CRITICAL: Track complete cases
 # Get complete cases BEFORE selecting columns
@@ -233,12 +238,12 @@ if(!dir.exists(plsda_out)){
 }
 
 results_summary
-
-
-write.csv(conf_prop, file.path(plsda_out,"prop_treatment_plsda.csv"))
-write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
-write.csv(results_summary, file.path(plsda_out,"results_summary_plsda.csv"), row.names = FALSE)
-write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
+# 
+# 
+# write.csv(conf_prop, file.path(plsda_out,"prop_treatment_plsda.csv"))
+# write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
+# write.csv(results_summary, file.path(plsda_out,"results_summary_plsda.csv"), row.names = FALSE)
+# write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
 
 cat("\n=== Analysis Complete ===\n")
 cat("Results saved to:", plsda_out, "\n")

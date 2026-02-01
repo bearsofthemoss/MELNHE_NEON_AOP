@@ -33,3 +33,4 @@
 *.pdf
 .RDataTmp
 *.png
+*.rds

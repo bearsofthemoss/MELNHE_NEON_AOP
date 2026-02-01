@@ -302,12 +302,13 @@ g4 <- ggplot() +
 # -----------------------------------------------------------------------------
 library(patchwork)
 
+# etc.
 option1 <- inset_map + g1 + g2 + g4 + 
   plot_layout(ncol = 4, widths = c(1, 1, 1, 1)) +
   plot_annotation(tag_levels = 'A', tag_suffix = ')')+
-  theme(plot.margin = margin(.2, .2, .2, .2))
+  theme(plot.margin = margin(.02, .02, .02, .02))
 
-option1
+option1  
 
 ggsave("figure_1.png", option1, 
        width = 16, height = 4.5, dpi = 300, bg = "white")

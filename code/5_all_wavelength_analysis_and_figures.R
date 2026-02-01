@@ -68,7 +68,7 @@ gat <- gat[gat$pri> -.3, ]
 names(gat)
 dim(gat)
 
-avg_pri <-aggregate(list(height=gat$height,
+avg_pri <-aggregate(list(
                             pri = gat$pri), 
                        by=list(Stand=gat$Stand,
                                Age=gat$Age,
@@ -125,17 +125,17 @@ TukeyHSD(aov(modi), "Treatment")
 
 options(scipen=999)
 out_res
-
+out_sel
 
 out_sel$age <- factor(out_sel$age, levels=c("Young forest","Mid-aged forest","Mature forest"))
 
+library(ggbeeswarm)
+
 fig5 <- ggplot(out_sel, aes(x = Treatment, y = pri, col=Treatment)) + 
-  geom_boxplot(outlier.colour = "black", outlier.shape = 16,
-               outlier.size = 2, notch = FALSE) +
-  geom_point()+
-  ylim(-.17, -.12)+
-  geom_text(aes(x = Treatment, y = max_y, label = group),
-            vjust = -0.5, size = 5, fontface = "bold",
+  geom_beeswarm(side = -1L, size=3, shape = 19)+
+  ylim(-.17, -.11)+
+  geom_text(aes(x = Treatment, y = -.12, label = group),
+            vjust = -0.5, size = 5,
             inherit.aes = FALSE) +
   facet_wrap(~age, nrow = 1) +
   theme_bw() +
@@ -144,7 +144,7 @@ fig5 <- ggplot(out_sel, aes(x = Treatment, y = pri, col=Treatment)) +
   theme(legend.position = "none") +
   labs(y = "PRI")+
   theme(strip.text = element_text(size = 12))
-g5
+fig5
 
 
 ggsave("figure_5.png", fig5, 
