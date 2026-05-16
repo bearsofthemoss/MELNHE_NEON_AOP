@@ -33,33 +33,38 @@ dada$Age[dada$Stand=="C9"]<-"Mature stands"
 library(tidyr)
 # gather spectra for averaging
 names(dada)
-spectra_gather<-gather(dada, "wvl","refl",10:351)
+spectra_gather<-gather(dada, "wvl","refl",7:351)
 
 spectra_gather$plot<-paste(spectra_gather$Stand, spectra_gather$Treatment)
 
 pre_lda<-spread(spectra_gather, wvl,refl) ### means
 
 names(pre_lda)
-lda_obj<-pre_lda[  ,c(4,7:354)]
+lda_obj<-pre_lda[  ,c(4,10:354)]
 
 #lda_obj[140:145,]
 
 nzv <- nearZeroVar(lda_obj[,-1])
 
-lda_obj[,140:145]
+
+
+lda_obj[,134:145]
 
 lda_obj_cleaned <- lda_obj[ , -c(nzv +1)]
 
 summary(lda_obj_cleaned)
 
+dim(lda_obj)
+dim(lda_obj_cleaned)
 
 # Try LDA again
 lda_res <- lda(as.factor(Treatment) ~ ., data = lda_obj_cleaned, CV = FALSE)
 
+names(lda_obj_cleaned)
 
 # proportion explained by treatment
 lda_res <- lda(as.factor(Treatment) ~ . , data = lda_obj_cleaned, CV=F) ### try resampling spectra to coarser resolution
-(prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100) ### variability explained
+prop.lda <- lda_res$svd^2/sum(lda_res$svd^2)*100 ### variability explained
 lda_out <-  as.data.frame(as.matrix(lda_obj_cleaned[,-1]) %*% as.matrix(lda_res$scaling))
 
 
@@ -102,21 +107,22 @@ plot_avg$Age <- dada$Age[match(plot_avg$Stand, dada$Stand)]
 
 library(ggrepel)
 
+plot_avg$Age <- factor(plot_avg$Age, c("Young stands","Mid-aged stands","Mature stands"))
+
 # Create the ggplot
 fig2 <- ggplot() +
   # Add ellipses (using stat_ellipse for 95% confidence ellipses)
   stat_ellipse(data = ellipse_data,
-               aes(x = LD1, y = LD2, fill = Treatment, color = Treatment),
-               geom = "path", alpha = 0.05, level = 0.68, type = "norm") +
+               aes(x = LD1, y = LD2, color = Treatment),linewidth=1,
+               geom = "path", alpha = 0.95, level = 0.95, type = "norm") +
   # Add points
   geom_point(data = plot_avg,
              aes(x = LD1, y = LD2,
-                 color = Treatment, 
-                 shape = Age),
-             size = 3, alpha = 0.6) +
-  geom_text_repel(data=plot_avg, 
-                  aes(x = LD1, y = LD2,
-                      label = Stand), size = 4)+
+                 color = Treatment),
+             size = 1, alpha = 0.6) +
+  # geom_text_repel(data=plot_avg, 
+  #                 aes(x = LD1, y = LD2,
+  #                     label = Stand), size = 4)+
   # Set colors to match your original plot
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
   scale_fill_manual(values = c("black", "blue", "red", "purple")) +
@@ -128,8 +134,10 @@ fig2 <- ggplot() +
        y = paste0("LD 2 (", round(prop.lda[2], 1), "%)")) +
   # Theme adjustments
   theme_classic() +
-  theme(plot.title = element_text(size = 15, hjust = 0))
+  theme(plot.title = element_text(size = 15, hjust = 0),
+        legend.position= "bottom",
+        strip.text.x = element_text(size = 14))
 fig2
 
 ggsave("figure_2.png", fig2, 
-       width = 6, height = 4.5, dpi = 300, bg = "white")
+       width = 8, height = 4.5, dpi = 300, bg = "white")

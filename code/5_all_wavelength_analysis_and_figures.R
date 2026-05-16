@@ -10,7 +10,7 @@ library(dplyr)
 library(agricolae)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada<- read.csv(here::here( "data_folder","processed_spectra.csv"))
+dada <- read.csv(here::here( "data_folder","processed_spectra.csv"))
 
 
 dada<-dada[,-1]
@@ -54,22 +54,18 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 ##########
 
 
-
+gat$`468.9`
 
 ## calculate plot-level PRI avg
 gat<-spread(ldada, "wvl","refl")
-gat$pri<-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
+gat$pri550 <-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
+gat$pri570<-(gat$`528.99`- gat$`468.9`)/(gat$`528.99` +gat$`468.9`)
 
 
-# remove unreasonable PRI values?
-hist(gat$pri, breaks=200)
-
-gat <- gat[gat$pri> -.3, ]
-names(gat)
-dim(gat)
 
 avg_pri <-aggregate(list(
-                            pri = gat$pri), 
+                            pri550 = gat$pri550,
+                            pri570 = gat$pri570), 
                        by=list(Stand=gat$Stand,
                                Age=gat$Age,
                                Treatment = gat$Treatment,
@@ -78,6 +74,96 @@ avg_pri <-aggregate(list(
                                staplo = gat$staplo), 
                        FUN="mean", na.rm=T)
 
+
+
+pa570 <- lmer(pri570 ~ Ntrmt * Ptrmt * Age + (1 | Stand), data = avg_pri)
+
+
+anova(pa570)
+
+ggplot( avg_pri)+
+  geom_col(aes(x=Stand, y=pri570, fill=Treatment),position = position_dodge(), col="black")+
+  scale_fill_manual(values=c("black","blue","red","purple"))
+
+ggplot( avg_pri)+
+  geom_col(aes(x=Stand, y=pri570, fill=Treatment),position = position_dodge())+
+  scale_fill_manual(values=c("black","blue","red","purple"))
+
+
+
+
+
+
+
+library(emmeans)
+library(ggplot2)
+
+# Get estimated marginal means for the P × Age interaction
+# (marginalising over N treatment)
+emm_PA <- emmeans(pa570, ~ Ptrmt * Age)
+emm_df  <- as.data.frame(emm_PA)
+
+# Rename for clarity
+names(emm_df)[names(emm_df) == "emmean"] <- "emmean"
+
+avg_pri$Age <- factor(avg_pri$Age, levels=c(
+  "Young forest","Mid-aged forest","Mature forest"
+))
+library(ggnewscale)
+
+pri_fig_570 <- ggplot() +
+  
+  # ── raw data: 4-treatment colour scale ──
+  geom_jitter(data = avg_pri,
+              aes(x = Age, y = pri570,
+                  colour = factor(Treatment), group = factor(Ptrmt)),
+              width = 0.1, alpha = 0.4, size = 1.8) +
+  
+  scale_colour_manual(
+    values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"),
+    name   = "Treatment"
+  ) +
+  
+  # ── register a new colour scale for all layers below this line ──
+  new_scale_colour() +
+  
+  # ── emmeans lines: 2-level P colour scale ──
+  geom_line(data = emm_df,
+            aes(x = Age, y = emmean,
+                colour = Ptrmt, group = Ptrmt),
+            linewidth = 1.1,
+            position = position_dodge(0.4)) +
+  
+  geom_pointrange(data = emm_df,
+                  aes(x = Age, y = emmean,
+                      ymin = lower.CL, ymax = upper.CL,
+                      colour = Ptrmt, group = Ptrmt),
+                  linewidth = 0.9, size = 0.6, fatten = 4,
+                  position = position_dodge(0.4)) +
+  
+  scale_colour_manual(
+    values = c("NoP" = "black", "P" = "#d73027"),
+    labels = c("NoP" = "No P added", "P" = "P added"),
+    name   = "P treatment (emmeans)"
+  ) +
+  
+  labs(x        = "Age class",
+       y        = "PRI (530–570)/(530+570)",
+       title    = "P × Age interaction",
+       subtitle = "Points = stand-level means  |  Lines = emmeans ± 95% CI") +
+  
+  theme_bw(base_size = 12) +
+  theme(panel.grid.minor = element_blank(),
+        legend.position  = "bottom")
+
+pri_fig_570
+
+ggsave("figure_5a.png", pri_fig_570, 
+       width = 7, height = 3.5, dpi = 300, bg = "white")
+
+
+
+#################################################################################
 
 # Analysis of PRI
 
@@ -133,10 +219,10 @@ library(ggbeeswarm)
 
 fig5 <- ggplot(out_sel, aes(x = Treatment, y = pri, col=Treatment)) + 
   geom_beeswarm(side = -1L, size=3, shape = 19)+
-  ylim(-.17, -.11)+
-  geom_text(aes(x = Treatment, y = -.12, label = group),
-            vjust = -0.5, size = 5,
-            inherit.aes = FALSE) +
+#  ylim(-.17, -.11)+
+  # geom_text(aes(x = Treatment, y = -.12, label = group),
+  #           vjust = -0.5, size = 5,
+  #           inherit.aes = FALSE) +
   facet_wrap(~age, nrow = 1) +
   theme_bw() +
   theme(panel.grid = element_blank())+
@@ -151,8 +237,8 @@ ggsave("figure_5.png", fig5,
        width = 7, height = 3.5, dpi = 300, bg = "white")
 
 
-
-
+gat
+names(gat)
 
 
 # #######################
