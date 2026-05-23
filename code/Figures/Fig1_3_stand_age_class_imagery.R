@@ -23,9 +23,7 @@ library(rhdf5)
 library(ggrepel)
 library(maps)
 library(cowplot)  # for combining plots
-
-
-### Bartlett shapefile
+## Bartlett shapefile
 
 bart <- sf::read_sf("D:/Users/bears/Downloads/S_USA.Experimental_Area_Boundaries/S_USA.Experimental_Area_Boundaries.shp") 
 bart <- bart[bart$NAME=="Bartlett Experimental Forest",]
@@ -37,6 +35,8 @@ ba <- st_transform(ba, crs=4326)
 ## stakes
 stands <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites.shp"))
 
+
+st_write(stands, "bartlett_stands.kml", driver = "KML")
 
 subp <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites_subplots.shp"))
 subp <- subp[subp$Site=="C9",]
@@ -153,7 +153,7 @@ chm.C2a <- rast(file.path(lidar_path, "NEON_D01_BART_DP3_318000_4881000_CHM.tif"
 chm.C2b <- rast(file.path(lidar_path, "NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
 chm.C2 <- terra::merge(chm.C2a, chm.C2b)
 
-C2 <- st_transform(stands[stands$Site == "C2", ], st_crs(chm.C2))
+C2 <- st_transform(stands[stands$Site == "C3", ], st_crs(chm.C2))
 C2_buffer <- st_buffer(C2, dist = 70)
 chm_c2 <- terra::crop(chm.C2, C2_buffer)
 
