@@ -1,6 +1,6 @@
 library(ggplot2)
 # Variable importance for each age class
-wvl <- colnames(read.csv(here::here("data_folder","processed_spectra2.csv")))
+wvl <- colnames(read.csv(here::here("data_folder","processed_spectra3.csv")))
 
 # select wvl columns
 wvl <- wvl[8:352]
@@ -41,10 +41,10 @@ m_vip$line_group[m_vip$wvl > 1450 & m_vip$wvl < 1780] <- "2"
 m_vip$line_group[m_vip$wvl > 1960] <- "3"
 
 #############
-a_vip$is_important_1 <-   a_vip$VIP_Score > 1 
-o_vip$is_important_1 <-   o_vip$VIP_Score > 1 
-y_vip$is_important_1 <-   y_vip$VIP_Score > 1 
-m_vip$is_important_1 <-   m_vip$VIP_Score > 1 
+a_vip$is_important_1 <-   a_vip$VIP_mean > 1 
+o_vip$is_important_1 <-   o_vip$VIP_mean > 1 
+y_vip$is_important_1 <-   y_vip$VIP_mean > 1 
+m_vip$is_important_1 <-   m_vip$VIP_mean > 1 
 
 vip <- rbind(a_vip, o_vip, m_vip, y_vip)
 
@@ -55,7 +55,7 @@ head(vip)
  
 vip$Age <- factor(vip$Age, levels=c("All ages","Young forest","Mid-aged forest","Mature forest"))
 
-g1 <- ggplot(vip, aes(x= wvl, y= VIP_Score, group = line_group))+
+g1 <- ggplot(vip, aes(x= wvl, y= VIP_mean, group = line_group))+
   geom_line()+
   theme_bw()+
   theme(panel.grid = element_blank())+
