@@ -2,10 +2,9 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada <- read.csv(here::here( "data_folder","processed_spectra.csv"))
+dada <- read.csv(here::here( "data_folder","processed_spectra2.csv"))
 
 
-dada<-dada[,-1]
 
 age_class <- c("Young forest","Mid-aged forest","Mature forest")
 
@@ -24,7 +23,7 @@ dada$Age[dada$Stand=="C9"]<-"Mature forest"
 
 names(dada)
 # make a 'long' version of dada
-ldada<-gather(dada, "wvl","refl",7:351)
+ldada<-gather(dada, "wvl","refl",8:352)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
@@ -138,10 +137,19 @@ plot_level$staplo <- paste(plot_level$Stand, plot_level$Treatment)
 #   )
 # 
 
+
+plot_level$line_group <- NA
+plot_level$line_group[plot_level$wvl < 1340] <- "1"
+plot_level$line_group[plot_level$wvl > 1450 & m_vip$wvl < 1780] <- "2"
+plot_level$line_group[plot_level$wvl > 1960] <- "3"
+
+plot_level <- plot_level[!is.na(plot_level$line_group),]
+
 library(ggh4x)
+plot_level$staplo_line <- paste(plot_level$staplo, plot_level$line_group)
 
 spec_region_fig <- ggplot(plot_level, aes(x = wvl, y = plot_mean,
-                                          colour = Treatment, fill = Treatment, group = staplo)) +
+                                          colour = Treatment, fill = Treatment, group = staplo_line)) +
   
   geom_line(linewidth = 0.6, aes(linetype = Age)) +
   

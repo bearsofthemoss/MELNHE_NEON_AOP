@@ -3,7 +3,7 @@ library(caret)
 
 # Select age group
 
-dati <- read.csv(here::here("data_folder","processed_spectra.csv"))
+dati <- read.csv(here::here("data_folder","processed_spectra2.csv"))
 min(table(dati$Treatment, dati$Stand))
 
 # Provide the Age column  
@@ -32,7 +32,7 @@ dati$statr <- paste(dati$Stand, dati$Treatment)
 
 ### Generate 100 random partitions ###
 set.seed(1234)
-nsims <- 10
+nsims <- 20
 rndid <- list()
 
 
@@ -352,7 +352,7 @@ validation = data.frame(
 
 #plsda_out <- here::here("R_output","PLSDA_output", sel_stand_age)
 
-plsda_out <- here::here("R_output","PLSDA_output", "All_ages")
+plsda_out <- here::here("R_output","PLSDA_output_response", "All_ages")
 
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)
@@ -398,7 +398,9 @@ conf_prop_data$Reference  <- factor(conf_prop_data$Reference,  levels = c("Contr
 conf_prop_data$Prediction <- factor(conf_prop_data$Prediction, levels = c("Control", "N", "P", "NP"))
 
 # Color palette
-col <- colorRampPalette(c("black", "brown", "orange", "olivedrab", "darkgreen"))
+col <- colorRampPalette(c("black","black","brown","gold","olivedrab","darkgreen"))
+
+conf_prop_data$Prediction <- factor(conf_prop_data$Prediction, levels=c("NP","P","N","Control"))
 
 # Plot
 fig3 <- ggplot(conf_prop_data, aes(x = Reference, y = Prediction, fill = Proportion)) +
@@ -425,9 +427,11 @@ fig3 <- ggplot(conf_prop_data, aes(x = Reference, y = Prediction, fill = Proport
     legend.text   = element_text(size = 12),
     panel.grid    = element_blank()
   ) +
-  coord_fixed()
+  coord_fixed()+
+  ggtitle("75/25 split using all 9 stands")
 
-fig3
+fig3 +fig3_loso
+  
 
 ggsave("figure_3.png", fig3, 
        width = 6, height = 4, dpi = 300, bg = "white")

@@ -2,8 +2,9 @@ library(dplyr)
 library(caret)
 
 # Select age group
-sel_stand_age <- "Young forest"
-dati <- read.csv(here::here("data_folder","processed_spectra.csv"))
+#sel_stand_age <- "Young forest"
+dati <- read.csv(here::here("data_folder","processed_spectra2.csv"))
+dati<-dati[,-1]
 min(table(dati$Treatment, dati$Stand))
 
 # Provide the Age column  
@@ -18,7 +19,8 @@ dati$Age[dati$Stand=="C8"]<-"Mature forest"
 dati$Age[dati$Stand=="C9"]<-"Mature forest"
 
 ## Select Stand age
-dati <- dati[dati$Age==sel_stand_age, ]
+
+sel_stand_age  <-"Young forest"
 
 ## Count tops
 count_tops <- as.data.frame(table(dati$Treatment, dati$Stand, dati$Age))
@@ -31,7 +33,7 @@ train_min_75 <- ceiling(min(count_tops$Freq) * .75)
 dati$statr <- paste(dati$Stand, dati$Treatment)
 
 ### Generate 100 random partitions ###
-set.seed(1234)
+#set.seed(1234)
 nsims <- 10
 rndid <- list()
 
@@ -203,45 +205,7 @@ for (nsim in 1:nsims){
   probis[[nsim]] <- probs 
 }
 
-### Performance Statistics ###
 
-# ## Calibration Performance (Training) ##
-# accu_cal <- numeric(length = nsims)
-# kappa_cal <- numeric(length = nsims)
-# 
-# for (i in 1:nsims){
-#   accu_cal[i] <- mods[[i]]$results$Accuracy[opt_comp]
-#   kappa_cal[i] <- mods[[i]]$results$Kappa[opt_comp]
-# }
-# 
-# cat("\n=== CALIBRATION PERFORMANCE (Training) ===\n")
-# cat("Accuracy:", round(mean(accu_cal), 3), "±", round(sd(accu_cal), 3), "\n")
-# cat("Kappa:", round(mean(kappa_cal), 3), "±", round(sd(kappa_cal), 3), "\n")
-
-# ## Validation Performance (Testing) ##
-# accu_val <- numeric(length = nsims)
-# kappa_val <- numeric(length = nsims)
-# 
-# for (i in 1:nsims){
-#   accu_val[i] <- confus[[i]]$overall["Accuracy"]
-#   kappa_val[i] <- confus[[i]]$overall["Kappa"]
-# }
-# 
-# cat("\n=== VALIDATION PERFORMANCE (Testing) ===\n")
-# cat("Accuracy:", round(mean(accu_val), 3), "±", round(sd(accu_val), 3), "\n")
-# cat("Kappa:", round(mean(kappa_val), 3), "±", round(sd(kappa_val), 3), "\n")
-# 
-# ### Average Confusion Matrix ###
-# tabs <- list()
-# for(i in 1:length(confus)){
-#   tabs[[i]] <- confus[[i]]$table
-# }
-# 
-# tabsi <- Reduce('+', tabs)
-# tab_mean <- as.data.frame.matrix(tabsi / length(confus))
-# 
-# cat("\n=== AVERAGE CONFUSION MATRIX ===\n")
-# print(round(tab_mean, 2))
 
 ### Accuracy Validation
 
@@ -346,7 +310,7 @@ vip_results_mixo <- data.frame(
     train_pixels = nrow(training))
   
   
-  plsda_out <- here::here("R_output","PLSDA_output", sel_stand_age)
+  plsda_out <- here::here("R_output","PLSDA_output_response", sel_stand_age)
   
   if(!dir.exists(plsda_out)){ 
     dir.create(plsda_out, recursive = TRUE)

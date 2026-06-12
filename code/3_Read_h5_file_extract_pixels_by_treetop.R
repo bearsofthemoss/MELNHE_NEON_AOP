@@ -59,9 +59,11 @@ spectra_df <- list()
 
 # Loop through the various tiff files that were downloaded, intersect tree points
 # to create spectra #
+t1 <- Sys.time()
 
-#for (k in 1:length(ff)){
-for (k in 7 ){
+
+for (k in 1:length(ff)){
+
 
    (f <- ff[k])
   
@@ -176,27 +178,27 @@ for (k in 7 ){
   cube_wat <- raster::subset(hsiStack, good)
   
   ### NDVI mask
-  ndvi_lim <- ndvi_calc >= 0.8 # set NDVI threshold
+  ndvi_lim <- ndvi_calc >= 0.7 # set NDVI threshold
   
   # mask bands, takes a minute
   cube_masked <- raster::mask(cube_wat, ndvi_lim, maskvalue = FALSE)
 
-  # brightness normalization
+  # # brightness normalization
   cube_norm <- raster::calc(cube_masked, fun=bright_norm)
   names(cube_norm) <- names(cube_masked)
-  
+
   #plotRGB(cube_norm,r = 52, g = 28, b = 10, stretch = 'lin',colNA="red")
-  
-  ### Shade mask
+
+  # ### Shade mask
   nam_d <- gsub("_reflectance.h5", "", nami) ## get coordinates of matching tile
   dsm <- rast(dd[grep(nam_d,dd)])
 
   dsm_slope <- terrain(dsm,v="slope")
   dsm_aspect <- terrain(dsm,v="aspect")
-  
+
   i_h5 <- f[grep(nam_d,f)][1]
   ii <- h5ls(file = i_h5)
-  
+
   d_nam <- paste(ii[grep("Solar_Zenith",ii$name),]$group, ii[grep("Solar_Zenith",ii$name),]$name, sep="/")
   zenith <- list()
   for (nn in 1:length(d_nam)){
@@ -204,7 +206,7 @@ for (k in 7 ){
     h5closeAll()
   }
   zenith <- mean(unlist(zenith))
-  
+
   d_nam <- paste(ii[grep("Solar_Azim",ii$name),]$group, ii[grep("Solar_Azim",ii$name),]$name, sep="/")
   azimuth <- list()
   for (nn in 1:length(d_nam)){
@@ -212,43 +214,51 @@ for (k in 7 ){
     h5closeAll()
   }
   azimuth <- mean(unlist(azimuth))
-  
+
   dsm_shade <- shade(dsm_slope, dsm_aspect, angle = zenith, direction = azimuth)
-  
-    
+
+
   ############################
   # Find ideal threshold
-  shade_mask <- dsm_shade >= 0.5 
-  
-  ###################
-  
-  
-  # # Apply to processed images
- cube_no_shade <- raster::mask(cube_norm, shade_mask, maskvalue = 0)
+  shade_mask <- dsm_shade >= 0.1
+
+  # ###################
   # 
-  
+  # 
+  # # # Apply to processed images
+  # cube_terra <- rast(cube_norm)
+  # 
+  # cube_no_shade <- raster::mask(cube_terra, shade_mask, maskvalue = 0)
+
   ################################################################################################
   ################################################################################################
   # Extract data
   
-  trees_proj <- sf::st_transform(trees, crs = crs(cube_no_shade))
+  trees_proj <- sf::st_transform(trees, crs = crs(cube_norm))
+  
+
 dim(trees_proj)
 
   # Convert coordinates to matrix for terra extract
   coords_matrix <- st_coordinates(trees_proj$geometry)
   coords_matrix[ ,1:2]
   
-  # Extract values using coordinate matrix
-  tree_shade_values <- terra::extract(dsm_shade, coords_matrix[ ,1:2])
+  dsm_shade_proj <- terra::project(dsm_shade, crs(cube_norm))
   
-  # Add to tree tops data
+  # # Extract values using coordinate matrix
+  tree_shade_values <- terra::extract(dsm_shade_proj, coords_matrix[ ,1:2])
+
+  hist(tree_shade_values$hillshade)
+nrow(tree_shade_values)
+nrow(trees_proj)
+    # Add to tree tops data
   trees_proj$shade_intensity <- tree_shade_values$hillshade  # Continuous shade values
 
   trees_proj <- trees_proj[trees_proj$shade_intensity >= 0.1 &
                               !is.na(trees_proj$shade_intensity), ]
-  dim(trees_proj)
+   dim(trees_proj)
 # only use the trees that are not masked
-
+hist(trees_proj$shade_intensity)
   
   # Check CRS compatibility (convert both to strings for comparison)
   raster_crs <- as.character(crs(cube_norm))
@@ -273,8 +283,7 @@ dim(trees_proj)
   }
   
   
-
-cat("Completed iteration k =", k, "\n\n")
+cat("Completed iteration k =", k, "\n\n", Sys.time()-t1 )
 }
 
 # ============================================================================
@@ -320,21 +329,19 @@ if (length(spectra_df) > 0) {
 
   
    ###########
-  
+table(combined_spectra$Stand, combined_spectra$Treatment )
 min(table(combined_spectra$Stand, combined_spectra$Treatment ))
 
  
-write.csv(combined_spectra, file=here::here("data_folder","processed_spectra_shade2.csv"))
+write.csv(combined_spectra, file=here::here("data_folder","processed_spectra3.csv"))
 
 names(combined_spectra)
 test  <- gather(combined_spectra, "wvl","refl", 7:351)
 head(test)
 test$wvl <- round(as.numeric(gsub(".*_", "", test$wvl)),0)
 
-ggplot(test[test$Stand=="C9"&
-              test$wvl>500 & test$wvl<570,], aes(x= wvl, y= refl, fill=Treatment))+
+ggplot(test, aes(x= wvl, y= refl, fill=Treatment))+
   geom_boxplot(aes(group = wvl))+
   geom_line(aes(group = treeID))+
-  
     facet_wrap(~Treatment)
  

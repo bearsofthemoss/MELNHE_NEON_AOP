@@ -4,10 +4,11 @@ library(corrplot)
 library(MLmetrics)
 
 # Select age group
-sel_stand_age <- "Young forest"
+sel_stand_age <- "All stands"
 
-dati <- read.csv(here::here( "data_folder","processed_spectra.csv"))
-
+dati <- read.csv(here::here( "data_folder","processed_spectra3.csv"))
+dati <- dati[,-1]
+names(dati)
 min(table(dati$Treatment, dati$Stand))
 
 # Provide the Age column  
@@ -22,7 +23,13 @@ dati$Age[dati$Stand=="C8"]<-"Mature forest"
 dati$Age[dati$Stand=="C9"]<-"Mature forest"
 
 ## Select Stand age
+if( sel_stand_age != "All stands"){
 dati <- dati[dati$Age==sel_stand_age ,]
+}
+if( sel_stand_age == "All stands"){
+  dati$Age <- "All stands"
+}
+
 
 ## Count tops
 count_tops <- as.data.frame(table(dati$Treatment, dati$Stand, dati$Age))
@@ -66,10 +73,7 @@ for(plot in plots) {
 table(out_train_data$Stand, out_train_data$Treatment)
 sum(table(out_train_data$Stand, out_train_data$Treatment))
 table(out_test_data$Stand, out_test_data$Treatment)
-sum(table(out_test_data$Stand, out_test_data$Treatment)
-    
-    
-    )
+sum(table(out_test_data$Stand, out_test_data$Treatment))
 
 ### 2. Data clean up - CRITICAL: Track complete cases
 # Get complete cases BEFORE selecting columns
@@ -109,7 +113,7 @@ cv_results <- perf(plsda_cv,
 plot(cv_results, main = "PLSDA Component Selection")
 
 # Find optimal components (minimum error rate)
-opt_comp <- cv_results$choice.ncomp["BER", "max.dist"]
+opt_comp <- cv_results$choice.ncomp["overall", "max.dist"]
 cat("Optimal number of components:", opt_comp, "\n")
 
 ### 4. Final PLSDA Model ###
@@ -179,7 +183,7 @@ if(is.matrix(class_stats)) {
 conf_table <- conf_matrix$table
 conf_prop <- prop.table(conf_table, 2)  # Proportions by reference
 
-### 8. Variable Importance ###
+ ### 8. Variable Importance ###
 vip_scores <- vip(final_plsda)
 important_vars <- which(vip_scores[, 1] > 1)
 
@@ -231,7 +235,7 @@ vip_df <- data.frame(
   Important = vip_scores[, 1] > 1)
 
 # Save outputs
-plsda_out <- here::here("R_output","PLSDA_output", sel_stand_age)
+plsda_out <- here::here("R_output","PLSDA_output_response", sel_stand_age)
 
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)
@@ -240,10 +244,15 @@ if(!dir.exists(plsda_out)){
 results_summary
 # 
 # 
-# write.csv(conf_prop, file.path(plsda_out,"prop_treatment_plsda.csv"))
-# write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
-# write.csv(results_summary, file.path(plsda_out,"results_summary_plsda.csv"), row.names = FALSE)
-# write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
+write.csv(conf_prop, file.path(plsda_out,"prop_treatment_plsda.csv"))
+write.csv(conf_table, file.path(plsda_out,"count_treatment_plsda.csv"))
+write.csv(results_summary, file.path(plsda_out,"results_summary_plsda.csv"), row.names = FALSE)
+write.csv(vip_df, file.path(plsda_out,"vip_scores.csv"), row.names = FALSE)
+
+
+conf_table
+conf_prop
 
 cat("\n=== Analysis Complete ===\n")
 cat("Results saved to:", plsda_out, "\n")
+ 

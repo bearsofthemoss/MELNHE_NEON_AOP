@@ -39,7 +39,7 @@ stands <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bar
 st_write(stands, "bartlett_stands.kml", driver = "KML")
 
 subp <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites_subplots.shp"))
-subp <- subp[subp$Site=="C9",]
+subp <- subp[subp$Site=="C3",]
 subp <- st_transform(subp, crs=4326)
 
 
@@ -153,7 +153,7 @@ chm.C2a <- rast(file.path(lidar_path, "NEON_D01_BART_DP3_318000_4881000_CHM.tif"
 chm.C2b <- rast(file.path(lidar_path, "NEON_D01_BART_DP3_318000_4880000_CHM.tif"))
 chm.C2 <- terra::merge(chm.C2a, chm.C2b)
 
-C2 <- st_transform(stands[stands$Site == "C3", ], st_crs(chm.C2))
+C2 <- st_transform(stands[stands$Site == "C2", ], st_crs(chm.C2))
 C2_buffer <- st_buffer(C2, dist = 70)
 chm_c2 <- terra::crop(chm.C2, C2_buffer)
 
@@ -220,7 +220,7 @@ rgb_path <- here::here("data_folder", "DP3.30010.001", "neon-aop-products",
 chm.C7 <- terra::rast(file.path(lidar_path, "NEON_D01_BART_DP3_315000_4880000_CHM.tif"))
 pic_C7 <- terra::rast(file.path(rgb_path, "2019_BART_5_315000_4880000_image.tif"))
 
-single_plot <- stands[stands$Site == "C7" & stands$Plot == 2, ]
+single_plot <- stands[stands$Site == "C7" & stands$Plot == 4, ]
 single_plot <- st_transform(single_plot, st_crs(pic_C7))
 plot_buffer <- st_buffer(single_plot, dist = 5)
 
@@ -234,6 +234,19 @@ lin.C <- function(x) {x * 0.02}
 m7c <- crop(chm.C7, single_plot, mask = TRUE)
 m7c_raster <- raster::raster(m7c)
 m7ctops <- ForestTools::vwf(CHM = m7c, winFun = lin.C, minHeight = 5)
+
+# delineate tree crowns
+crowns <- ForestTools::mcws(
+  m7ctops,       # your existing treetops SpatialPointsDataFrame
+  m7c,          # your canopy height model raster
+  minHeight = 5,            # minimum tree height (adjust to your data)
+  format = "polygons"       # returns crown polygons
+)
+
+# --- 2. Convert to sf for ggplot ---
+crowns_sf <- st_as_sf(crowns)
+
+
 m7ctops_sf <- st_as_sf(m7ctops)
 
 # Shade analysis
@@ -267,9 +280,12 @@ coords_matrix <- st_coordinates(m7ctops_sf)
 tree_shade_values <- terra::extract(dsm_shade, coords_matrix)
 m7ctops_sf$shade_intensity <- tree_shade_values$hillshade
 
+
+
 g4 <- ggplot() +
   geom_raster(data = rgb_df, aes(x = x, y = y), fill = rgb_df$rgb) +
-  geom_sf(data = m7ctops_sf, aes(col = shade_intensity), size = 3) +
+  geom_sf(data = m7ctops_sf, aes(col = shade_intensity), size = 1) +
+  geom_sf(data = crowns_sf, fill = NA, color = "white", linewidth = .5) + 
   scale_color_viridis_c(name = "Shade intensity", option = "plasma") +
   geom_sf(data = single_plot, col = "black", fill = NA, linewidth = 3) +
   theme_void() +
@@ -293,6 +309,7 @@ g4 <- ggplot() +
            expand = FALSE) +
   labs(x = "", y = "")
 
+g4
 # =============================================================================
 # LAYOUT OPTIONS
 # =============================================================================
@@ -305,10 +322,14 @@ library(patchwork)
 # etc.
 option1 <- inset_map + g1 + g2 + g4 + 
   plot_layout(ncol = 4, widths = c(1, 1, 1, 1)) +
-  plot_annotation(tag_levels = 'A', tag_suffix = ')')+
-  theme(plot.margin = margin(.02, .02, .02, .02))
+  plot_annotation(
+    tag_levels = 'A', 
+    tag_suffix = ')',
+    theme = theme(plot.tag = element_text(size = 34)) 
+  ) +
+  theme(plot.margin = margin(.05, .05, .05, .05))
 
-option1  
+option1
 
 ggsave("figure_1.png", option1, 
-       width = 16, height = 4.5, dpi = 300, bg = "white")
+       width = 9, height = 4, dpi = 300, bg = "white")

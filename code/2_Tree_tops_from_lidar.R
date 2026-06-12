@@ -161,15 +161,15 @@ m9np<-crop(chm.C9, C9[C9$Treatment=="NP",])
 #####################################
 
 ##
-lin.C <- function(x){x * 0.04}
-lin.C2 <- function(x){x * 0.04}
-lin.C3 <- function(x){x * 0.04}
-lin.C4 <- function(x){x * 0.04}
-lin.C5 <- function(x){x * 0.04}
-lin.C6 <- function(x){x * 0.04}
-lin.C7 <- function(x){x * 0.04}
-lin.C8 <- function(x){x * 0.04}
-lin.C9 <- function(x){x * 0.04}
+lin.C <- function(x){x * 0.1}
+lin.C2 <- function(x){x * 0.1}
+lin.C3 <- function(x){x * 0.1}
+lin.C4 <- function(x){x * 0.1}
+lin.C5 <- function(x){x * 0.1}
+lin.C6 <- function(x){x * 0.1}
+lin.C7 <- function(x){x * 0.1}
+lin.C8 <- function(x){x * 0.1}
+lin.C9 <- function(x){x * 0.1}
 
 
 # set the window size using the function 0.02 m width for each pixel height value.
@@ -421,6 +421,6 @@ bap$Age <- factor(bap$Age, levels=rev(c("~30 years old", "~60 years old", "~100 
  head(bap)
  ####  Write output
  
- st_write( bart_ttops, here::here("data_folder","bart_tree_tops.shp"))
+ st_write( bart_ttops, here::here("data_folder","bart_tree_tops_June26.shp"))
  
  
