@@ -10,7 +10,7 @@ library(dplyr)
 library(agricolae)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada <- read.csv(here::here( "data_folder","processed_spectra3.csv"))
+dada <- read.csv(here::here( "R_output","processed_spectra3.csv"))
 
 summary(dada$winRadius)
 
@@ -33,7 +33,7 @@ dada$Age[dada$Stand=="C9"]<-"Mature forest"
 
 names(dada)
 # make a 'long' version of dada
-ldada<-gather(dada, "wvl","refl",8:352)
+ldada<-tidyr::gather(dada, "wvl","refl",8:352)
 ldada$wvl<-as.numeric(gsub(".*_","",ldada$wvl))
 ldada<-na.omit(ldada) # take out NA values- about half were NA 10_3 Ary
 ldada$staplo<-paste(ldada$Stand, ldada$Treatment)
@@ -57,14 +57,86 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 
 
 ## calculate plot-level PRI avg
-gat<-spread(ldada, "wvl","refl")
+gat<-tidyr::spread(ldada, "wvl","refl")
+
+
+names(gat)
+vis <- gather(gat, "WVL", "value",  20:60)
+
+av <- aggregate(list(value = vis$value), by=list(
+           WVL = vis$WVL,
+           Stand = vis$Stand,
+           Age = vis$Age,
+           Treatment = vis$Treatment),
+           FUN= "mean",na.rm=T)
+str(av)
+av$WVL <- as.numeric(av$WVL)
+ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
+  geom_line(aes(group = Treatment)) +
+  facet_wrap(~ Stand, scales = "free_y") +
+  scale_color_manual(values = c("black", "blue", "red", "purple")) +
+  theme_bw() +
+  labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
+  theme(
+    legend.position  = "bottom",
+    
+    # ── move strip labels inside, top-left ──────────────────────────────
+    strip.background  = element_blank(),   # remove grey box entirely
+    strip.text        = element_text(
+      hjust   = 0,  # push toward left edge
+      vjust   = .5,     # push toward top
+      margin  = margin(b = 4),  # pull text into panel
+      size    = 12
+    ),
+    
+    # ── reduce whitespace between panels ────────────────────────────────
+    panel.spacing.x  = unit(0.2, "lines"),
+    panel.spacing.y  = unit(0.4, "lines")
+  )+
+  geom_vline( xintercept = 440, linetype = "dashed", col="forestgreen")+
+  geom_vline( xintercept = 480, linetype = "dashed",col="forestgreen")+
+  geom_vline( xintercept = 531, linetype = "solid",col="orange")+
+  geom_vline( xintercept = 570, linetype = "dotted",col="black")
+
+
+
+## Red edge
+names(gat)
+re <- gather(gat, "WVL", "value",  72:77)
+
+nir <- aggregate(list(value = re$value), by=list(
+  WVL = re$WVL,
+  Stand = re$Stand,
+  Age = re$Age,
+  Treatment = re$Treatment),
+  FUN= "mean",na.rm=T)
+str(nir)
+nir$WVL <- as.numeric(nir$WVL)
+
+ggplot(nir, aes(x= WVL, y= value, 
+               col=Treatment ))+
+  geom_line(aes(group = Treatment))+
+  facet_wrap(~Stand, scales="free_y")+
+  scale_color_manual(values= c("black","blue","red","purple"))+
+  theme_bw()+
+  labs(y="Normalized reflectance", 
+       x="Wavelength (nm)")+
+  theme(legend.position="bottom")
+  # geom_vline( xintercept = 440, linetype = "dashed", col="forestgreen")+
+  # geom_vline( xintercept = 480, linetype = "dashed",col="forestgreen")+
+  # geom_vline( xintercept = 531, linetype = "solid",col="orange")+
+  # geom_vline( xintercept = 570, linetype = "dotted",col="black")
+
+
+
+  
 gat$pri550 <-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
 gat$pri570<-(gat$`528.99` - gat$`569.06`)/( gat$`528.99` + gat$`569.06`)
 
-head(gat[gat$Stand=="C6",])
 
-
-avg_pri <-aggregate(list(
+avg_pri <-aggregate(list(   r531 = gat$`528.99`,
+                            r440 = gat$`438.85`,
+                            r480 = gat$`478.91`,
                             pri550 = gat$pri550,
                             pri570 = gat$pri570), 
                        by=list(Stand=gat$Stand,
@@ -81,6 +153,25 @@ pa570 <- lmer(pri570 ~ Ntrmt * Ptrmt * Age + (1 | Stand), data = avg_pri)
 
 
 anova(pa570)
+
+m_chla <- lmer(r440 ~ Ntrmt * Ptrmt * Age + (1 | Stand), data = avg_pri)
+
+
+anova(m_chla)
+
+names(avg_pri)
+
+ap <- gather(avg_pri, "WVL", "value",  7:11)
+
+
+
+ap$Age <- factor(ap$Age, levels=c("Young forest", "Mid-aged forest","Mature forest"))
+ggplot(ap, aes(x= Treatment, y= value, 
+               col=Treatment,
+               group=Stand,
+               shape = Age))+
+  geom_point(position = position_dodge(.8))+
+  facet_wrap(~WVL, scales="free")
 
 
 
