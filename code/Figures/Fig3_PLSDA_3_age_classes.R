@@ -7,69 +7,116 @@ library(dplyr)
 
 
 
-ares <- read.csv(here::here("R_output","PLSDA_output_response","All stands","results_summary_plsda.csv"))
-yres <- read.csv(here::here("R_output","PLSDA_output_response","Young forest","results_summary_plsda.csv"))
-mres <- read.csv(here::here("R_output","PLSDA_output_response","Mid-aged forest","results_summary_plsda.csv"))
-ores <- read.csv(here::here("R_output","PLSDA_output_response","Mature forest","results_summary_plsda.csv"))
+# ares <- read.csv(here::here("R_output","PLSDA_output","LOSO all age","results_summary_plsda_loso.csv"))
+# yres <- read.csv(here::here("R_output","PLSDA_output","Young stands loso","results_summary_plsda_loso.csv"))
+# mres <- read.csv(here::here("R_output","PLSDA_output","Mid-aged stands loso","results_summary_plsda_loso.csv"))
+# ores <- read.csv(here::here("R_output","PLSDA_output","Mature stands loso","results_summary_plsda_loso.csv"))
+
+ ares <- read.csv(here::here("R_output","PLSDA_output_response_72_25","All stands","results_summary_plsda.csv"))
+ yres <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Young forest","results_summary_plsda.csv"))
+ mres <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mid-aged forest","results_summary_plsda.csv"))
+ ores <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mature forest","results_summary_plsda.csv"))
+ 
+
+
 
 ares
 yres
 mres
 ores
-### Add from the 'all age' PLSDA first
-
-prop_data <- read.csv(here::here("R_output","PLSDA_output_response","All stands","prop_treatment_plsda.csv"))
 
 
-# Reshape to long format and compute row-wise proportions
-all_conf_prop_data <- melt(prop_data, id.vars = "X", variable.name = "Reference", value.name = "Proportion")
-colnames(all_conf_prop_data)[1] <- "Prediction"
-
-all_conf_prop_data$Proportion <- round(all_conf_prop_data$Proportion, 2) * 100
-all_conf_prop_data$Age <- "All stands"
-
-
-
-#######################
-#########################################################
-
-
+############
 
 # Read count data
-o_c_data <- read.csv(here::here("R_output","PLSDA_output_response","Mature forest","prop_treatment_plsda.csv"))
-m_c_data <- read.csv(here::here("R_output","PLSDA_output_response","Mid-aged forest","prop_treatment_plsda.csv"))
-y_c_data <- read.csv(here::here("R_output","PLSDA_output_response","Young forest","prop_treatment_plsda.csv"))
+a_c_data <- read.csv(here::here("R_output","PLSDA_output","All stands loso","count_treatment_plsda_loso.csv"))
+o_c_data <- read.csv(here::here("R_output","PLSDA_output","Mature stands loso","count_treatment_plsda_loso.csv"))
+m_c_data <- read.csv(here::here("R_output","PLSDA_output","Mid-aged stands loso","count_treatment_plsda_loso.csv"))
+y_c_data <- read.csv(here::here("R_output","PLSDA_output","Young stands loso","count_treatment_plsda_loso.csv"))
 
 ####  # Old Forest
-o_conf_prop_data <- melt(o_c_data, id.vars = "X", variable.name = "Reference", value.name = "Proportion")
-colnames(o_conf_prop_data)[1] <- "Prediction"
+o_count_long <- melt(o_c_data, id.vars = "X", variable.name = "Reference", value.name = "Count")
+colnames(o_count_long)[1] <- "Prediction"
 
-o_conf_prop_data$Proportion <- round(o_conf_prop_data$Proportion, 2)*100
+# Compute row totals and proportions
+o_row_totals <- aggregate(Count ~ Prediction, data = o_count_long, sum)
+o_count_long <- merge(o_count_long, o_row_totals, by = "Prediction", suffixes = c("", "_total"))
+o_count_long$Proportion <- (o_count_long$Count / o_count_long$Count_total) * 100
+
+o_conf_prop_data <- o_count_long[, c("Prediction", "Reference",  "Proportion")]
+o_conf_prop_data$Proportion <- round(o_conf_prop_data$Proportion, 1)
 o_conf_prop_data$Age <- "Mature forest"
 
 ####  # Mid-aged Forest
-m_conf_prop_data <- melt(m_c_data, id.vars = "X", variable.name = "Reference", value.name = "Proportion")
-colnames(m_conf_prop_data)[1] <- "Prediction"
+m_count_long <- melt(m_c_data, id.vars = "X", variable.name = "Reference", value.name = "Count")
+colnames(m_count_long)[1] <- "Prediction"
 
-m_conf_prop_data$Proportion <- round(m_conf_prop_data$Proportion, 2)*100
+# Compute row totals and proportions
+m_row_totals <- aggregate(Count ~ Prediction, data = m_count_long, sum)
+m_count_long <- merge(m_count_long, m_row_totals, by = "Prediction", suffixes = c("", "_total"))
+m_count_long$Proportion <- (m_count_long$Count / m_count_long$Count_total) * 100
+
+m_conf_prop_data <- m_count_long[, c("Prediction", "Reference", "Proportion")]
+m_conf_prop_data$Proportion <- round(m_conf_prop_data$Proportion, 1)
 m_conf_prop_data$Age <- "Mid-aged forest"
 
 
 ####  # Young Forest
-y_conf_prop_data <- melt(y_c_data, id.vars = "X", variable.name = "Reference", value.name = "Proportion")
-colnames(y_conf_prop_data)[1] <- "Prediction"
+y_count_long <- melt(y_c_data, id.vars = "X", variable.name = "Reference", value.name = "Count")
+colnames(y_count_long)[1] <- "Prediction"
 
-y_conf_prop_data$Proportion <- round(y_conf_prop_data$Proportion, 2)*100
+# Compute row totals and proportions
+y_row_totals <- aggregate(Count ~ Prediction, data = y_count_long, sum)
+y_count_long <- merge(y_count_long, y_row_totals, by = "Prediction", suffixes = c("", "_total"))
+y_count_long$Proportion <- (y_count_long$Count / y_count_long$Count_total) * 100
+
+y_conf_prop_data <- y_count_long[, c("Prediction", "Reference",  "Proportion")]
+y_conf_prop_data$Proportion <- round(y_conf_prop_data$Proportion, 1)
 y_conf_prop_data$Age <- "Young forest"
 
+
+#####  #  All ages
+a_count_long <- melt(a_c_data, id.vars = "X", variable.name = "Reference", value.name = "Count")
+colnames(a_count_long)[1] <- "Prediction"
+
+# Compute row totals and proportions
+a_row_totals <- aggregate(Count ~ Prediction, data = a_count_long, sum)
+a_count_long <- merge(a_count_long, a_row_totals, by = "Prediction", suffixes = c("", "_total"))
+a_count_long$Proportion <- (a_count_long$Count / a_count_long$Count_total) * 100
+
+a_conf_prop_data <- a_count_long[, c("Prediction", "Reference",  "Proportion")]
+a_conf_prop_data$Proportion <- round(a_conf_prop_data$Proportion, 1)
+a_conf_prop_data$Age <- "All stands"
 
 
 ####
 # Rbind the 3 together
 
 conf_prop_data <- rbind(
-  all_conf_prop_data, o_conf_prop_data,
+  a_conf_prop_data, o_conf_prop_data,
   m_conf_prop_data, y_conf_prop_data )
+# 
+
+#########
+
+# Above uses the leave one stand out.
+
+# below reads in the 75/25 test train split
+
+# a_c_data <- read.csv(here::here("R_output","PLSDA_output_response_72_25","All stands","prop_treatment_plsda.csv"))
+# o_c_data <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mature forest","prop_treatment_plsda.csv"))
+# m_c_data <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mid-aged forest","prop_treatment_plsda.csv"))
+# y_c_data <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Young forest","prop_treatment_plsda.csv"))
+# 
+# y_c_data$Age <- "Young forest"
+# m_c_data$Age <- "Mid-aged forest"
+# o_c_data$Age <- "Mature forest"
+# a_c_data$Age <- "All stands"
+# 
+# conf_prop_data <- rbind(
+#   a_c_data, o_c_data,
+#   m_c_data, y_c_data )
+
 
 
 table(conf_prop_data$Reference, conf_prop_data$Prediction)
@@ -77,6 +124,7 @@ table(conf_prop_data$Reference, conf_prop_data$Prediction)
 # Set factor levels
 conf_prop_data$Reference  <- factor(conf_prop_data$Reference,  levels = c("Control", "N", "P", "NP"))
 conf_prop_data$Prediction <- factor(conf_prop_data$Prediction, levels = c( "NP", "P","N","Control"))
+
 
 
 

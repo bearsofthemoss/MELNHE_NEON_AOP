@@ -259,7 +259,7 @@ ggsave(paste0("plot indiv tree ", sel_stand_age, " plsda.png"),
 
 
 # Save outputs
-plsda_out <- here::here("R_output","PLSDA_output_response", sel_stand_age)
+plsda_out <- here::here("R_output","PLSDA_output_response_72_25", sel_stand_age)
 
 if(!dir.exists(plsda_out)){ 
   dir.create(plsda_out, recursive = TRUE)

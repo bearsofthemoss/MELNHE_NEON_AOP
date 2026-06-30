@@ -14,7 +14,7 @@ library(tidyr)
 
   
 ## dada contains the tree top reflectance.This was made in file 2. 
-dada<-  read.csv(here::here( "R_output","processed_spectra3.csv"))
+dada<-  read.csv(here::here( "data_folder","processed_spectra3.csv"))
 
 names(dada)
 # add in stand ages
@@ -49,7 +49,8 @@ nzv <- nearZeroVar(lda_obj[,c(-1, -2)])
 
 lda_obj[,134:139]
 
-lda_obj_cleaned <- lda_obj[ , -c(nzv +1)]
+#lda_obj_cleaned <- lda_obj[ , -c(nzv +1)]
+lda_obj_cleaned <- lda_obj[ , -c(nzv$Position +1)]
 
 summary(lda_obj_cleaned)
 
@@ -158,9 +159,9 @@ fig_trt <- ggplot() +
              aes(x = LD1, y = LD2,
                  color = Treatment),
              size = 2, alpha = 0.6) +
-  # geom_text_repel(data=lda_out,
-  #                 aes(x = LD1, y = LD2,
-  #                     label = Stand), size = 4)+
+  geom_text_repel(data=lda_out,
+                  aes(x = LD1, y = LD2,
+                      label = Stand), size = 4)+
   # Set colors to match your original plot
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
   scale_fill_manual(values = c("black", "blue", "red", "purple")) +

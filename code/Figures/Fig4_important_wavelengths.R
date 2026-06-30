@@ -5,10 +5,17 @@ wvl <- colnames(read.csv(here::here("data_folder","processed_spectra3.csv")))
 # select wvl columns
 wvl <- wvl[8:352]
 wvl_nm <- round(as.numeric(sapply(strsplit(wvl, '_'), `[`, 2)),0)
-a_vip <- read.csv(here::here("R_output","PLSDA_output_response","All stands","vip_scores.csv"))
-y_vip <- read.csv(here::here("R_output","PLSDA_output_response","Young forest","vip_scores.csv"))
-m_vip <- read.csv(here::here("R_output","PLSDA_output_response","Mid-aged forest","vip_scores.csv"))
-o_vip <- read.csv(here::here("R_output","PLSDA_output_response","Mature forest","vip_scores.csv"))
+# a_vip <- read.csv(here::here("R_output","PLSDA_output","LOSO all age","vip_scores_loso.csv"))
+# y_vip <- read.csv(here::here("R_output","PLSDA_output","Young stands loso","vip_scores_loso.csv"))
+# m_vip <- read.csv(here::here("R_output","PLSDA_output","Mid-aged stands loso","vip_scores_loso.csv"))
+# o_vip <- read.csv(here::here("R_output","PLSDA_output","Mature stands loso","vip_scores_loso.csv"))
+a_vip <- read.csv(here::here("R_output","PLSDA_output_response_72_25","All stands","vip_scores.csv"))
+y_vip <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Young forest","vip_scores.csv"))
+m_vip <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mid-aged forest","vip_scores.csv"))
+o_vip <- read.csv(here::here("R_output","PLSDA_output_response_72_25","Mature forest","vip_scores.csv"))
+
+
+
 a_vip$wvl <- wvl_nm
 y_vip$wvl <- wvl_nm
 m_vip$wvl <- wvl_nm
@@ -72,3 +79,4 @@ g1
 
 ggsave("figure_4.png", g1, 
        width = 6, height = 4, dpi = 300, bg = "white")
+

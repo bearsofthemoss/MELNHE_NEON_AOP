@@ -325,11 +325,11 @@ option1 <- inset_map + g1 + g2 + g4 +
   plot_annotation(
     tag_levels = 'A', 
     tag_suffix = ')',
-    theme = theme(plot.tag = element_text(size = 34)) 
+    theme = theme(plot.tag = element_text(size = 50)) 
   ) +
   theme(plot.margin = margin(.05, .05, .05, .05))
 
 option1
 
 ggsave("figure_1.png", option1, 
-       width = 9, height = 4, dpi = 300, bg = "white")
+       width = 10, height = 4, dpi = 300, bg = "white")

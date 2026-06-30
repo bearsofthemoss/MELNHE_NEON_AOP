@@ -31,7 +31,7 @@ plots_UTM <- sf::st_transform(stands, crs = "EPSG:32619")
 
 
 # Alex's tree tops
-trees <- st_read(here::here("data_folder","bart_tree_tops.shp"))
+trees <- st_read(here::here("data_folder","bart_tree_tops_June26.shp"))
 trees <- sf::st_transform(trees, crs = "EPSG:32619")
 
 centroids <-  st_coordinates(st_centroid(stands))
@@ -44,7 +44,7 @@ north <-centroids[, 1]
 
 
 # Folder working directories
-ff <- list.files("data_folder/DP3.30006.001/neon-aop-products/2019/",pattern = ".h5", recursive = T, full.names = T)
+ff <- list.files("data_folder/NEON_refl-surf-bidir-ortho-mosaic/NEON.D01.BART.DP3.30006.002.2022-08.basic.20260615T024858Z.PROVISIONAL",pattern = ".h5", recursive = T, full.names = T)
 dd <- list.files("data_folder/DP3.30024.001/neon-aop-products/2019/",pattern = "DSM.tif", recursive = T, full.names = T)
 
 
@@ -333,7 +333,7 @@ table(combined_spectra$Stand, combined_spectra$Treatment )
 min(table(combined_spectra$Stand, combined_spectra$Treatment ))
 
  
-write.csv(combined_spectra, file=here::here("data_folder","processed_spectra3.csv"))
+write.csv(combined_spectra, file=here::here("data_folder","processed_spectra4.csv"))
 
 names(combined_spectra)
 test  <- gather(combined_spectra, "wvl","refl", 7:351)

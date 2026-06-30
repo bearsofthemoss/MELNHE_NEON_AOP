@@ -4,9 +4,11 @@ library(mixOmics)
 
 dati <- read.csv(here::here("data_folder","processed_spectra3.csv"))
 dati <- dati[,-1]
+
 min(table(dati$Treatment, dati$Stand))
 
 names(dati)
+
 
 
 dati_long <- tidyr::gather(dati, "wavelength", "refl", 7:351)
@@ -25,9 +27,9 @@ dati_wide <- tidyr::spread(dati_avg, wavelength, refl)
 ##############################################
 
 ## This enforces plot averages!!
- # dati <- dati_wide
+dati <- dati_wide
 
-  dati #  just use dati if you want individual trees
+  #dati #  just use dati if you want individual trees
 
 ##############################################
 
@@ -41,12 +43,12 @@ colnames(ber_mat) <- stands
 names(dati)
 
 # indiv tree here 
-spec_complete <- complete.cases(dati[, 7:351])
-spec          <- as.matrix(dati[spec_complete, 7:351])
+# spec_complete <- complete.cases(dati[, 7:351])
+# spec          <- as.matrix(dati[spec_complete, 7:351])
 
-# ## plot average here
-# spec_complete <- complete.cases(dati[, 4:348])
-# spec          <- as.matrix(dati[spec_complete, 4:348])
+## plot average here
+spec_complete <- complete.cases(dati[, 4:348])
+spec          <- as.matrix(dati[spec_complete, 4:348])
 
 dati_complete <- dati[spec_complete, ]
 
@@ -185,24 +187,38 @@ vip_long$Age[vip_long$Stand=="C6"]<-"Mid-aged forest"
 vip_long$Age[vip_long$Stand=="C7"]<-"Mature forest"
 vip_long$Age[vip_long$Stand=="C8"]<-"Mature forest"
 vip_long$Age[vip_long$Stand=="C9"]<-"Mature forest"
-### Plot
-ggplot()+
-#vip_df, aes(x = wavelength, y = VIP_mean)) +
-  geom_line(data = vip_long,
-            aes(x = wavelength, y = VIP, group = Stand),
-            color = "black", linewidth = 0.5) +
-  # geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
-  #             alpha = 0.3, fill = "olivedrab") +
-  geom_line(color = "darkgreen", linewidth = 0.9) +
-  geom_hline(yintercept = 1, color = "red", linetype = "dashed", linewidth = 0.6) +
-  labs(x     = "Wavelength (nm)",
-       y     = "VIP score",
-       title = "Variable Importance — mean ± SD across 9 LOSO folds") +
-  theme_minimal()+
-  facet_wrap(~Age, nrow=3)
 
+
+vip_long$line_group <- NA
+vip_long$line_group[vip_long$wavelength< 1340] <- "1"
+vip_long$line_group[vip_long$wavelength > 1450 & vip_long$wavelength < 1780] <- "2"
+vip_long$line_group[vip_long$wavelength > 1960] <- "3"
+
+
+
+vip_long <- vip_long[!is.na(vip_long$line_group),]
+
+vip_long$lgs <- paste(vip_long$Stand, vip_long$line_group)
+
+# ### Plot
+# ggplot()+
+# #vip_df, aes(x = wavelength, y = VIP_mean)) +
+#   geom_line(data = vip_long,
+#             aes(x = wavelength, y = VIP, group = lgs),
+#              linewidth = 0.5) +
+#   # geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
+#   #             alpha = 0.3, fill = "olivedrab") +
+#   geom_line(color = "darkgreen", linewidth = 0.9) +
+#   geom_hline(yintercept = 1, color = "red", linetype = "dashed", linewidth = 0.6) +
+#   labs(x     = "Wavelength (nm)",
+#        y     = "VIP score",
+#        title = "Variable Importance — mean ± SD across 9 LOSO folds") +
+#   theme_bw()+
+#   facet_wrap(~Age, nrow=3)+
+#   theme(panel.grid=element_blank())
+# 
 #############################
-
+# 
 acc <- paste0("Accuracy:", round(mean(accu_v)*100, 1), "+-", round(sd(accu_v)*100, 1))
 kapp <- paste0("Kappa:",    round(mean(kappa_v), 2), "+-", round(sd(kappa_v), 2))
 
@@ -270,53 +286,213 @@ fig_loso_trees <- ggplot(conf_prop_data, aes(x = Reference, y = Prediction, fill
     panel.grid    = element_blank()
   ) +
   coord_fixed()+
-  ggtitle("LOSO all stands- individual trees")
+  ggtitle("LOSO all stands- plot level averages")
 
 
  fig_loso_trees
-ggsave("plot indiv_tree loso  fig.png", fig_loso_trees,
+ggsave("plot avg loso fig.png", fig_loso_trees,
         width = 10, height = 4, dpi = 300, bg = "white")
-
-# #fig_loso_plot_avg 
-# ggsave("plot average loso fig2.png", fig_loso_plot_avg, 
-#        width = 10, height = 4, dpi = 300, bg = "white")
 
 
 
 library(patchwork)
-fig_loso_plot_avg + fig_loso_trees
 
 
 
 ############################
 
-# Extract VIP from each LOSO model
-# finmods should be your list of 9 plsda fits from the validation loop
+# # Extract VIP from each LOSO model
+# # finmods should be your list of 9 plsda fits from the validation loop
 vip_list <- lapply(finmods, function(m) vip(m)[, 1])
 
-# Combine into matrix: rows = wavelengths, cols = stands
-vip_mat <- do.call(cbind, vip_list)
-colnames(vip_mat) <- stands
+vip_mat           <- do.call(cbind, vip_list)
+rownames(vip_mat) <- as.numeric(sub(".*_", "", names(spec[1, ])))
 
-# Summary across folds
-vip_mean <- rowMeans(vip_mat)
-vip_sd   <- apply(vip_mat, 1, sd)
 
-vip_df <- data.frame(
-  Variable_Index = 1:nrow(vip_mat),
-  VIP_mean       = vip_mean,
-  VIP_sd         = vip_sd,
+vip_mean_df <- data.frame(
+  wavelength = as.numeric(rownames(vip_mat)),
+  VIP_mean   = rowMeans(vip_mat),
+  VIP_sd     = apply(vip_mat, 1, sd),
   VIP_upper      = vip_mean + vip_sd,
   VIP_lower      = vip_mean - vip_sd
 )
 
+vip_mean_df$line_group <- NA
+vip_mean_df$line_group[vip_mean_df$wavelength < 1340] <- "1"
+vip_mean_df$line_group[vip_mean_df$wavelength > 1450 & vip_mean_df$wavelength < 1780] <- "2"
+vip_mean_df$line_group[vip_mean_df$wavelength > 1960] <- "3"
+
+#############
+vip_mean_df$is_important_1 <-   vip_mean_df$VIP_mean > 1 
+
+
+vip_mean_df <- vip_mean_df[!is.na(vip_mean_df$line_group),]
+
+
 # Plot
-ggplot(vip_df, aes(x = Variable_Index, y = VIP_mean)) +
-  geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
-              alpha = 0.3, fill = "olivedrab") +
-  geom_line(color = "darkgreen", linewidth = 0.8) +
+fig_VIP <- ggplot(vip_mean_df, aes(x = wavelength  , y = VIP_mean)) +
+#  geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
+ #             alpha = 0.3, fill = "olivedrab") +
+  geom_line(color = "black", linewidth = 0.8,
+            aes(group=line_group)) +
+  geom_point(data=vip_mean_df[vip_mean_df$is_important_1==TRUE,],
+             aes(x=wavelength, y=VIP_mean), col="darkgreen")+
   geom_hline(yintercept = 1, color = "red", linetype = "dashed") +
   labs(x = "Band index",
-       y = "VIP score",
-       title = "Variable Importance — mean ± SD across 9 LOSO folds") +
-  theme_minimal()
+       y = "VIP score") +
+  theme_bw()+
+  theme(panel.grid = element_blank())
+
+fig_VIP
+
+ggsave("vip_loso_fig.png", fig_VIP,
+       width = 10, height = 4, dpi = 300, bg = "white")
+
+
+
+##########
+
+# Each confus[[s]] corresponds to stands[s]
+# Assign age to each stand's result
+stand_ages <- c(C1="Young forest", C2="Young forest", C3="Young forest",
+                C4="Mid-aged forest", C5="Mid-aged forest", C6="Mid-aged forest",
+                C7="Mature forest", C8="Mature forest", C9="Mature forest")
+
+
+# # 1. Score plot — 36 points positioned by comp1/comp2
+
+# Collect held-out stand scores across all 9 folds
+scores_list <- list()
+
+for (s in seq_along(stands)) {
+  inTrain   <- dati_complete$Stand != stands[s]
+  testi     <- spec[!inTrain, ]
+  testclass <- classi[!inTrain]
+  test_stand <- dati_complete$Stand[!inTrain]
+  
+  # Project test data onto training model's components
+  preds <- predict(finmods[[s]], newdata = testi)
+  
+  scores_list[[s]] <- data.frame(
+    comp1     = preds$variates[, 1],
+    comp2     = preds$variates[, 2],
+    Treatment = testclass,
+    Stand     = test_stand
+  )
+}
+
+scores_df <- do.call(rbind, scores_list)
+scores_df$Age <- stand_ages[scores_df$Stand]
+
+
+
+### ANOVA on LD1
+
+scores_df$Treatment<-factor(scores_df$Treatment, levels=c("Control","N","P","NP"))
+scores_df$Ntrmt <- factor(  ifelse(scores_df$Treatment == "N" | scores_df$Treatment == "NP", "N", "NoN"))
+scores_df$Ptrmt <- factor(  ifelse(scores_df$Treatment %in% c("P", "NP"), "P", "NoP"))
+
+
+ld1_mod <-  lmer( comp1 ~ Ntrmt*Ptrmt*Age + (1| Stand), data = scores_df)
+anova(ld1_mod)
+
+ld2_mod <-  lmer( comp2 ~ Ntrmt*Ptrmt*Age + (1| Stand), data = scores_df)
+anova(ld2_mod)
+
+
+####
+
+# Collect held-out stand scores across all 9 folds
+scores_list <- list()
+
+for (s in seq_along(stands)) {
+  inTrain   <- dati_complete$Stand != stands[s]
+  testi     <- spec[!inTrain, ]
+  testclass <- classi[!inTrain]
+  test_stand <- dati_complete$Stand[!inTrain]
+  
+  # Project test data onto training model's components
+  preds <- predict(finmods[[s]], newdata = testi)
+  
+  scores_list[[s]] <- data.frame(
+    comp1     = preds$variates[, 1],
+    comp2     = preds$variates[, 2],
+    Treatment = testclass,
+    Stand     = test_stand
+  )
+}
+
+scores_df <- do.call(rbind, scores_list)
+scores_df$Age <- stand_ages[scores_df$Stand]
+
+###
+
+scores_df$Treatment <- factor(scores_df$Treatment, levels=c("Control","N","P","NP"))
+
+scores_df$Age <- factor(scores_df$Age, levels=c("Young forest","Mid-aged forest", "Mature forest"))
+p_scores <- ggplot(scores_df, aes(x = comp1, y = comp2,
+                                  color = Treatment)) +
+  geom_point(size = 3) +
+  stat_ellipse(aes(group = Treatment), linewidth = 0.6) +
+  scale_color_manual(values=c("black","blue","red","purple"))+
+  labs(x = "Component 1", y = "Component 2") +
+  theme_bw()+
+  coord_fixed()+
+  geom_vline(xintercept = 0, linetype="dashed")+
+  geom_hline(yintercept = 0, linetype="dashed")+
+  theme(legend.position = "right",
+        panel.grid = element_blank())+
+  facet_wrap(~Age, nrow=1)
+
+p_scores
+# 2. Loading spectrum — comp1 and comp2 as lines, colored by sign
+loadings_long <- loadings_df %>%
+  tidyr::pivot_longer(cols      = c(comp1, comp2),
+                      names_to  = "Component",
+                      values_to = "Loading")
+
+#####
+table(loadings_long$wavelength)
+loadings_long$line_group <- NA
+loadings_long$line_group[loadings_long$wavelength < 1340] <- "1"
+loadings_long$line_group[loadings_long$wavelength > 1451 & loadings_long$wavelength < 1781] <- "2"
+loadings_long$line_group[loadings_long$wavelength > 1965] <- "3"
+
+
+table(loadings_long$wavelength)
+sum(table(loadings_long$line_group))
+dim(loadings_long)
+#############
+
+loadings_long <- loadings_long[!is.na(loadings_long$line_group),]
+
+loadings_long$comp_line <- paste(loadings_long$Component, loadings_long$line_group)
+
+########
+
+loadings_long[loadings_long$Component=="comp1","Component"] <- "Component 1"
+loadings_long[loadings_long$Component=="comp2","Component"] <- "Component 2"
+
+p_loadings <- ggplot(loadings_long,
+                     aes(x = wavelength, y = Loading, group=comp_line)) +
+  geom_line(linewidth = 0.7, aes(linetype = Component), col="black") +
+ geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
+  # scale_color_manual(values = c(comp1 = "darkgreen", comp2 = "steelblue")) +
+  labs(x = "Wavelength (nm)", y = "PLSDA Loading") +
+  theme_bw() +
+  ylim(-.15, .2)+
+  facet_wrap(~Component, nrow=2)+
+  theme(panel.grid=element_blank())+
+  theme(legend.position = "right")
+p_loadings
+
+
+# 3. Stack them# 3. Stack them# 3. Stack them
+library(patchwork)
+p_scores / p_loadings
+
+
+ggsave("loadings plot avg loso.png", 
+       width = 10, height = 4, dpi = 300, bg = "white")
+
+
