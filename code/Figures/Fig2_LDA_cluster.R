@@ -153,15 +153,15 @@ fig_trt <- ggplot() +
   # Add ellipses (using stat_ellipse for 95% confidence ellipses)
   stat_ellipse(data = ellipse_data,
                aes(x = LD1, y = LD2, color = Treatment),linewidth=1,
-               geom = "path", alpha = 0.95, level = 0.95, type = "norm") +
+               geom = "path", alpha = 0.95, level = 0.68, type = "norm") +
   # Add points
   geom_point(data = lda_out,
              aes(x = LD1, y = LD2,
                  color = Treatment),
-             size = 2, alpha = 0.6) +
-  geom_text_repel(data=lda_out,
-                  aes(x = LD1, y = LD2,
-                      label = Stand), size = 4)+
+             size = 3, alpha = 0.6) +
+  # geom_text_repel(data=lda_out,
+  #                 aes(x = LD1, y = LD2,
+  #                     label = Stand), size = 4)+
   # Set colors to match your original plot
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
   scale_fill_manual(values = c("black", "blue", "red", "purple")) +
@@ -175,6 +175,11 @@ fig_trt <- ggplot() +
   theme_classic() +
   theme(legend.position= "bottom")
 fig_trt
+
+ggsave("figure_2.png", fig_trt, 
+       width = 5, height = 4.5, dpi = 300, bg = "white")
+
+
 
 #################################################
 

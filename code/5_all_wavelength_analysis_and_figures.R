@@ -83,39 +83,50 @@ ggplot(xya, aes( x= a570, y=a531, col=Treatment))+
 
 xya$pri <- (xya$a531 - xya$a570) / (xya$a531 + xya$a570)
 
-
-pri_mod <- lmer( pri ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(pri_mod)
+xya$diff <- xya$a531 - xya$a570
 
 
 chla_mod <- lmer( a440 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(chla_mod)
+chladf <- as.data.frame(anova(chla_mod))
+chladf$model <- "wvl 440 chl a"
 
 chlb_mod <- lmer( a480 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(chlb_mod)
+chlbdf <- as.data.frame(anova(chlb_mod))
+chlbdf$model <- "wvl 480 chl b"
 
 car_mod <- lmer( a531 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(car_mod)
+cardf <- as.data.frame(anova(car_mod))
+cardf$model <- "wvl 531 xanthophyll"
 
 ref_mod <- lmer( a570 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(ref_mod)
+refdf <- as.data.frame(anova(ref_mod))
+refdf$model <- "wvl 570 reference"
+
+dif_mod <- lmer( xya$diff ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+difdf <- as.data.frame(anova(dif_mod))
+difdf$model <- "wvl 531 - 570 difference"
+
+pri_mod <- lmer( xya$pri ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+pridf <- as.data.frame(anova(pri_mod))
+pridf$model <- "PRI ratio 531 - 570 / 531 + 570"
 
 
-# diff
-xya$diff <- xya$a531 - xya$a570
 
-ref_mod <- lmer( diff ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-anova(ref_mod)
+mod_output <- rbind(chladf, chlbdf, cardf, refdf, difdf, pridf)
+
 
 
 
 ###########################################
-xya
 
-xya$n531 <- xya$a531 / sum(xya$a531)
-xya$n440 <- xya$a440 / sum(xya$a440)
-xya$n480 <- xya$a480 / sum(xya$a480)
-xya$n570 <- xya$a570 / sum(xya$a570)
+
+# xya$n531 <- xya$a531 / sum(xya$a531)
+# xya$n440 <- xya$a440 / sum(xya$a440)
+# xya$n480 <- xya$a480 / sum(xya$a480)
+# xya$n570 <- xya$a570 / sum(xya$a570)
+
+
+
 
 head(xya)
 #sel <- xya[ , c(1:5,10:14)]
@@ -126,8 +137,8 @@ fg1 <-ggplot(xya)+
   geom_point(aes(x=Age, y=n440, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="440 nm normalized reflectance",
-       x="Forest stand")+
+  labs(y="440 nm",
+       x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg1
@@ -136,8 +147,8 @@ fg2 <-ggplot(xya)+
   geom_point(aes(x=Age, y=n480, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="480 nm normalized reflectance",
-       x="Forest stand")+
+  labs(y="480 nm",
+       x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg2
@@ -145,8 +156,8 @@ fg3 <-ggplot(xya)+
   geom_point(aes(x=Age, y=n531, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="531 nm normalized reflectance",
-       x="Forest stand")+
+  labs(y="531 nm  ",
+       x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg3
@@ -154,11 +165,12 @@ fg4 <-ggplot(xya)+
   geom_point(aes(x=Age, y=n570, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="570 nm normalized reflectance",
-       x="Forest stand")+
+  labs(y="570 nm",
+       x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg4
+
 fg5 <-ggplot(xya)+
   geom_point(aes(x=Age, y=pri, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
@@ -181,11 +193,11 @@ fgdif <-ggplot(xya)+
 
 fgdif
 
-fg5 + fgdif
+fg4 + fgdif
 
-library(cowplot)
+library(patchwork)
 
-( fg1 + fg2 ) / ( fg3  + fg4 )  
+( fg1 + fg2 ) / ( fg3  + fg4 )  / (fgdif + fg5)
 
 
 

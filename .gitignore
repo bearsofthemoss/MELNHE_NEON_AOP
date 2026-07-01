@@ -15,6 +15,7 @@
 *.csv
 *.txt
 
+!data_folder/processed_spectra3.csv
 
 *.Rproj.user/
 *.json
