@@ -2,11 +2,18 @@ library(dplyr)
 library(caret)
 library(mixOmics)
 
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# 
+# BiocManager::install("mixOmics")
+
+set.seed(12345)
+
 dati <- read.csv(here::here("data_folder","processed_spectra3.csv"))
 dati <- dati[,-1]
 
 min(table(dati$Treatment, dati$Stand))
-
+max(table(dati$Treatment, dati$Stand))
 names(dati)
 
 
@@ -140,82 +147,10 @@ cat("\n=== LOSO VALIDATION PERFORMANCE ===\n")
 cat("Accuracy:", round(mean(accu_v), 3), "+-", round(sd(accu_v), 3), "\n")
 cat("Kappa:",    round(mean(kappa_v), 3), "+-", round(sd(kappa_v), 3), "\n")
 
-### VIP across LOSO folds
-# Extract VIP for each fold — use opt_comp column (accumulates across components)
-vip_list <- lapply(finmods, function(m) vip(m)[, opt_comp])
-
-# Matrix: rows = bands, cols = stands
-vip_mat          <- do.call(cbind, vip_list)
-colnames(vip_mat) <- stands
-rownames(vip_mat) <- as.numeric(sub(".*_", "", colnames(spec))) # wavelength names as row labels
-
-vip_long <- vip_mat %>%
-  as.data.frame() %>%
-  tibble::rownames_to_column("wavelength") %>%
-  tidyr::pivot_longer(cols      = -wavelength,
-                      names_to  = "Stand",
-                      values_to = "VIP") %>%
-  dplyr::mutate(wavelength = as.numeric(wavelength))
-
-
-# Per-stand and mean summary
-vip_mean <- rowMeans(vip_mat)
-vip_sd   <- apply(vip_mat, 1, sd)
-
-vip_df <- data.frame(
-  wavelength = colnames(spec),
-  VIP_mean   = vip_mean,
-  VIP_sd     = vip_sd,
-  VIP_upper  = vip_mean + vip_sd,
-  VIP_lower  = vip_mean - vip_sd
-)
-
-vip_df$wavelength <- as.numeric(sub(".*_", "", vip_df$wavelength))
 
 
 
-vip_stand_df <- vip_long %>%
-  dplyr::mutate(important = VIP > 1)
 
-
-vip_long$Age[vip_long$Stand=="C1"]<-"Young forest"
-vip_long$Age[vip_long$Stand=="C2"]<-"Young forest"
-vip_long$Age[vip_long$Stand=="C3"]<-"Young forest"
-vip_long$Age[vip_long$Stand=="C4"]<-"Mid-aged forest"
-vip_long$Age[vip_long$Stand=="C5"]<-"Mid-aged forest"
-vip_long$Age[vip_long$Stand=="C6"]<-"Mid-aged forest" 
-vip_long$Age[vip_long$Stand=="C7"]<-"Mature forest"
-vip_long$Age[vip_long$Stand=="C8"]<-"Mature forest"
-vip_long$Age[vip_long$Stand=="C9"]<-"Mature forest"
-
-
-vip_long$line_group <- NA
-vip_long$line_group[vip_long$wavelength< 1340] <- "1"
-vip_long$line_group[vip_long$wavelength > 1450 & vip_long$wavelength < 1780] <- "2"
-vip_long$line_group[vip_long$wavelength > 1960] <- "3"
-
-
-
-vip_long <- vip_long[!is.na(vip_long$line_group),]
-
-vip_long$lgs <- paste(vip_long$Stand, vip_long$line_group)
-
-# ### Plot
-# ggplot()+
-# #vip_df, aes(x = wavelength, y = VIP_mean)) +
-#   geom_line(data = vip_long,
-#             aes(x = wavelength, y = VIP, group = lgs),
-#              linewidth = 0.5) +
-#   # geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
-#   #             alpha = 0.3, fill = "olivedrab") +
-#   geom_line(color = "darkgreen", linewidth = 0.9) +
-#   geom_hline(yintercept = 1, color = "red", linetype = "dashed", linewidth = 0.6) +
-#   labs(x     = "Wavelength (nm)",
-#        y     = "VIP score",
-#        title = "Variable Importance — mean ± SD across 9 LOSO folds") +
-#   theme_bw()+
-#   facet_wrap(~Age, nrow=3)+
-#   theme(panel.grid=element_blank())
 # 
 #############################
 # 
@@ -273,8 +208,7 @@ fig_loso_trees <- ggplot(conf_prop_data, aes(x = Reference, y = Prediction, fill
   ) +
   labs(
     x = "Reference class",
-    y = "Predicted class",
-    subtitle= paste0( acc,"; ", kapp)
+    y = "Predicted class"
   ) +
   theme_minimal() +
   theme(
@@ -285,12 +219,11 @@ fig_loso_trees <- ggplot(conf_prop_data, aes(x = Reference, y = Prediction, fill
     legend.text   = element_text(size = 12),
     panel.grid    = element_blank()
   ) +
-  coord_fixed()+
-  ggtitle("LOSO all stands- plot level averages")
+  coord_fixed()
 
 
  fig_loso_trees
-ggsave("plot avg loso fig.png", fig_loso_trees,
+ggsave("Figure_3.png", fig_loso_trees,
         width = 10, height = 4, dpi = 300, bg = "white")
 
 
@@ -329,24 +262,40 @@ vip_mean_df$is_important_1 <-   vip_mean_df$VIP_mean > 1
 vip_mean_df <- vip_mean_df[!is.na(vip_mean_df$line_group),]
 
 
-# Plot
-fig_VIP <- ggplot(vip_mean_df, aes(x = wavelength  , y = VIP_mean)) +
-#  geom_ribbon(aes(ymin = VIP_lower, ymax = VIP_upper),
- #             alpha = 0.3, fill = "olivedrab") +
-  geom_line(color = "black", linewidth = 0.8,
-            aes(group=line_group)) +
-  geom_point(data=vip_mean_df[vip_mean_df$is_important_1==TRUE,],
-             aes(x=wavelength, y=VIP_mean), col="darkgreen")+
-  geom_hline(yintercept = 1, color = "red", linetype = "dashed") +
-  labs(x = "Band index",
-       y = "VIP score") +
+
+g1 <- ggplot(vip_mean_df, aes(x= wavelength, y= VIP_mean, group = line_group))+
   theme_bw()+
-  theme(panel.grid = element_blank())
+  theme(panel.grid = element_blank())+
+  #  geom_point(data=vip[vip$is_important_1=="TRUE",], col="forestgreen", size=1)+
+  geom_hline(yintercept=1, linetype = "dashed")+
+  labs(x= "Wavelength (nm)", y="Variable Importance Value")+
+  annotate('rect', xmin=1340, xmax=1455, ymin=0, ymax=3, alpha=.2, fill='gray')+
+  annotate('rect', xmin=1790, xmax=1960, ymin=0, ymax=3, alpha=.2, fill='gray')+
+  #  facet_wrap(~Age, nrow=4)+
+  geom_vline(xintercept=535, linetype="solid", col="green",linewidth=2)+
+  geom_vline(xintercept=734, linetype="solid", col="green",linewidth=2)+
+  geom_vline(xintercept=985, linetype="solid", col="green",linewidth=2)+
+  scale_x_continuous(breaks=seq(400, 2500, 200))+
+  geom_line()+
+  annotate(geom = "text", x = 535, y = 2.5, label = "Xanthophyll", 
+           angle = 90,        # Rotates text 90 degrees counter-clockwise
+           vjust = -0.5,      # Adjusts spacing to prevent overlap
+           color = "black",  size = 5)+
+  annotate(geom = "text", x = 735, y = 2.5, label = "Red edge", 
+           angle = 90,        # Rotates text 90 degrees counter-clockwise
+           vjust = -0.5,      # Adjusts spacing to prevent overlap
+           color = "black",  size = 5)+
+  annotate(geom = "text", x = 985, y = 2.5, label = "Starch", 
+           angle = 90,        # Rotates text 90 degrees counter-clockwise
+           vjust = -0.5,      # Adjusts spacing to prevent overlap
+           color = "black",  size = 5)
+  
+  g1
 
-fig_VIP
+write.csv(vip_mean_df, file="plot avg LOSO VIP.csv")
 
-ggsave("vip_loso_fig.png", fig_VIP,
-       width = 10, height = 4, dpi = 300, bg = "white")
+ggsave("Figure_4.png", g1,
+       width = 7, height = 4, dpi = 300, bg = "white")
 
 
 

@@ -59,10 +59,9 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 gat<-tidyr::spread(ldada, "wvl","refl")
 
 
-xya <- aggregate( list(a531 = gat$`528.99`,
-                       a570 = gat$`569.06`,
-                       a440 = gat$`438.85`,
-                       a480 = gat$`478.91`),
+xya <- aggregate( list(a535 = gat$`534`,
+                       a735 = gat$`734.31`,
+                       a985 = gat$`984.71`),
                   by=list(Stand = gat$Stand,
                           Treatment = gat$Treatment,
                           Ntrmt = gat$Ntrmt,
@@ -72,133 +71,85 @@ xya <- aggregate( list(a531 = gat$`528.99`,
 
 xya
 
-ggplot(xya, aes( x= a570, y=a531, col=Treatment))+
-  geom_point()+facet_wrap(~Stand)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(x="570 nm", y="531 nm")+
-  theme_bw()+
-  geom_abline(linetype="dashed")
-
-### Calculate PRI
-
-xya$pri <- (xya$a531 - xya$a570) / (xya$a531 + xya$a570)
-
-xya$diff <- xya$a531 - xya$a570
-
-
-chla_mod <- lmer( a440 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-chladf <- as.data.frame(anova(chla_mod))
-chladf$model <- "wvl 440 chl a"
-
-chlb_mod <- lmer( a480 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-chlbdf <- as.data.frame(anova(chlb_mod))
-chlbdf$model <- "wvl 480 chl b"
-
-car_mod <- lmer( a531 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+car_mod <- lmer( a535 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
 cardf <- as.data.frame(anova(car_mod))
-cardf$model <- "wvl 531 xanthophyll"
+cardf$model <- "Carotenoids"
 
-ref_mod <- lmer( a570 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-refdf <- as.data.frame(anova(ref_mod))
-refdf$model <- "wvl 570 reference"
+red_mod <- lmer( a735 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+reddf <- as.data.frame(anova(red_mod))
+reddf$model <- "Red edge"
 
-dif_mod <- lmer( xya$diff ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-difdf <- as.data.frame(anova(dif_mod))
-difdf$model <- "wvl 531 - 570 difference"
+nir_mod <- lmer( a985 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+nirdf <- as.data.frame(anova(nir_mod))
+nirdf$model <- "NIR"
 
-pri_mod <- lmer( xya$pri ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-pridf <- as.data.frame(anova(pri_mod))
-pridf$model <- "PRI ratio 531 - 570 / 531 + 570"
+nir_mod2 <- lmer( a985 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+nirdf2 <- as.data.frame(anova(nir_mod2))
+
+emm_NIR <- emmeans(nir_mod2, ~ Ntrmt)
+emm_NIR
+((0.0918 - 0.0915) / (0.0915)) *100
+
+emm_vis <- emmeans(vis_mod2, ~ Ntrmt)
+(0.0055 - 0.00654) / (0.00654) * 100
+
+emm_RED <- emmeans(red_mod2, ~ Ntrmt)
+emm_RED
+((0.0561  - 0.0588 ) / 0.0588 ) * 100
 
 
+red_mod2 <- lmer( a735 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+reddf2 <- as.data.frame(anova(red_mod2))
 
-mod_output <- rbind(chladf, chlbdf, cardf, refdf, difdf, pridf)
+vis_mod2 <- lmer( a535 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+visdf2 <- as.data.frame(anova(vis_mod2))
 
 
+nirdf2$model <- "NIR2"
+nirdf2
+
+
+mod_output <- rbind(cardf, reddf, nirdf)
+
+write.csv(mod_output, file="anova_output.csv")
 
 
 ###########################################
 
-
-# xya$n531 <- xya$a531 / sum(xya$a531)
-# xya$n440 <- xya$a440 / sum(xya$a440)
-# xya$n480 <- xya$a480 / sum(xya$a480)
-# xya$n570 <- xya$a570 / sum(xya$a570)
-
-
-
-
-head(xya)
-#sel <- xya[ , c(1:5,10:14)]
-
 xya$Age <- factor(xya$Age, levels=c("Young forest","Mid-aged forest","Mature forest"))
 
 fg1 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n440, group=Treatment, col=Treatment),
+  geom_point(aes(x=Stand, y=a535, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="440 nm",
+  labs(y="535 nm normalised reflectance",
        x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg1
 
 fg2 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n480, group=Treatment, col=Treatment),
+  geom_point(aes(x=Stand, y=a735, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="480 nm",
+  labs(y="735 nm normalised reflectance",
        x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg2
+
 fg3 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n531, group=Treatment, col=Treatment),
+  geom_point(aes(x=Stand, y=a985, group=Treatment, col=Treatment),
              position= position_dodge(.4), size =3)+
   scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="531 nm  ",
+  labs(y="985 nm normalised reflectance",
        x="")+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position="none")
 fg3
-fg4 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n570, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="570 nm",
-       x="")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-fg4
-
-fg5 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=pri, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="PRI",
-       x="Forest stand")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-
-fg5
-
-fgdif <-ggplot(xya)+
-  geom_point(aes(x=Age, y=diff, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="531 - 570 nm difference",
-       x="Forest stand")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-
-fgdif
-
-fg4 + fgdif
-
 library(patchwork)
 
-( fg1 + fg2 ) / ( fg3  + fg4 )  / (fgdif + fg5)
-
+ fg1 + fg2  +  fg3  
 
 
 ###############################
@@ -242,6 +193,7 @@ ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
   facet_wrap(~ Stand, scales = "free_y") +
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
   theme_bw() +
+  geom_vline(xintercept= 535 , linetype="dashed")+
   labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
   theme(
     legend.position  = "bottom",
@@ -259,35 +211,61 @@ ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
     panel.spacing.x  = unit(0.2, "lines"),
     panel.spacing.y  = unit(0.4, "lines")
   )+
-  geom_vline( xintercept = 440, linetype = "dashed", col="forestgreen")+
-  geom_vline( xintercept = 480, linetype = "dashed",col="forestgreen")+
-  geom_vline( xintercept = 531, linetype = "solid",col="orange")+
-  geom_vline( xintercept = 570, linetype = "dotted",col="black")
+  theme_bw()+theme(panel.grid = element_blank())
 
 
 
 ## Red edge
 names(gat)
-re <- gather(gat, "WVL", "value",  72:77)
+re <- gather(gat, "WVL", "value",  76:80)
 
-nir <- aggregate(list(value = re$value), by=list(
+red <- aggregate(list(value = re$value), by=list(
   WVL = re$WVL,
   Stand = re$Stand,
   Age = re$Age,
   Treatment = re$Treatment),
   FUN= "mean",na.rm=T)
-str(nir)
-nir$WVL <- as.numeric(nir$WVL)
+str(red)
+red$WVL <- as.numeric(red$WVL)
 
-ggplot(nir, aes(x= WVL, y= value, 
+ggplot(red, aes(x= WVL, y= value, 
                col=Treatment ))+
   geom_line(aes(group = Treatment))+
   facet_wrap(~Stand, scales="free_y")+
   scale_color_manual(values= c("black","blue","red","purple"))+
   theme_bw()+
+  geom_vline(xintercept= 735 , linetype="dashed")+
   labs(y="Normalized reflectance", 
        x="Wavelength (nm)")+
-  theme(legend.position="bottom")
+  theme(legend.position="bottom")+
+  theme_bw()+theme(panel.grid= element_blank())
+
+############
+
+
+names(gat)
+nir <- gather(gat, "WVL", "value",  126:130)
+
+nir <- aggregate(list(value = nir$value), by=list(
+  WVL = nir$WVL,
+  Stand = nir$Stand,
+  Age = nir$Age,
+  Treatment = nir$Treatment),
+  FUN= "mean",na.rm=T)
+str(nir)
+nir$WVL <- as.numeric(nir$WVL)
+
+ggplot(nir, aes(x= WVL, y= value, 
+                col=Treatment ))+
+  geom_line(aes(group = Treatment))+
+  facet_wrap(~Stand, scales="free_y")+
+  scale_color_manual(values= c("black","blue","red","purple"))+
+  theme_bw()+
+  geom_vline(xintercept= 985 , linetype="dashed")+
+  labs(y="Normalized reflectance", 
+       x="Wavelength (nm)")+
+  theme(legend.position="right")
+
 
 
 library(emmeans)
