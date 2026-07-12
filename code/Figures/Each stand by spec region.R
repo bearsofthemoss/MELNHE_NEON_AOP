@@ -10,7 +10,7 @@ library(dplyr)
 library(agricolae)
 
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada <- read.csv(here::here( "R_output","processed_spectra3.csv"))
+dada <- read.csv(here::here( "data_folder","processed_spectra3.csv"))
 
 summary(dada$winRadius)
 
@@ -93,11 +93,6 @@ ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
     panel.spacing.x  = unit(0.2, "lines"),
     panel.spacing.y  = unit(0.4, "lines")
   )+
-  geom_vline( xintercept = 440, linetype = "dashed", col="forestgreen")+
-  geom_vline( xintercept = 480, linetype = "dashed",col="forestgreen")+
-  geom_vline( xintercept = 531, linetype = "solid",col="orange")+
-  geom_vline( xintercept = 570, linetype = "dotted",col="black")
-
 
 
 ## Red edge

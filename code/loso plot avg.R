@@ -245,10 +245,12 @@ rownames(vip_mat) <- as.numeric(sub(".*_", "", names(spec[1, ])))
 vip_mean_df <- data.frame(
   wavelength = as.numeric(rownames(vip_mat)),
   VIP_mean   = rowMeans(vip_mat),
-  VIP_sd     = apply(vip_mat, 1, sd),
-  VIP_upper      = vip_mean + vip_sd,
-  VIP_lower      = vip_mean - vip_sd
-)
+  VIP_sd     = apply(vip_mat, 1, sd))
+
+
+vip_mean_df$VIP_upper <- vip_mean_df$VIP_mean + vip_mean_df$VIP_sd
+vip_mean_df$VIP_lower <- vip_mean_df$VIP_mean - vip_mean_df$VIP_sd
+
 
 vip_mean_df$line_group <- NA
 vip_mean_df$line_group[vip_mean_df$wavelength < 1340] <- "1"
@@ -277,15 +279,15 @@ g1 <- ggplot(vip_mean_df, aes(x= wavelength, y= VIP_mean, group = line_group))+
   geom_vline(xintercept=985, linetype="solid", col="green",linewidth=2)+
   scale_x_continuous(breaks=seq(400, 2500, 200))+
   geom_line()+
-  annotate(geom = "text", x = 535, y = 2.5, label = "Xanthophyll", 
+  annotate(geom = "text", x = 535, y = 2.5, label = "carotenoid", 
            angle = 90,        # Rotates text 90 degrees counter-clockwise
            vjust = -0.5,      # Adjusts spacing to prevent overlap
            color = "black",  size = 5)+
-  annotate(geom = "text", x = 735, y = 2.5, label = "Red edge", 
+  annotate(geom = "text", x = 735, y = 2.5, label = "red edge", 
            angle = 90,        # Rotates text 90 degrees counter-clockwise
            vjust = -0.5,      # Adjusts spacing to prevent overlap
            color = "black",  size = 5)+
-  annotate(geom = "text", x = 985, y = 2.5, label = "Starch", 
+  annotate(geom = "text", x = 985, y = 2.5, label = "starch", 
            angle = 90,        # Rotates text 90 degrees counter-clockwise
            vjust = -0.5,      # Adjusts spacing to prevent overlap
            color = "black",  size = 5)
@@ -440,8 +442,8 @@ p_loadings
 library(patchwork)
 p_scores / p_loadings
 
-
-ggsave("loadings plot avg loso.png", 
-       width = 10, height = 4, dpi = 300, bg = "white")
-
+# 
+# ggsave("loadings plot avg loso.png", 
+#        width = 10, height = 4, dpi = 300, bg = "white")
+# 
 

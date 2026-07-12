@@ -135,7 +135,7 @@ fg2 <-ggplot(xya)+
   labs(y="735 nm normalised reflectance",
        x="")+
   theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
+  theme(panel.grid = element_blank(), legend.position="bottom")
 fg2
 
 fg3 <-ggplot(xya)+
@@ -149,8 +149,13 @@ fg3 <-ggplot(xya)+
 fg3
 library(patchwork)
 
- fg1 + fg2  +  fg3  
+f5 <-  fg1 + fg2  +  fg3  
 
+ 
+ ggsave("figure_5.png", f5, 
+        width = 9, height = 3.5, dpi = 300, bg = "white")
+ 
+ 
 
 ###############################
 gat$pri550 <-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
@@ -178,7 +183,7 @@ pri_res[pri_res$`Pr(>F)`< 0.01 ,"Pr(>F)"] <- "< 0.01"
 
 pri_res
 names(gat)
-vis <- gather(gat, "WVL", "value",  20:60)
+vis <- gather(gat, "WVL", "value",  24:70)
 
 av <- aggregate(list(value = vis$value), by=list(
            WVL = vis$WVL,
@@ -188,7 +193,7 @@ av <- aggregate(list(value = vis$value), by=list(
            FUN= "mean",na.rm=T)
 str(av)
 av$WVL <- as.numeric(av$WVL)
-ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
+vis_reg <- ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
   geom_line(aes(group = Treatment)) +
   facet_wrap(~ Stand, scales = "free_y") +
   scale_color_manual(values = c("black", "blue", "red", "purple")) +
@@ -213,6 +218,11 @@ ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
   )+
   theme_bw()+theme(panel.grid = element_blank())
 
+vis_reg
+
+ggsave("figure_S2.png", vis_reg, 
+       width = 8, height = 4, dpi = 300, bg = "white")
+
 
 
 ## Red edge
@@ -228,7 +238,7 @@ red <- aggregate(list(value = re$value), by=list(
 str(red)
 red$WVL <- as.numeric(red$WVL)
 
-ggplot(red, aes(x= WVL, y= value, 
+red_reg <- ggplot(red, aes(x= WVL, y= value, 
                col=Treatment ))+
   geom_line(aes(group = Treatment))+
   facet_wrap(~Stand, scales="free_y")+
@@ -239,6 +249,12 @@ ggplot(red, aes(x= WVL, y= value,
        x="Wavelength (nm)")+
   theme(legend.position="bottom")+
   theme_bw()+theme(panel.grid= element_blank())
+
+
+ggsave("figure_S3.png", red_reg, 
+       width = 6, height = 4, dpi = 300, bg = "white")
+
+
 
 ############
 
@@ -255,7 +271,7 @@ nir <- aggregate(list(value = nir$value), by=list(
 str(nir)
 nir$WVL <- as.numeric(nir$WVL)
 
-ggplot(nir, aes(x= WVL, y= value, 
+nir_reg <- ggplot(nir, aes(x= WVL, y= value, 
                 col=Treatment ))+
   geom_line(aes(group = Treatment))+
   facet_wrap(~Stand, scales="free_y")+
@@ -264,8 +280,13 @@ ggplot(nir, aes(x= WVL, y= value,
   geom_vline(xintercept= 985 , linetype="dashed")+
   labs(y="Normalized reflectance", 
        x="Wavelength (nm)")+
-  theme(legend.position="right")
+  theme(legend.position="right",
+        panel.grid = element_blank())
 
+nir_reg
+
+ggsave("figure_S4.png", nir_reg, 
+       width = 6, height = 4, dpi = 300, bg = "white")
 
 
 library(emmeans)
