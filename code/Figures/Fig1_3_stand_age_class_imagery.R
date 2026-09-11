@@ -36,7 +36,7 @@ ba <- st_transform(ba, crs=4326)
 stands <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites.shp"))
 
 
-st_write(stands, "bartlett_stands.kml", driver = "KML")
+#st_write(stands, "bartlett_stands.kml", driver = "KML")
 
 subp <- st_read(file.path("D:/Users/bears/Downloads/Intensive_Bartlett_GIS/Bartlett_intensive_sites_subplots.shp"))
 subp <- subp[subp$Site=="C3",]
@@ -103,6 +103,8 @@ inset_map
 # Panel 2: Site Overview Map
 # -----------------------------------------------------------------------------
 
+library(ggspatial)
+
 g1 <- ggplot() + 
   geom_sf(data = ba, fill = "lightgreen") +
   geom_sf(data = stand_centroids, aes(fill = Age, shape = Age), size = 4) +
@@ -114,6 +116,13 @@ g1 <- ggplot() +
                   aes(x = st_coordinates(stand_centroids)[, 1], 
                       y = st_coordinates(stand_centroids)[, 2],
                       label = Site)) +
+  annotation_scale( bar_cols = "black",
+    location = "br",
+    width_hint = 0.25,
+    unit_category = "metric",
+    pad_x = unit(0.2, "cm"),
+    pad_y = unit(0.2, "cm")
+  ) +
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),
@@ -139,6 +148,9 @@ g1 <- ggplot() +
     )
   ) +
   labs(x = "", y = "")
+
+g1
+
 
 # -----------------------------------------------------------------------------
 # Panel 3: CHM with Treatment Plots
@@ -285,8 +297,8 @@ m7ctops_sf$shade_intensity <- tree_shade_values$hillshade
 g4 <- ggplot() +
   geom_raster(data = rgb_df, aes(x = x, y = y), fill = rgb_df$rgb) +
   geom_sf(data = m7ctops_sf, aes(col = shade_intensity), size = 1) +
-  geom_sf(data = crowns_sf, fill = NA, color = "white", linewidth = .5) + 
-  scale_color_viridis_c(name = "Shade intensity", option = "plasma") +
+  #geom_sf(data = crowns_sf, fill = NA, color = "white", linewidth = .5) + 
+  scale_color_viridis_c(name = "Shading intensity", option = "plasma") +
   geom_sf(data = single_plot, col = "black", fill = NA, linewidth = 3) +
   theme_void() +
   theme(
@@ -297,7 +309,7 @@ g4 <- ggplot() +
   ) +
   guides(
     color = guide_colorbar(
-      title = "Shade intensity",
+      title = "Shading intensity",
       title.position = "top",
       title.hjust = 0.5,
       barwidth = 10,
@@ -320,7 +332,7 @@ g4
 library(patchwork)
 
 # etc.
-option1 <- inset_map + g1 + g2 + g4 + 
+option1 <-  g1 + g2 + g4 + 
   plot_layout(ncol = 4, widths = c(1, 1, 1, 1)) +
   plot_annotation(
     tag_levels = 'A', 

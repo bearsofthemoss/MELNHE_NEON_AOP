@@ -63,6 +63,8 @@ gat<-tidyr::spread(ldada, "wvl","refl")
 names(gat)
 vis <- gather(gat, "WVL", "value",  20:60)
 
+str(vis)
+
 av <- aggregate(list(value = vis$value), by=list(
   WVL = vis$WVL,
   Stand = vis$Stand,
@@ -70,34 +72,54 @@ av <- aggregate(list(value = vis$value), by=list(
   Treatment = vis$Treatment),
   FUN= "mean",na.rm=T)
 str(av)
-av$WVL <- as.numeric(av$WVL)
-ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
-  geom_line(aes(group = Treatment)) +
-  facet_wrap(~ Stand, scales = "free_y") +
-  scale_color_manual(values = c("black", "blue", "red", "purple")) +
-  theme_bw() +
-  labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
-  theme(
-    legend.position  = "bottom",
-    
-    # ── move strip labels inside, top-left ──────────────────────────────
-    strip.background  = element_blank(),   # remove grey box entirely
-    strip.text        = element_text(
-      hjust   = 0,  # push toward left edge
-      vjust   = .5,     # push toward top
-      margin  = margin(b = 4),  # pull text into panel
-      size    = 12
-    ),
-    
-    # ── reduce whitespace between panels ────────────────────────────────
-    panel.spacing.x  = unit(0.2, "lines"),
-    panel.spacing.y  = unit(0.4, "lines")
-  )+
 
+av$WVL <- as.numeric(av$WVL)
+
+
+# one row per panel, positioned at WVL you choose
+labels_df <- data.frame(
+  Stand = unique(av$Stand),
+  WVL   = 440,
+  value = 0.009
+)
+
+
+
+fig_6 <- ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
+  geom_line(aes(group = Treatment), linewidth = 0.5, show.legend = FALSE) +
+ # geom_point(aes(group = Treatment), size=1, shape=18, fill=NA, alpha=.4, show.legend = FALSE) +
+  geom_point(aes(fill = Treatment), shape = 22, size = 0, stroke = 0,
+             alpha = 0, show.legend = TRUE) +
+  geom_text(data = labels_df, aes(x = WVL, y = value, label = Stand),
+            inherit.aes = FALSE, hjust = 0, vjust = 0, size =7) +
+  geom_vline(xintercept = 535, linetype="dashed")+
+  facet_wrap(~ Stand, ncol = 3) +
+  scale_color_manual(values = c(Control = "black", N = "blue",
+                                P = "red", NP = "purple")) +
+  scale_fill_manual(values = c(Control = "black", N = "blue",
+                               P = "red", NP = "purple")) +
+  labs(x = "Wavelength (nm)", y = "Normalized reflectance", fill = "Treatment") +
+  theme_bw() +
+  theme(
+    panel.spacing   = unit(0, "lines"),
+    strip.text      = element_blank(),
+    strip.background = element_blank(),
+    panel.grid      = element_blank(),
+    legend.position = "bottom"
+  ) +
+  guides(
+    col  = "none",
+    fill = guide_legend(override.aes = list(size = 4, alpha = 1))
+  )
+
+fig_6
+
+ggsave("figure_6.png", fig_6,
+       width = 8, height = 4, dpi = 300, bg = "white")
 
 ## Red edge
 names(gat)
-re <- gather(gat, "WVL", "value",  72:77)
+re <- gather(gat, "WVL", "value",  69:83)
 
 nir <- aggregate(list(value = re$value), by=list(
   WVL = re$WVL,
@@ -108,37 +130,55 @@ nir <- aggregate(list(value = re$value), by=list(
 str(nir)
 nir$WVL <- as.numeric(nir$WVL)
 
+library(ggplot2)
 
-ggplot(nir, aes(x = WVL, y = value, col = Treatment)) +
-  geom_line(aes(group = Treatment)) +
-  facet_wrap(~ Stand, scales = "free_y") +
-  scale_color_manual(values = c("black", "blue", "red", "purple")) +
+library(ggplot2)
+
+# one row per panel, positioned at WVL ~690, value 0.06
+labels_df <- data.frame(
+  Stand = unique(nir$Stand),
+  WVL   = 685,
+  value = 0.06
+)
+
+
+fig_7 <- ggplot(nir, aes(x = WVL, y = value, col = Treatment)) +
+  geom_line(aes(group = Treatment), linewidth = 0.5, show.legend = FALSE) +
+ # geom_point(aes(group = Treatment), size=2, shape=18, fill=NA, alpha=.4, show.legend = FALSE) +
+  geom_point(aes(fill = Treatment), shape = 22, size = 0, stroke = 0,
+             alpha = 0, show.legend = TRUE) +
+  geom_text(data = labels_df, aes(x = WVL, y = value, label = Stand),
+            inherit.aes = FALSE, hjust = 0, vjust = 0, size =7) +
+  geom_vline(xintercept = 735, linetype="dashed")+
+  facet_wrap(~ Stand, ncol = 3) +
+  scale_color_manual(values = c(Control = "black", N = "blue",
+                                P = "red", NP = "purple")) +
+  scale_fill_manual(values = c(Control = "black", N = "blue",
+                               P = "red", NP = "purple")) +
+  labs(x = "Wavelength (nm)", y = "Normalized reflectance", fill = "Treatment") +
   theme_bw() +
-  labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
   theme(
-    legend.position  = "bottom",
-    
-    # ── move strip labels inside, top-left ──────────────────────────────
-    strip.background  = element_blank(),   # remove grey box entirely
-    strip.text        = element_text(
-      hjust   = 0,  # push toward left edge
-      vjust   = .5,     # push toward top
-      margin  = margin(b = 4),  # pull text into panel
-      size    = 12
-    ),
-    
-    # ── reduce whitespace between panels ────────────────────────────────
-    panel.spacing.x  = unit(0.2, "lines"),
-    panel.spacing.y  = unit(0.4, "lines")
+    panel.spacing   = unit(0, "lines"),
+    strip.text      = element_blank(),
+    strip.background = element_blank(),
+    panel.grid      = element_blank(),
+    legend.position = "bottom"
+  ) +
+  guides(
+    col  = "none",
+    fill = guide_legend(override.aes = list(size = 4, alpha = 1))
   )
 
+fig_7
 
+ggsave("figure_7.png", fig_7,
+       width = 8, height = 4, dpi = 300, bg = "white")
 
 ##########################################
 
 ## NIR
 names(gat)
-plat <- gather(gat, "WVL", "value", 100:150)
+plat <- gather(gat, "WVL", "value", 120:143)
 
 plat <- aggregate(list(value = plat$value), by=list(
   WVL = plat$WVL,
@@ -150,25 +190,46 @@ plat <- aggregate(list(value = plat$value), by=list(
 plat$WVL <- as.numeric(plat$WVL)
 
 
-ggplot(plat, aes(x = WVL, y = value, col = Treatment)) +
-  geom_line(aes(group = Treatment)) +
-  facet_wrap(~ Stand, scales = "free_y") +
-  scale_color_manual(values = c("black", "blue", "red", "purple")) +
+# one row per panel, positioned at WVL you choose
+labels_df <- data.frame(
+  Stand = unique(plat$Stand),
+  WVL   = 940,
+  value = 0.097
+)
+
+
+
+fig_8 <- ggplot(plat, aes(x = WVL, y = value, col = Treatment)) +
+  geom_line(aes(group = Treatment), linewidth = 0.5, show.legend = FALSE) +
+#  geom_point(aes(group = Treatment), size=2, shape=18, fill=NA, alpha=.4, show.legend = FALSE) +
+  geom_point(aes(fill = Treatment), shape = 22, size = 0, stroke = 0,
+             alpha = 0, show.legend = TRUE) +
+  geom_text(data = labels_df, aes(x = WVL, y = value, label = Stand),
+            inherit.aes = FALSE, hjust = 0, vjust = 0, size =7) +
+  geom_vline(xintercept = 985, linetype="dashed")+
+  facet_wrap(~ Stand, ncol = 3) +
+  scale_color_manual(values = c(Control = "black", N = "blue",
+                                P = "red", NP = "purple")) +
+  scale_fill_manual(values = c(Control = "black", N = "blue",
+                               P = "red", NP = "purple")) +
+  labs(x = "Wavelength (nm)", y = "Normalized reflectance", fill = "Treatment") +
   theme_bw() +
-  labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
   theme(
-    legend.position  = "bottom",
-    
-    # ── move strip labels inside, top-left ──────────────────────────────
-    strip.background  = element_blank(),   # remove grey box entirely
-    strip.text        = element_text(
-      hjust   = 0,  # push toward left edge
-      vjust   = .5,     # push toward top
-      margin  = margin(b = 4),  # pull text into panel
-      size    = 12
-    ),
-    
-    # ── reduce whitespace between panels ────────────────────────────────
-    panel.spacing.x  = unit(0.2, "lines"),
-    panel.spacing.y  = unit(0.4, "lines")
+    panel.spacing   = unit(0, "lines"),
+    strip.text      = element_blank(),
+    strip.background = element_blank(),
+    panel.grid      = element_blank(),
+    legend.position = "bottom"
+  ) +
+  guides(
+    col  = "none",
+    fill = guide_legend(override.aes = list(size = 4, alpha = 1))
   )
+
+fig_8
+
+ggsave("figure_8.png", fig_8,
+       width = 8, height = 4, dpi = 300, bg = "white")
+
+
+
