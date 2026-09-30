@@ -2,7 +2,7 @@
 ## Generate Table 1 sp composition info based in tree inventory
 
 #  Read in Tree DBH information ####
-
+library(dplyr)
 
 rten <- read.csv(here::here("data_folder","MELNHE_TreeDiameters_GreaterThan10cm_2008-2023.csv"))
 names(rten)
@@ -33,13 +33,24 @@ head(tn)
 
 tn$staplo <- paste(tn$stand, tn$Plot)
 
+# b <- tn %>%
+#   group_by(stand, Species) %>%
+#   summarise(sp_BA = sum(BA, na.rm = TRUE), .groups = "drop") %>%
+#   group_by(stand) %>%
+#   mutate(pct = sp_BA / sum(sp_BA)) %>%
+#   filter(pct > 0.01) %>%
+#   arrange(stand, desc(pct)) %>%
+#   select(stand, Species, pct)
+# 
+# b[b$stand=="C5",]
+
 b <- tn %>%
   group_by(stand, Species) %>%
   summarise(sp_BA = sum(BA, na.rm = TRUE), .groups = "drop") %>%
   group_by(stand) %>%
   mutate(pct = sp_BA / sum(sp_BA)) %>%
-  filter(pct > 0.01) %>%
   arrange(stand, desc(pct)) %>%
+  slice_head(n = 3) %>%
   select(stand, Species, pct)
 
-b[b$stand=="C5",]
+b
