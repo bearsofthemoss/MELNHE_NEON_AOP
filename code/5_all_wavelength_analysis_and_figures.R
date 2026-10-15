@@ -83,19 +83,22 @@ nir_mod <- lmer( a985 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
 nirdf <- as.data.frame(anova(nir_mod))
 nirdf$model <- "NIR"
 
-nir_mod2 <- lmer( a985 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
-nirdf2 <- as.data.frame(anova(nir_mod2))
+# nir_mod2 <- lmer( a985 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+# anova(nir_mod2)
+# nirdf2 <- as.data.frame(anova(nir_mod2))
 
-emm_NIR <- emmeans(nir_mod2, ~ Ntrmt)
+emm_NIR <- emmeans(nir_mod, ~ Ntrmt)
+
 emm_NIR
 ((0.0918 - 0.0915) / (0.0915)) *100
 
-emm_vis <- emmeans(vis_mod2, ~ Ntrmt)
-(0.0055 - 0.00654) / (0.00654) * 100
 
-emm_RED <- emmeans(red_mod2, ~ Ntrmt)
+emm_vis <- emmeans(vis_mod, ~ Ntrmt)
+(0.00612 - 0.00705 ) / (0.00705 ) * 100
+
+emm_RED <- emmeans(red_mod, ~ Ntrmt)
 emm_RED
-((0.0561  - 0.0588 ) / 0.0588 ) * 100
+((0.0571   - 0.0599  ) / 0.0599  ) * 100
 
 
 red_mod2 <- lmer( a735 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
@@ -168,7 +171,7 @@ fig_5 <- ggplot(mapping=aes(x=Age, y=Refl, shape=Treatment)) +
   scale_shape_manual(values=trt_shapes) +
   facet_wrap(~ Band, scales="free_y", nrow=1,
              labeller=labeller(Band=band_labels)) +
-  labs(y="Normalised reflectance", x="Forest Age") +
+  labs(y="Normalized reflectance", x="Forest Age") +
   theme_bw() +
   theme(panel.grid       = element_blank(),
         strip.background  = element_blank(),
