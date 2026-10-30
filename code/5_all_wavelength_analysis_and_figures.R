@@ -8,27 +8,27 @@ library(lme4)
 library(tidyr)
 library(dplyr)
 library(agricolae)
-
+library(emmeans)
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
 dada <- read.csv(here::here("data_folder", "processed_spectra3.csv"))
 summary(dada$winRadius)
 
 
 
-age_class <- c("Young forest","Mid-aged forest","Mature forest")
+age_class <- c("Young","Mid-aged","Mature")
 
 
 
 # stand ages
-dada$Age[dada$Stand=="C1"]<-"Young forest"
-dada$Age[dada$Stand=="C2"]<-"Young forest"
-dada$Age[dada$Stand=="C3"]<-"Young forest"
-dada$Age[dada$Stand=="C4"]<-"Mid-aged forest"
-dada$Age[dada$Stand=="C5"]<-"Mid-aged forest"
-dada$Age[dada$Stand=="C6"]<-"Mid-aged forest" 
-dada$Age[dada$Stand=="C7"]<-"Mature forest"
-dada$Age[dada$Stand=="C8"]<-"Mature forest"
-dada$Age[dada$Stand=="C9"]<-"Mature forest"
+dada$Age[dada$Stand=="C1"]<-"Young"
+dada$Age[dada$Stand=="C2"]<-"Young"
+dada$Age[dada$Stand=="C3"]<-"Young"
+dada$Age[dada$Stand=="C4"]<-"Mid-aged"
+dada$Age[dada$Stand=="C5"]<-"Mid-aged"
+dada$Age[dada$Stand=="C6"]<-"Mid-aged" 
+dada$Age[dada$Stand=="C7"]<-"Mature"
+dada$Age[dada$Stand=="C8"]<-"Mature"
+dada$Age[dada$Stand=="C9"]<-"Mature"
 
 names(dada)
 # make a 'long' version of dada
@@ -59,10 +59,9 @@ ldada$Ptrmt <- factor(  ifelse(ldada$Treatment %in% c("P", "NP"), "P", "NoP"))
 gat<-tidyr::spread(ldada, "wvl","refl")
 
 
-xya <- aggregate( list(a531 = gat$`528.99`,
-                       a570 = gat$`569.06`,
-                       a440 = gat$`438.85`,
-                       a480 = gat$`478.91`),
+xya <- aggregate( list(a535 = gat$`534`,
+                       a735 = gat$`734.31`,
+                       a985 = gat$`984.71`),
                   by=list(Stand = gat$Stand,
                           Treatment = gat$Treatment,
                           Ntrmt = gat$Ntrmt,
@@ -72,319 +71,125 @@ xya <- aggregate( list(a531 = gat$`528.99`,
 
 xya
 
-ggplot(xya, aes( x= a570, y=a531, col=Treatment))+
-  geom_point()+facet_wrap(~Stand)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(x="570 nm", y="531 nm")+
-  theme_bw()+
-  geom_abline(linetype="dashed")
+vis_mod <- lmer( a535 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+visdf <- as.data.frame(anova(vis_mod))
+visdf$model <- "Visible"
 
-### Calculate PRI
+red_mod <- lmer( a735 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+reddf <- as.data.frame(anova(red_mod))
+reddf$model <- "Red edge"
 
-xya$pri <- (xya$a531 - xya$a570) / (xya$a531 + xya$a570)
+nir_mod <- lmer( a985 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
+nirdf <- as.data.frame(anova(nir_mod))
+nirdf$model <- "NIR"
 
-xya$diff <- xya$a531 - xya$a570
+# nir_mod2 <- lmer( a985 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+# anova(nir_mod2)
+# nirdf2 <- as.data.frame(anova(nir_mod2))
 
+emm_NIR <- emmeans(nir_mod, ~ Ntrmt)
 
-chla_mod <- lmer( a440 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-chladf <- as.data.frame(anova(chla_mod))
-chladf$model <- "wvl 440 chl a"
-
-chlb_mod <- lmer( a480 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-chlbdf <- as.data.frame(anova(chlb_mod))
-chlbdf$model <- "wvl 480 chl b"
-
-car_mod <- lmer( a531 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-cardf <- as.data.frame(anova(car_mod))
-cardf$model <- "wvl 531 xanthophyll"
-
-ref_mod <- lmer( a570 ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-refdf <- as.data.frame(anova(ref_mod))
-refdf$model <- "wvl 570 reference"
-
-dif_mod <- lmer( xya$diff ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-difdf <- as.data.frame(anova(dif_mod))
-difdf$model <- "wvl 531 - 570 difference"
-
-pri_mod <- lmer( xya$pri ~ Ntrmt * Ptrmt * Age + (1|Stand), data=xya)
-pridf <- as.data.frame(anova(pri_mod))
-pridf$model <- "PRI ratio 531 - 570 / 531 + 570"
+emm_NIR
+((0.0918 - 0.0915) / (0.0915)) *100
 
 
+emm_vis <- emmeans(vis_mod, ~ Ntrmt)
+(0.00612 - 0.00705 ) / (0.00705 ) * 100
 
-mod_output <- rbind(chladf, chlbdf, cardf, refdf, difdf, pridf)
+emm_RED <- emmeans(red_mod, ~ Ntrmt)
+emm_RED
+((0.0571   - 0.0599  ) / 0.0599  ) * 100
 
 
+red_mod2 <- lmer( a735 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+reddf2 <- as.data.frame(anova(red_mod2))
+
+vis_mod2 <- lmer( a535 ~ Ntrmt   + (1|Stand), data=xya[xya$Ptrmt!="P",])
+visdf2 <- as.data.frame(anova(vis_mod2))
+
+
+nirdf2$model <- "NIR2"
+nirdf2
+
+
+mod_output <- rbind(cardf, reddf, nirdf)
+
+write.csv(mod_output, file="anova_output.csv")
 
 
 ###########################################
 
-
-# xya$n531 <- xya$a531 / sum(xya$a531)
-# xya$n440 <- xya$a440 / sum(xya$a440)
-# xya$n480 <- xya$a480 / sum(xya$a480)
-# xya$n570 <- xya$a570 / sum(xya$a570)
-
-
-
-
-head(xya)
-#sel <- xya[ , c(1:5,10:14)]
-
-xya$Age <- factor(xya$Age, levels=c("Young forest","Mid-aged forest","Mature forest"))
-
-fg1 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n440, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="440 nm",
-       x="")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-fg1
-
-fg2 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n480, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="480 nm",
-       x="")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-fg2
-fg3 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n531, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="531 nm  ",
-       x="")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-fg3
-fg4 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=n570, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="570 nm",
-       x="")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-fg4
-
-fg5 <-ggplot(xya)+
-  geom_point(aes(x=Age, y=pri, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="PRI",
-       x="Forest stand")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-
-fg5
-
-fgdif <-ggplot(xya)+
-  geom_point(aes(x=Age, y=diff, group=Treatment, col=Treatment),
-             position= position_dodge(.4), size =3)+
-  scale_color_manual(values=c("black","blue","red","purple"))+
-  labs(y="531 - 570 nm difference",
-       x="Forest stand")+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position="none")
-
-fgdif
-
-fg4 + fgdif
-
-library(patchwork)
-
-( fg1 + fg2 ) / ( fg3  + fg4 )  / (fgdif + fg5)
-
-
-
-###############################
-gat$pri550 <-(gat$`528.99`- gat$`549.02`)/(gat$`528.99` +gat$`549.02`)
-gat$pri570<-(gat$`528.99` - gat$`569.06`)/( gat$`528.99` + gat$`569.06`)
-
-
-names(gat)
-
-pri_mod <- lmer( pri570 ~ Ntrmt * Ptrmt * Age + (1|Stand/staplo), data=gat)
-
-pri_res <- as.data.frame(anova(pri_mod))
-
-pri_res$source <- rownames(pri_res)
-pri_res$DenDF <-round( pri_res$DenDF, 2)
-pri_res$`F value` <-round( pri_res$`F value`, 2)
-pri_res$`Pr(>F)` <-round( pri_res$`Pr(>F)`, 2)
-
-
-pri_res[pri_res$`Pr(>F)`< 0.01 ,"Pr(>F)"] <- "< 0.01"
-
-# write.csv(pri_res[,c("source","NumDF","DenDF","F value","Pr(>F)")],
-#           file="PRI_anova_results.csv")
-
-
-
-pri_res
-names(gat)
-vis <- gather(gat, "WVL", "value",  20:60)
-
-av <- aggregate(list(value = vis$value), by=list(
-           WVL = vis$WVL,
-           Stand = vis$Stand,
-           Age = vis$Age,
-           Treatment = vis$Treatment),
-           FUN= "mean",na.rm=T)
-str(av)
-av$WVL <- as.numeric(av$WVL)
-ggplot(av, aes(x = WVL, y = value, col = Treatment)) +
-  geom_line(aes(group = Treatment)) +
-  facet_wrap(~ Stand, scales = "free_y") +
-  scale_color_manual(values = c("black", "blue", "red", "purple")) +
-  theme_bw() +
-  labs(y = "Normalized reflectance", x = "Wavelength (nm)") +
-  theme(
-    legend.position  = "bottom",
-    
-    # ── move strip labels inside, top-left ──────────────────────────────
-    strip.background  = element_blank(),   # remove grey box entirely
-    strip.text        = element_text(
-      hjust   = 0,  # push toward left edge
-      vjust   = .5,     # push toward top
-      margin  = margin(b = 4),  # pull text into panel
-      size    = 12
-    ),
-    
-    # ── reduce whitespace between panels ────────────────────────────────
-    panel.spacing.x  = unit(0.2, "lines"),
-    panel.spacing.y  = unit(0.4, "lines")
-  )+
-  geom_vline( xintercept = 440, linetype = "dashed", col="forestgreen")+
-  geom_vline( xintercept = 480, linetype = "dashed",col="forestgreen")+
-  geom_vline( xintercept = 531, linetype = "solid",col="orange")+
-  geom_vline( xintercept = 570, linetype = "dotted",col="black")
-
-
-
-## Red edge
-names(gat)
-re <- gather(gat, "WVL", "value",  72:77)
-
-nir <- aggregate(list(value = re$value), by=list(
-  WVL = re$WVL,
-  Stand = re$Stand,
-  Age = re$Age,
-  Treatment = re$Treatment),
-  FUN= "mean",na.rm=T)
-str(nir)
-nir$WVL <- as.numeric(nir$WVL)
-
-ggplot(nir, aes(x= WVL, y= value, 
-               col=Treatment ))+
-  geom_line(aes(group = Treatment))+
-  facet_wrap(~Stand, scales="free_y")+
-  scale_color_manual(values= c("black","blue","red","purple"))+
-  theme_bw()+
-  labs(y="Normalized reflectance", 
-       x="Wavelength (nm)")+
-  theme(legend.position="bottom")
-
-
-library(emmeans)
+xya$Age <- factor(xya$Age, levels=c("Young","Mid-aged","Mature"))
+library(tidyr)
 library(ggplot2)
 
-# Get estimated marginal means for the P × Age interaction
-# (marginalising over N treatment)
-emm_PA <- emmeans(pa570, ~ Ptrmt * Ntrmt+Age)
-emm_df  <- as.data.frame(emm_PA)
+xya$Age <- factor(xya$Age, levels=c("Young","Mid-aged","Mature"))
 
-# Rename for clarity
-names(emm_df)[names(emm_df) == "emmean"] <- "emmean"
+band_levels <- c("a535","a735","a985")
+band_labels <- c(a535="535 nm", a735="735 nm", a985="985 nm")
 
-avg_pri$Age <- factor(avg_pri$Age, levels=c(
-  "Young forest","Mid-aged forest","Mature forest"
-))
+raw_long <- xya %>%
+  pivot_longer(c(a535, a735, a985), names_to="Band", values_to="Refl") %>%
+  mutate(Band = factor(Band, levels=band_levels))
 
-emm_df$Age <- factor(emm_df$Age, levels=c(
-  "Young forest","Mid-aged forest","Mature forest"
-))
+avg_long <- raw_long %>%
+  group_by(Age, Treatment, Band) %>%
+  summarise(Refl = mean(Refl), .groups="drop")
+
+# treatment shapes: Control=square(22), NP=diamond(23), N=down-tri(25), P=up-tri(24)
+trt_shapes <- c(Control=22, NP=23, N=25, P=24)
+trt_cols   <- c(Control="black", N="blue", P="red", NP="purple")
+
+xya$Age <- factor(xya$Age, levels=c("Young","Mid-aged","Mature"))
+band_levels <- c("a535","a735","a985")
+band_labels <- c(a535="535 nm", a735="735 nm", a985="985 nm")
+raw_long <- xya %>%
+  pivot_longer(c(a535, a735, a985), names_to="Band", values_to="Refl") %>%
+  mutate(Band = factor(Band, levels=band_levels))
+avg_long <- raw_long %>%
+  group_by(Age, Treatment, Band) %>%
+  summarise(Refl = mean(Refl), .groups="drop")
+
+# treatment shapes: Control=square(22), NP=diamond(23), N=down-tri(25), P=up-tri(24)
+trt_shapes <- c(Control=22, NP=23, N=25, P=24)
+trt_cols   <- c(Control="black", N="blue", P="red", NP="purple")
 
 
-emm_df[emm_df$Ptrmt=="NoP" & emm_df$Ntrmt == "NoN", "Treatment"] <- "Control"
-emm_df[emm_df$Ptrmt=="NoP" & emm_df$Ntrmt == "N", "Treatment"] <- "N"
-emm_df[emm_df$Ptrmt=="P" & emm_df$Ntrmt == "NoN", "Treatment"] <- "P"
-emm_df[emm_df$Ptrmt=="P" & emm_df$Ntrmt == "N", "Treatment"] <- "NP"
 
-
-emm_df$Treatment <- factor(emm_df$Treatment, levels=c("Control","N","P", "NP"))
-library(ggbeeswarm)
-library(ggnewscale)
-
-prin <- spread(avg_pri[ , c("Stand","Age","pri570","Ntrmt","Ptrmt")], "Ntrmt","pri570")
-
-# prin[prin$Ntrmt=="No N","Ntrmt"] <- "No added N"
-# prin[prin$Ntrmt=="Yes N","Ntrmt"] <- "Added N"
-prin[prin$Ptrmt=="No N","Ptrmt"] <- "No added P"
-prin[prin$Ptrmt=="Yes N","Ptrmt"] <- "Added P"
-
-fxy <- ggplot(prin,
-               aes(x=NoN, y= N, shape=Age, group=Stand))+
-  geom_point(aes(color=Ptrmt), size=3)+
-  scale_color_manual(values=c("red","black"))+
-  geom_line(aes(group=Stand))+
-  geom_abline()+
-  coord_fixed()+
-  theme_bw(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    legend.position  = "right"
+fig_5 <- ggplot(mapping=aes(x=Age, y=Refl, shape=Treatment)) +
+  # raw values: solid fill, low alpha
+  # geom_point(data=raw_long, aes(col=Treatment, fill=Treatment),
+  #            size=1.8, alpha=.30) +
+  geom_point(data=raw_long, aes(col=Treatment, fill=Treatment),
+             size=0.8, alpha=.30,
+             position=position_jitterdodge(jitter.width=0, dodge.width=0.4)) +
+  # averages: hollow (fill=NA)
+  geom_point(data=avg_long, aes(col=Treatment),
+             size=2.5, stroke=1.4, fill=NA) +
+  scale_color_manual(values=trt_cols) +
+  scale_fill_manual(values=trt_cols) +
+  scale_shape_manual(values=trt_shapes) +
+  facet_wrap(~ Band, scales="free_y", nrow=1,
+             labeller=labeller(Band=band_labels)) +
+  labs(y="Normalized reflectance", x="Forest Age") +
+  theme_bw() +
+  theme(panel.grid       = element_blank(),
+        strip.background  = element_blank(),
+        strip.text        = element_text(face=2, hjust=0),
+        legend.position   = "right",
+        panel.spacing     = unit(0.6, "lines")) +
+  guides(
+    shape = guide_legend(override.aes = list(alpha=1, size=3.5)),
+    fill = "none"
   )
-fxy
-
-ggsave("figure_5xy_P.png", fxy, 
-       width = 7, height = 3.5, dpi = 300, bg = "white")
 
 
 
-avg_pri$Treatment <- factor(avg_pri$Treatment, levels = c("Control", "N", "P", "NP"))
 
-pri_fig_570 <- ggplot() +
-  geom_point(
-    data = avg_pri,
-    aes(x     = Treatment,
-        y     = pri570,
-        col  = Treatment
-        ,group = interaction(Treatment, Age, lex.order = TRUE)
-        )
-    ,
-    position  = position_dodge(0.7),
-    alpha     = 0.4
-  ) +
-  
-  scale_color_manual(
-    values = c("Control" = "black", "N" = "blue", "P" = "red", "NP" = "purple"),
-    name   = "Treatment"
-  ) +
+ggsave("figure_5.png", fig_5,
+       width = 8, height = 3.5, dpi = 300, bg = "white")
 
-  labs(
-    x = "Age class",
-    y = "PRI"
-  ) +
-  
-  theme_bw(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    legend.position  = "right"
-  )+
-  facet_wrap(~Age)
-
-pri_fig_570
-
-
-ggsave("figure_5a.png", pri_fig_570, 
-       width = 7, height = 3.5, dpi = 300, bg = "white")
-
-#################################################################################
-
-# Analysis of PRI
-
+# #################################################################################
+# 
+# # Analysis of PRI
+# 

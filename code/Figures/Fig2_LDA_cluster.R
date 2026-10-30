@@ -49,8 +49,8 @@ nzv <- nearZeroVar(lda_obj[,c(-1, -2)])
 
 lda_obj[,134:139]
 
-#lda_obj_cleaned <- lda_obj[ , -c(nzv +1)]
-lda_obj_cleaned <- lda_obj[ , -c(nzv$Position +1)]
+lda_obj_cleaned <- lda_obj[ , -c(nzv +1)]
+#lda_obj_cleaned <- lda_obj[ , -c(nzv$Position +1)]
 
 summary(lda_obj_cleaned)
 
@@ -153,7 +153,7 @@ fig_trt <- ggplot() +
   # Add ellipses (using stat_ellipse for 95% confidence ellipses)
   stat_ellipse(data = ellipse_data,
                aes(x = LD1, y = LD2, color = Treatment),linewidth=1,
-               geom = "path", alpha = 0.95, level = 0.68, type = "norm") +
+               geom = "path", alpha = 0.95, level =.95, type = "norm") +
   # Add points
   geom_point(data = lda_out,
              aes(x = LD1, y = LD2,

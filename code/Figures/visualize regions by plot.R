@@ -2,7 +2,7 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 ## read in data, add 'ages', add 'YesN','NoN' for N*P ANOVA
-dada <- read.csv(here::here( "data_folder","processed_spectra2.csv"))
+dada <- read.csv(here::here( "data_folder","processed_spectra3.csv"))
 
 
 
